@@ -56,10 +56,10 @@ struct stack_t
 };
 
 
-enum stack_error_code stack_init(struct stack_t *s);
-enum stack_error_code stack_destroy(struct stack_t *s);
-enum stack_error_code stack_push(struct stack_t *s, int value);
-enum stack_error_code stack_pop(struct stack_t *s, stack_value_t *pValue);
+enum stack_error_code stack_init(struct stack_t *s) __attribute__((warn_unused_result));
+enum stack_error_code stack_destroy(struct stack_t *s) __attribute__((warn_unused_result));
+enum stack_error_code stack_push(struct stack_t *s, int value) __attribute__((warn_unused_result));
+enum stack_error_code stack_pop(struct stack_t *s, stack_value_t *pValue) __attribute__((warn_unused_result));
 
 
 #endif

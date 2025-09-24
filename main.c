@@ -8,6 +8,18 @@
 
 #define $(f) do{enum stack_error_code err = 0; if ((err = f) != 0) { printf("OK: CodeLine %s:%s:%d [%s] returned error %d (%s)\n", __FILE__, __FUNCTION__, __LINE__, #f, err, stack_get_error_string(err)); return; }}while(0)
 
+void test_000()
+{
+    START_TESTING_FUNCTION;
+    /* this must show warning: -Wunused-result :) */
+    if (0)
+    {
+        struct stack_t stk1;
+        stack_init(&stk1);
+    }
+    printf("Do you see warning?\n");
+}
+
 void test_100()
 {
     START_TESTING_FUNCTION;
@@ -271,6 +283,7 @@ void test_500()
 
 int main()
 {
+    test_000();
     test_100();
     test_112();
     test_125();
