@@ -20,6 +20,41 @@ void test_000()
     printf("Do you see warning?\n");
 }
 
+void test_050()
+{
+    START_TESTING_FUNCTION;
+    $(stack_init(NULL));
+    END_TESTING_FUNCTION;
+}
+
+void test_051()
+{
+    START_TESTING_FUNCTION;
+    $(stack_push(NULL, 0));
+    END_TESTING_FUNCTION;
+}
+
+void test_052()
+{
+    START_TESTING_FUNCTION;
+    $(stack_pop(NULL, NULL));
+    END_TESTING_FUNCTION;
+}
+
+void test_053()
+{
+    START_TESTING_FUNCTION;
+    $(stack_destroy(NULL));
+    END_TESTING_FUNCTION;
+}
+
+void test_054()
+{
+    START_TESTING_FUNCTION;
+    $(stack_get_size(NULL, NULL));
+    END_TESTING_FUNCTION;
+}
+
 void test_100()
 {
     START_TESTING_FUNCTION;
@@ -331,6 +366,11 @@ void test_600()
 int main()
 {
     test_000();
+    test_050();
+    test_051();
+    test_052();
+    test_053();
+    test_054();
     test_100();
     test_112();
     test_125();

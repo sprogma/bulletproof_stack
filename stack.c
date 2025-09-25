@@ -98,7 +98,7 @@ enum stack_error_code stack_print_elements(struct stack_t *s, ssize_t first, ssi
     STACK_DEBUG_PRINT("stack data content:\n");
     for (ssize_t i = 0; i < first && element < s->data_len; ++i, ++element)
     {
-        STACK_DEBUG_PRINT("    data[%zd] %d\n", element, s->data[element]);
+        STACK_DEBUG_PRINT("    data[%08zd] = %d\n", element, s->data[element]);
     }
     if (element < s->data_len - last)
     {
@@ -107,12 +107,12 @@ enum stack_error_code stack_print_elements(struct stack_t *s, ssize_t first, ssi
     }
     for (ssize_t i = 0; i < last && element < s->data_len; ++i, ++element)
     {
-        STACK_DEBUG_PRINT("    data[%zd] %d\n", element, s->data[element]);
+        STACK_DEBUG_PRINT("    data[%08zd] = %d\n", element, s->data[element]);
     }
 }
 
 
-#define STACK_VALIDATE(s) CHECK(stack_validate(__FILE__, __FUNCTION__, __LINE__, s))
+#define STACK_VALIDATE(s) CHECK(stack_validate(file_name, func_name, line, s))
 enum stack_error_code stack_validate(const char *file, const char *func, int line, struct stack_t *s)
 {
     /* 1. easy check - if stack is null */
@@ -243,15 +243,15 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     return stack_code_ok;
 }
 
-#define STACK_VERIFY(s) CHECK(stack_verify(__FILE__, __FUNCTION__, __LINE__, s))
-enum stack_error_code stack_verify(const char *file, const char *func, int line, struct stack_t *s)
+#define STACK_VERIFY(s) CHECK(stack_verify(file_name, func_name, line, s))
+enum stack_error_code stack_verify(STACK_COMMON_ARGS, struct stack_t *s)
 {
-    CHECK(stack_validate(file, func, line, s));
+    STACK_VALIDATE(s);
     return stack_code_ok;
 }
 
 
-enum stack_error_code stack_init(struct stack_t *s)
+enum stack_error_code stack_fn_init(STACK_COMMON_ARGS, struct stack_t *s)
 {
     if (s == NULL)
     {
@@ -299,7 +299,7 @@ enum stack_error_code stack_init(struct stack_t *s)
 }
 
 
-enum stack_error_code stack_destroy(struct stack_t *s)
+enum stack_error_code stack_fn_destroy(STACK_COMMON_ARGS, struct stack_t *s)
 {
     STACK_VERIFY(s);
     free(s->data);
@@ -311,18 +311,19 @@ enum stack_error_code stack_destroy(struct stack_t *s)
 }
 
 
-enum stack_error_code stack_get_size(struct stack_t *s, ssize_t *size)
+enum stack_error_code stack_fn_get_size(STACK_COMMON_ARGS, struct stack_t *s, ssize_t *size)
 {
     STACK_VERIFY(s);
     if (size != NULL)
     {
         *size = s->data_len;
     }
+    STACK_VERIFY(s);
     return stack_code_ok;
 }
 
 
-enum stack_error_code stack_push(struct stack_t *s, stack_value_t value)
+enum stack_error_code stack_fn_push(STACK_COMMON_ARGS, struct stack_t *s, stack_value_t value)
 {
     STACK_VERIFY(s);
     if (s->data_len == s->data_alloc)
@@ -352,7 +353,7 @@ enum stack_error_code stack_push(struct stack_t *s, stack_value_t value)
 }
 
 
-enum stack_error_code stack_pop(struct stack_t *s, stack_value_t *pValue)
+enum stack_error_code stack_fn_pop(STACK_COMMON_ARGS, struct stack_t *s, stack_value_t *pValue)
 {
     STACK_VERIFY(s);
     if (s->data_len == 0)

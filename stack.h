@@ -64,12 +64,19 @@ struct stack_t
     stack_thread_type_t creator_thread;
 };
 
+#define STACK_COMMON_ARGS const char *file_name, const char *func_name, const int line
+#define STACK_COMMON_ARGS_VALUE __FILE__, __FUNCTION__, __LINE__
 
-enum stack_error_code stack_init(struct stack_t *s) __attribute__((warn_unused_result));
-enum stack_error_code stack_destroy(struct stack_t *s) __attribute__((warn_unused_result));
-enum stack_error_code stack_get_size(struct stack_t *s, ssize_t *size) __attribute__((warn_unused_result));
-enum stack_error_code stack_push(struct stack_t *s, int value) __attribute__((warn_unused_result));
-enum stack_error_code stack_pop(struct stack_t *s, stack_value_t *pValue) __attribute__((warn_unused_result));
+enum stack_error_code stack_fn_init(STACK_COMMON_ARGS, struct stack_t *s) __attribute__((warn_unused_result));
+enum stack_error_code stack_fn_destroy(STACK_COMMON_ARGS, struct stack_t *s) __attribute__((warn_unused_result));
+enum stack_error_code stack_fn_get_size(STACK_COMMON_ARGS, struct stack_t *s, ssize_t *size) __attribute__((warn_unused_result));
+enum stack_error_code stack_fn_push(STACK_COMMON_ARGS, struct stack_t *s, int value) __attribute__((warn_unused_result));
+enum stack_error_code stack_fn_pop(STACK_COMMON_ARGS, struct stack_t *s, stack_value_t *pValue) __attribute__((warn_unused_result));
 
+#define stack_init(s) stack_fn_init(STACK_COMMON_ARGS_VALUE, s)
+#define stack_destroy(s) stack_fn_destroy(STACK_COMMON_ARGS_VALUE, s)
+#define stack_get_size(s, out) stack_fn_get_size(STACK_COMMON_ARGS_VALUE, s, out)
+#define stack_push(s, in) stack_fn_push(STACK_COMMON_ARGS_VALUE, s, in)
+#define stack_pop(s, out) stack_fn_pop(STACK_COMMON_ARGS_VALUE, s, out)
 
 #endif
