@@ -6,6 +6,13 @@
 
 
 
+#ifdef _WIN32
+    #include "Windows.h"
+    #define stack_GetCurrentThreadId() GetCurrentThreadId()
+#else
+    #include "pthread.h"
+    #define stack_GetCurrentThreadId pthread_self()
+#endif
 
 #ifndef NDEBUG
 
@@ -80,7 +87,7 @@ enum stack_error_code stack_update_hashes(struct stack_t *s)
     s->hash.content = calculate_content_hash(s);
     /* 2. compute header hash, becouse it depends on content hash value */
     s->hash.header = calculate_header_hash(s);
-    return 0;
+    return stack_code_ok;
 }
 
 
@@ -95,7 +102,7 @@ enum stack_error_code stack_print_elements(struct stack_t *s, ssize_t first, ssi
     }
     if (element < s->data_len - last)
     {
-        STACK_DEBUG_PRINT("    %zd ... %zd\n", element, s->data_len - last);
+        STACK_DEBUG_PRINT("    data[%zd..%zd] = ...\n", element, s->data_len - last - 1);
         element = s->data_len - last;
     }
     for (ssize_t i = 0; i < last && element < s->data_len; ++i, ++element)
@@ -130,6 +137,27 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
         STACK_DEBUG_PRINT("    data:       %p  [SPOILED?]\n", s->data);
         STACK_DEBUG_PRINT("    data_len:   %016zd  [SPOILED?]\n", s->data_len);
         STACK_DEBUG_PRINT("    data_alloc: %016zd  [SPOILED?]\n", s->data_alloc);
+        STACK_DEBUG_PRINT("}\n");
+        return stack_validation_error;
+    }
+
+    /* 3. check caller thread */
+    stack_thread_type_t current_thread = stack_GetCurrentThreadId();
+    if (s->creator_thread != current_thread)
+    {
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("!> use of stack from another thread \n");
+        STACK_DEBUG_PRINT("!> This stack doesn't support multithreaded usage.\n");
+        #ifdef _WIN32
+            STACK_DEBUG_PRINT("!> stack was created in %lu thread.\n", s->creator_thread);
+            STACK_DEBUG_PRINT("!> but now used from    %lu thread.\n", current_thread);
+        #endif
+        STACK_DEBUG_PRINT("stack [%p] : \n", s);
+        STACK_DEBUG_PRINT("{\n");
+        STACK_DEBUG_PRINT("    hash:       [header: %llx content: %llx] [CORRECT]\n", s->hash.header, s->hash.content);
+        STACK_DEBUG_PRINT("    data:       %p\n", s->data);
+        STACK_DEBUG_PRINT("    data_len:   %016zd\n", s->data_len);
+        STACK_DEBUG_PRINT("    data_alloc: %016zd\n", s->data_alloc);
         STACK_DEBUG_PRINT("}\n");
         return stack_validation_error;
     }
@@ -174,6 +202,19 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
         STACK_DEBUG_PRINT("}\n");
         return stack_validation_error;
     }
+    if (s->data_len > s->data_alloc)
+    {
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("!> given stack's data_len is greated than data_alloc\n");
+        STACK_DEBUG_PRINT("stack [%p] : \n", s);
+        STACK_DEBUG_PRINT("{\n");
+        STACK_DEBUG_PRINT("    hash:       [header: %llx content: %llx] [CORRECT]\n", s->hash.header, s->hash.content);
+        STACK_DEBUG_PRINT("    data:       %p\n", s->data);
+        STACK_DEBUG_PRINT("    data_len:   %016zd  [ > %016zd ]\n", s->data_len, s->data_alloc);
+        STACK_DEBUG_PRINT("    data_alloc: %016zd  [ < %016zd ]\n", s->data_alloc, s->data_len);
+        STACK_DEBUG_PRINT("}\n");
+        return stack_validation_error;
+    }
 
     /* 4. check content hash */
     uint64_t real_content_hash = calculate_content_hash(s);
@@ -199,14 +240,14 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     }
 
     /* structure is right */
-    return 0;
+    return stack_code_ok;
 }
 
 #define STACK_VERIFY(s) CHECK(stack_verify(__FILE__, __FUNCTION__, __LINE__, s))
 enum stack_error_code stack_verify(const char *file, const char *func, int line, struct stack_t *s)
 {
     CHECK(stack_validate(file, func, line, s));
-    return 0;
+    return stack_code_ok;
 }
 
 
@@ -238,6 +279,7 @@ enum stack_error_code stack_init(struct stack_t *s)
     s->data_len = 0;
     s->data_alloc = 16;
     s->data = calloc(1, sizeof(*s->data) * s->data_alloc);
+    s->creator_thread = stack_GetCurrentThreadId();
     if (s->data == NULL)
     {
         return stack_no_memory_error;
@@ -253,7 +295,7 @@ enum stack_error_code stack_init(struct stack_t *s)
     #endif
     stack_update_hashes(s);
     STACK_VERIFY(s);
-    return 0;
+    return stack_code_ok;
 }
 
 
@@ -265,7 +307,18 @@ enum stack_error_code stack_destroy(struct stack_t *s)
     s->data_len = -1;
     s->data_alloc = -1;
     stack_update_hashes(s);
-    return 0;
+    return stack_code_ok;
+}
+
+
+enum stack_error_code stack_get_size(struct stack_t *s, ssize_t *size)
+{
+    STACK_VERIFY(s);
+    if (size != NULL)
+    {
+        *size = s->data_len;
+    }
+    return stack_code_ok;
 }
 
 
@@ -295,7 +348,7 @@ enum stack_error_code stack_push(struct stack_t *s, stack_value_t value)
     s->data[s->data_len++] = value;
     stack_update_hashes(s);
     STACK_VERIFY(s);
-    return 0;
+    return stack_code_ok;
 }
 
 
@@ -316,5 +369,5 @@ enum stack_error_code stack_pop(struct stack_t *s, stack_value_t *pValue)
     }
     stack_update_hashes(s);    
     STACK_VERIFY(s);
-    return 0;
+    return stack_code_ok;
 }

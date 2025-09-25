@@ -6,6 +6,14 @@
 #include "stddef.h"
 
 
+#ifdef _WIN32
+    #include "WinDef.h"
+    typedef DWORD stack_thread_type_t;
+#else
+    #include "pthread.h"
+    typedef pthread_t stack_thread_type_t;
+#endif
+
 enum stack_error_code
 {
     stack_code_ok = 0,
@@ -53,11 +61,13 @@ struct stack_t
     stack_value_t *data;
     ssize_t data_len;
     ssize_t data_alloc;
+    stack_thread_type_t creator_thread;
 };
 
 
 enum stack_error_code stack_init(struct stack_t *s) __attribute__((warn_unused_result));
 enum stack_error_code stack_destroy(struct stack_t *s) __attribute__((warn_unused_result));
+enum stack_error_code stack_get_size(struct stack_t *s, ssize_t *size) __attribute__((warn_unused_result));
 enum stack_error_code stack_push(struct stack_t *s, int value) __attribute__((warn_unused_result));
 enum stack_error_code stack_pop(struct stack_t *s, stack_value_t *pValue) __attribute__((warn_unused_result));
 
