@@ -361,6 +361,28 @@ void test_600()
     END_TESTING_FUNCTION;
 }
 
+const struct stack_t test_700_glob_stk = {};
+
+void test_700()
+{
+    START_TESTING_FUNCTION;
+    
+    $(stack_init((void *)&test_700_glob_stk));
+    
+    END_TESTING_FUNCTION;
+}
+
+void test_800()
+{
+    START_TESTING_FUNCTION;
+
+    $(stack_init((void *)0x0000000011223344LL));
+    
+    END_TESTING_FUNCTION;
+}
+
+
+
 
 
 int main()
@@ -389,5 +411,7 @@ int main()
     test_400();
     test_500();
     test_600();
+    test_700();
+    test_800();
     return 0;
 }

@@ -20,6 +20,7 @@ enum stack_error_code
     stack_unknown_error,
     stack_pop_empty_error,
     stack_no_memory_error,
+    stack_invalid_memory_error,
     stack_validation_error,
 };
 
@@ -35,6 +36,8 @@ static inline const char *stack_get_error_string(enum stack_error_code err)
             return "stack_pop_empty_error";
         case stack_no_memory_error:
             return "stack_no_memory_error";
+        case stack_invalid_memory_error:
+            return "stack_invalid_memory_error";
         case stack_validation_error:
             return "stack_validation_error";
         default:
@@ -65,7 +68,7 @@ struct stack_t
 };
 
 #define STACK_COMMON_ARGS const char *file_name, const char *func_name, const int line
-#define STACK_COMMON_ARGS_VALUE __FILE__, __FUNCTION__, __LINE__
+#define STACK_COMMON_ARGS_SET_VALUES __FILE__, __FUNCTION__, __LINE__
 
 enum stack_error_code stack_fn_init(STACK_COMMON_ARGS, struct stack_t *s) __attribute__((warn_unused_result));
 enum stack_error_code stack_fn_destroy(STACK_COMMON_ARGS, struct stack_t *s) __attribute__((warn_unused_result));
@@ -73,10 +76,10 @@ enum stack_error_code stack_fn_get_size(STACK_COMMON_ARGS, struct stack_t *s, ss
 enum stack_error_code stack_fn_push(STACK_COMMON_ARGS, struct stack_t *s, int value) __attribute__((warn_unused_result));
 enum stack_error_code stack_fn_pop(STACK_COMMON_ARGS, struct stack_t *s, stack_value_t *pValue) __attribute__((warn_unused_result));
 
-#define stack_init(s) stack_fn_init(STACK_COMMON_ARGS_VALUE, s)
-#define stack_destroy(s) stack_fn_destroy(STACK_COMMON_ARGS_VALUE, s)
-#define stack_get_size(s, out) stack_fn_get_size(STACK_COMMON_ARGS_VALUE, s, out)
-#define stack_push(s, in) stack_fn_push(STACK_COMMON_ARGS_VALUE, s, in)
-#define stack_pop(s, out) stack_fn_pop(STACK_COMMON_ARGS_VALUE, s, out)
+#define stack_init(s) stack_fn_init(STACK_COMMON_ARGS_SET_VALUES, s)
+#define stack_destroy(s) stack_fn_destroy(STACK_COMMON_ARGS_SET_VALUES, s)
+#define stack_get_size(s, out) stack_fn_get_size(STACK_COMMON_ARGS_SET_VALUES, s, out)
+#define stack_push(s, in) stack_fn_push(STACK_COMMON_ARGS_SET_VALUES, s, in)
+#define stack_pop(s, out) stack_fn_pop(STACK_COMMON_ARGS_SET_VALUES, s, out)
 
 #endif

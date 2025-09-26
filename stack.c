@@ -5,6 +5,10 @@
 #include "stack.h"
 
 
+#define COMMON_ARGS_VALUE file_name, func_name, line
+#define USE_MEMORY_CHECKS
+#define USE_MEMORY_CHECKS_BAN_EXECUTE_WRITECOPY
+
 
 #ifdef _WIN32
     #include "Windows.h"
@@ -43,9 +47,128 @@
 #endif
 
 
-uint64_t calculate_hash(void *data, size_t length)
+
+static int is_address_mapped_read(void *address, size_t size)
+{
+    #ifndef USE_MEMORY_CHECKS
+    return 1;
+    #endif
+    void *end_address = (char *)address + size;
+    #ifdef _WIN32
+        while (address < end_address)
+        {
+            MEMORY_BASIC_INFORMATION info;
+            if (VirtualQuery(address, &info, sizeof(info)) == 0)
+            {
+                printf("VirtualQuerry ERROR: %ld\n", GetLastError());
+                return 0;
+            }
+            if (info.State != MEM_COMMIT)
+            {
+                return 0;
+            }
+            if (info.AllocationProtect != PAGE_EXECUTE_READ && 
+                info.AllocationProtect != PAGE_EXECUTE_READWRITE && 
+                #ifndef USE_MEMORY_CHECKS_BAN_EXECUTE_WRITECOPY
+                    info.AllocationProtect != PAGE_EXECUTE_WRITECOPY && 
+                #endif
+                info.AllocationProtect != PAGE_READONLY && 
+                info.AllocationProtect != PAGE_READWRITE && 
+                info.AllocationProtect != PAGE_WRITECOPY)
+            {
+                return 0;
+            }
+            address = address + 4096;
+            void *end_of_allocation = info.AllocationBase + info.RegionSize - 4096;
+            if (info.AllocationBase + info.RegionSize > address)
+            {
+                address = end_of_allocation;
+            }
+        }
+        return 1;
+    #else 
+        #warning Linux doesnt support normal memory mappings check. Using simple ptr > 4096
+        return (size_t)address > 4096;
+    #endif
+};
+
+
+static int is_address_mapped_readwrite(void *address, size_t size)
+{
+    #ifndef USE_MEMORY_CHECKS
+    return 1;
+    #endif
+    void *end_address = (char *)address + size;
+    #ifdef _WIN32
+        while (address < end_address)
+        {
+            MEMORY_BASIC_INFORMATION info;
+            if (VirtualQuery(address, &info, sizeof(info)) == 0)
+            {
+                printf("VireualQuerry ERROR: %ld\n", GetLastError());
+                return 0;
+            }
+            if (info.State != MEM_COMMIT)
+            {
+                return 0;
+            }
+            if (info.AllocationProtect != PAGE_EXECUTE_READWRITE && 
+                #ifndef USE_MEMORY_CHECKS_BAN_EXECUTE_WRITECOPY
+                    info.AllocationProtect != PAGE_EXECUTE_WRITECOPY &&
+                #endif
+                info.AllocationProtect != PAGE_READWRITE && 
+                info.AllocationProtect != PAGE_WRITECOPY)
+            {
+                return 0;
+            }
+            address = address + 4096;
+            void *end_of_allocation = info.AllocationBase + info.RegionSize - 4096;
+            if (info.AllocationBase + info.RegionSize > address)
+            {
+                address = end_of_allocation;
+            }
+        }
+        return 1;
+    #else 
+        #warning Linux doesnt support normal memory mappings check. Using simple ptr > 4096
+        return (size_t)address > 4096;
+    #endif
+};
+
+
+#define ASSERT_ADDRESS_READ(ptr, size, msg) do{if (assert_address_mapped_read(COMMON_ARGS_VALUE, ptr, size, msg) != 0){return stack_invalid_memory_error;}}while(0)
+static int assert_address_mapped_read(const char *file_name, const char *func_name, int line, void *address, size_t length, const char *call_from_message)
+{
+    if (is_address_mapped_read(address, length) == 0)
+    {
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
+        STACK_DEBUG_PRINT("In %s failed check:\n", call_from_message);
+        STACK_DEBUG_PRINT("Memory mapping from %p of size %zu\n", address, length);
+        STACK_DEBUG_PRINT("have no rights on READ\n");
+        return 1;
+    }
+    return 0;
+}
+
+#define ASSERT_ADDRESS_READWRITE(ptr, size, msg) do{if (assert_address_mapped_readwrite(COMMON_ARGS_VALUE, ptr, size, msg) != 0){return stack_invalid_memory_error;}}while(0)
+static int assert_address_mapped_readwrite(const char *file_name, const char *func_name, int line, void *address, size_t length, const char *call_from_message)
+{
+    if (is_address_mapped_readwrite(address, length) == 0)
+    {
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
+        STACK_DEBUG_PRINT("In %s failed check:\n", call_from_message);
+        STACK_DEBUG_PRINT("Memory mapping from %p of size %zu\n", address, length);
+        STACK_DEBUG_PRINT("have no rights on READ or WRITE\n");
+        return 1;
+    }
+    return 0;
+}
+
+
+uint64_t calculate_hash(STACK_COMMON_ARGS, void *data, size_t length)
 {
     if (data == NULL || length == 0) return 0;
+    ASSERT_ADDRESS_READ(data, length, "hash calculation [DATA ACCESS]");
     char *ptr_data = data;
     uint64_t hash = 0x0123456789ABCDEFULL;
     for (size_t i = 0; i < length; ++i)
@@ -57,45 +180,49 @@ uint64_t calculate_hash(void *data, size_t length)
 }
 
 
-uint64_t calculate_header_hash(struct stack_t *s)
+uint64_t calculate_header_hash(STACK_COMMON_ARGS, struct stack_t *s)
 {
     if (s == NULL) return 0;
-    return calculate_hash((char *)s + sizeof(uint64_t), sizeof(*s) - sizeof(uint64_t));
+    return calculate_hash(COMMON_ARGS_VALUE, (char *)s + sizeof(uint64_t), sizeof(*s) - sizeof(uint64_t));
 }
 
-uint64_t calculate_content_hash(struct stack_t *s)
+uint64_t calculate_content_hash(STACK_COMMON_ARGS, struct stack_t *s)
 {
     if (s == NULL) return 0;
     #ifdef STACK_HASH_ALL_ALLOCATED_CONTENT
-        return calculate_hash(s->data, sizeof(*s->data) * s->data_alloc);
+        return calculate_hash(COMMON_ARGS_VALUE, s->data, sizeof(*s->data) * s->data_alloc);
     #else
         ssize_t end_length = STACK_MAX_HASHING_CONTENT_LENGTH >> 1;
         ssize_t begin_length = STACK_MAX_HASHING_CONTENT_LENGTH - end_length;
         if (end_length + begin_length < s->data_len)
         {
-            return calculate_hash(s->data,                            sizeof(*s->data) * begin_length) ^ 
-                   calculate_hash(s->data + s->data_len - end_length, sizeof(*s->data) * end_length);
+            return calculate_hash(COMMON_ARGS_VALUE, s->data,                            sizeof(*s->data) * begin_length) ^ 
+                   calculate_hash(COMMON_ARGS_VALUE, s->data + s->data_len - end_length, sizeof(*s->data) * end_length);
         }
-        return calculate_hash(s->data, sizeof(*s->data) * s->data_len);
+        return calculate_hash(COMMON_ARGS_VALUE, s->data, sizeof(*s->data) * s->data_len);
     #endif
 }
 
 
-enum stack_error_code stack_update_hashes(struct stack_t *s)
+enum stack_error_code stack_update_hashes(STACK_COMMON_ARGS, struct stack_t *s)
 {
     /* 1. compute content hash */
-    s->hash.content = calculate_content_hash(s);
+    s->hash.content = calculate_content_hash(COMMON_ARGS_VALUE, s);
     /* 2. compute header hash, becouse it depends on content hash value */
-    s->hash.header = calculate_header_hash(s);
+    s->hash.header = calculate_header_hash(COMMON_ARGS_VALUE, s);
     return stack_code_ok;
 }
 
 
-enum stack_error_code stack_print_elements(struct stack_t *s, ssize_t first, ssize_t last)
+enum stack_error_code stack_print_elements(STACK_COMMON_ARGS, struct stack_t *s, ssize_t first, ssize_t last)
 {
     ssize_t element = 0;
+    
 
     STACK_DEBUG_PRINT("stack data content:\n");
+
+    ASSERT_ADDRESS_READ(s->data, s->data_alloc * sizeof(*s->data), "printing elements [DATA ACCESS]");
+    
     for (ssize_t i = 0; i < first && element < s->data_len; ++i, ++element)
     {
         STACK_DEBUG_PRINT("    data[%08zd] = %d\n", element, s->data[element]);
@@ -112,23 +239,25 @@ enum stack_error_code stack_print_elements(struct stack_t *s, ssize_t first, ssi
 }
 
 
-#define STACK_VALIDATE(s) CHECK(stack_validate(file_name, func_name, line, s))
-enum stack_error_code stack_validate(const char *file, const char *func, int line, struct stack_t *s)
+#define STACK_VALIDATE(s) CHECK(stack_validate(COMMON_ARGS_VALUE, s))
+enum stack_error_code stack_validate(const char *file_name, const char *func_name, int line, struct stack_t *s)
 {
     /* 1. easy check - if stack is null */
     if (s == NULL)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> given stack is null\n");
         STACK_DEBUG_PRINT("stack [%p]\n", s);
         return stack_validation_error;
     }
+    
+    ASSERT_ADDRESS_READ(s, sizeof(*s), "stack pointer in validation [HEADER ACCESS]");
 
     /* 2. check header hash */
-    uint64_t real_header_hash = calculate_header_hash(s);
+    uint64_t real_header_hash = calculate_header_hash(COMMON_ARGS_VALUE, s);
     if (real_header_hash != s->hash.header)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> given stack's header was moditified outside\n");
         STACK_DEBUG_PRINT("!> found %llx instead of %llx\n", s->hash.header, real_header_hash);
         STACK_DEBUG_PRINT("stack [%p] : \n", s);
@@ -145,7 +274,7 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     stack_thread_type_t current_thread = stack_GetCurrentThreadId();
     if (s->creator_thread != current_thread)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> use of stack from another thread \n");
         STACK_DEBUG_PRINT("!> This stack doesn't support multithreaded usage.\n");
         #ifdef _WIN32
@@ -165,7 +294,7 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     /* 3. check header fields on normal data */
     if (s->data == NULL && s->data_alloc != 0)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> given stack's data is NULL\n");
         STACK_DEBUG_PRINT("stack [%p] : \n", s);
         STACK_DEBUG_PRINT("{\n");
@@ -178,7 +307,7 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     }    
     if (s->data_alloc < 0)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> given stack's data_alloc is less than zero\n");
         STACK_DEBUG_PRINT("stack [%p] : \n", s);
         STACK_DEBUG_PRINT("{\n");
@@ -191,7 +320,7 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     }
     if (s->data_len < 0)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> given stack's data_len is less than zero\n");
         STACK_DEBUG_PRINT("stack [%p] : \n", s);
         STACK_DEBUG_PRINT("{\n");
@@ -204,7 +333,7 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     }
     if (s->data_len > s->data_alloc)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> given stack's data_len is greated than data_alloc\n");
         STACK_DEBUG_PRINT("stack [%p] : \n", s);
         STACK_DEBUG_PRINT("{\n");
@@ -217,10 +346,10 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     }
 
     /* 4. check content hash */
-    uint64_t real_content_hash = calculate_content_hash(s);
+    uint64_t real_content_hash = calculate_content_hash(COMMON_ARGS_VALUE, s);
     if (real_content_hash != s->hash.content)
     {
-        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file, func, line);
+        STACK_DEBUG_PRINT("Error at %s:%s:%d\n", file_name, func_name, line);
         STACK_DEBUG_PRINT("!> given stack's content was moditified outside\n");
         STACK_DEBUG_PRINT("!> found %llx instead of %llx\n", s->hash.content, real_content_hash);
         STACK_DEBUG_PRINT("stack [%p] : \n", s);
@@ -232,7 +361,7 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
         
         ssize_t print_end = STACK_MAX_PRINT_CONTENT_LENGTH >> 1;
         ssize_t print_begin = STACK_MAX_PRINT_CONTENT_LENGTH - print_end;
-        stack_print_elements(s, print_begin, print_end);
+        stack_print_elements(COMMON_ARGS_VALUE, s, print_begin, print_end);
         
         STACK_DEBUG_PRINT("}\n");
         
@@ -243,7 +372,7 @@ enum stack_error_code stack_validate(const char *file, const char *func, int lin
     return stack_code_ok;
 }
 
-#define STACK_VERIFY(s) CHECK(stack_verify(file_name, func_name, line, s))
+#define STACK_VERIFY(s) CHECK(stack_verify(COMMON_ARGS_VALUE, s))
 enum stack_error_code stack_verify(STACK_COMMON_ARGS, struct stack_t *s)
 {
     STACK_VALIDATE(s);
@@ -259,6 +388,8 @@ enum stack_error_code stack_fn_init(STACK_COMMON_ARGS, struct stack_t *s)
         STACK_DEBUG_PRINT("!> given stack pointer is NULL\n");
         return stack_validation_error;
     }
+    ASSERT_ADDRESS_READWRITE(s, sizeof(*s), "stack pointer at creation [HEADER ACCESS]");
+    // printf("Assert completed");
     if (s->data_len != 0 || 
         s->data_alloc != 0 || 
         s->data != 0 || 
@@ -284,16 +415,17 @@ enum stack_error_code stack_fn_init(STACK_COMMON_ARGS, struct stack_t *s)
     {
         return stack_no_memory_error;
     }
+    ASSERT_ADDRESS_READWRITE(s->data, s->data_alloc * sizeof(*s->data), "initialization after calloc at creation [DATA ACCESS]");
     #ifdef STACK_FILL_RANDOM_AFTER_ALLOCATION
     {
         ssize_t total_size = (ssize_t)sizeof(*s->data) * s->data_alloc;
         for (ssize_t i = 0; i < total_size; ++i)
         {
-            ((char *)s->data)[i] = rand();
+            ((char *)s->data)[i] = rand() | 0x88;
         } 
     }
     #endif
-    stack_update_hashes(s);
+    stack_update_hashes(COMMON_ARGS_VALUE, s);
     STACK_VERIFY(s);
     return stack_code_ok;
 }
@@ -302,11 +434,14 @@ enum stack_error_code stack_fn_init(STACK_COMMON_ARGS, struct stack_t *s)
 enum stack_error_code stack_fn_destroy(STACK_COMMON_ARGS, struct stack_t *s)
 {
     STACK_VERIFY(s);
+    ASSERT_ADDRESS_READWRITE(s, sizeof(*s), "destruction [HEADER ACCESS]");
+    ASSERT_ADDRESS_READWRITE(s->data, s->data_alloc * sizeof(*s->data), "destruction [DATA ACCESS]");
     free(s->data);
     s->data = NULL;
     s->data_len = -1;
     s->data_alloc = -1;
-    stack_update_hashes(s);
+    stack_update_hashes(COMMON_ARGS_VALUE, s);
+    s->hash.header ^= 0x5555555555555555LL;
     return stack_code_ok;
 }
 
@@ -314,6 +449,7 @@ enum stack_error_code stack_fn_destroy(STACK_COMMON_ARGS, struct stack_t *s)
 enum stack_error_code stack_fn_get_size(STACK_COMMON_ARGS, struct stack_t *s, ssize_t *size)
 {
     STACK_VERIFY(s);
+    ASSERT_ADDRESS_READ(s, sizeof(*s), "getting size [HEADER ACCESS]");
     if (size != NULL)
     {
         *size = s->data_len;
@@ -326,6 +462,8 @@ enum stack_error_code stack_fn_get_size(STACK_COMMON_ARGS, struct stack_t *s, ss
 enum stack_error_code stack_fn_push(STACK_COMMON_ARGS, struct stack_t *s, stack_value_t value)
 {
     STACK_VERIFY(s);
+    ASSERT_ADDRESS_READWRITE(s, sizeof(*s), "push [HEADER ACCESS]");
+    ASSERT_ADDRESS_READWRITE(s->data, s->data_alloc * sizeof(*s->data), "push [DATA ACCESS]");
     if (s->data_len == s->data_alloc)
     {
         s->data_alloc = 2 * s->data_alloc + !(s->data_alloc);
@@ -341,13 +479,14 @@ enum stack_error_code stack_fn_push(STACK_COMMON_ARGS, struct stack_t *s, stack_
             ssize_t total_size = (ssize_t)sizeof(*s->data) * s->data_alloc;
             for (ssize_t i = begin_size; i < total_size; ++i)
             {
-                ((char *)s->data)[i] = rand();
+                ((char *)s->data)[i] = rand() | 0x88;
             } 
         }
         #endif
+        ASSERT_ADDRESS_READWRITE(s->data, s->data_alloc * sizeof(*s->data), "push after reallocation [DATA ACCESS]");
     }
     s->data[s->data_len++] = value;
-    stack_update_hashes(s);
+    stack_update_hashes(COMMON_ARGS_VALUE, s);
     STACK_VERIFY(s);
     return stack_code_ok;
 }
@@ -368,7 +507,7 @@ enum stack_error_code stack_fn_pop(STACK_COMMON_ARGS, struct stack_t *s, stack_v
     {
         s->data_len--;
     }
-    stack_update_hashes(s);    
+    stack_update_hashes(COMMON_ARGS_VALUE, s);    
     STACK_VERIFY(s);
     return stack_code_ok;
 }
