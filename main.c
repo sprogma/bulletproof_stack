@@ -69,12 +69,22 @@ int main()
             int x = 0, y = 0;
             $(stack_pop(&stk, &y));
             $(stack_pop(&stk, &x));
+            if (y == 0)
+            {
+                fprintf(stderr, "division on zero\n");
+                return 1;
+            }
             $(stack_push(&stk, x / y));
         }
         else if (strcmp(command, "sqrt") == 0)
         {
             int x = 0;
             $(stack_pop(&stk, &x));
+            if (x < 0)
+            {
+                fprintf(stderr, "sqrt from negative number\n");
+                return 1;
+            }
             $(stack_push(&stk, sqrt(x)));
         }
         else if (strcmp(command, "sqrt") == 0)
