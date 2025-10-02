@@ -1,3 +1,4 @@
+
 #define __USE_MINGW_ANSI_STDIO 1
 #include "stdio.h"
 #include "assert.h"
@@ -6,7 +7,7 @@
 #include "sys/stat.h"
 
 
-#include "assembler.h"
+#include "../utils/assembler.h"
 
     
 int read_file(const char *filename, char ***lines, ssize_t *lines_len)

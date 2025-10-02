@@ -3,7 +3,7 @@
 #include "malloc.h"
 #include "assert.h"
 
-#include "assembler.h"
+#include "../utils/assembler.h"
 
 
 int reserve_output_buffer(struct output_buffer *b, ssize_t size)
@@ -15,7 +15,7 @@ int reserve_output_buffer(struct output_buffer *b, ssize_t size)
         b->alloc = 2 * b->alloc + !(b->alloc);
     }
     
-    char *new_ptr = realloc(b->buffer, sizeof(*b->buffer) * b->alloc);
+    BYTE *new_ptr = realloc(b->buffer, sizeof(*b->buffer) * b->alloc);
     if (new_ptr == NULL)
     {
         return 1;
@@ -40,19 +40,10 @@ int main()
     char *output_buffer = calloc(1, sizeof(*output_buffer) * output_size);
 
     struct output_buffer b = {NULL, 0, 0};
+    
 
-    /* simple assembler: encode each instruction */
-    for (ssize_t i = 0; i < lines_len; ++i)
-    {
-        ssize_t written_bytes = 0;
-        reserve_output_buffer(&b, b.len + MAX_INSTRUCTION_LENGTH);
-        if (encode_instruction(lines[i], b.buffer + b.len, &written_bytes) != 0)
-        {
-            fprintf(stderr, "Error at encoding line %s:%zd\n>%s\n", filename, i, lines[i]);
-        }
-        assert(written_bytes <= MAX_INSTRUCTION_LENGTH);
-        b.len += written_bytes;
-    }
+    build_program(lines, lines_len, &b);
+    
 
     /* free text */
     free(lines[0]);
