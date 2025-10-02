@@ -60,6 +60,30 @@ void large_integer_dec(BYTE *s, size_t size)
 }
 
 
+void large_integer_add(BYTE *s, BYTE *a, size_t size)
+{
+    int carry = 0;
+    for (size_t i = 0; i < size; ++i)
+    {
+        int res = s[i] + a[i] + carry;
+        s[i] = res;
+        carry = res / 256;
+    }
+}
+
+
+void large_integer_sub(BYTE *s, BYTE *a, size_t size)
+{
+    int carry = 0;
+    for (size_t i = 0; i < size; ++i)
+    {
+        int res = s[i] - a[i] + carry;
+        s[i] = res;
+        carry = res / 256;
+    }
+}
+
+
 #define GET_ARG(s, ip, id) (*((int32_t *)((s)->mem + ip + 1 + 4 * (id))))
 #define INT_FROM(s, pos) (*((int32_t *)((s)->mem + (pos))))
 
@@ -197,7 +221,7 @@ void run(struct spu *s)
 
                 if (dst != src)
                 {
-                    memcpy(s->mem + dst, s->mem + src, INT_FROM(s, cnt));
+                    memcpy(s->mem + dst, s->mem + src, cnt);
                 }
                 large_integer_inc(s->mem + dst, cnt);
                 break;
@@ -211,7 +235,7 @@ void run(struct spu *s)
 
                 if (dst != src)
                 {
-                    memcpy(s->mem + dst, s->mem + src, INT_FROM(s, cnt));
+                    memcpy(s->mem + dst, s->mem + src, cnt);
                 }
                 large_integer_dec(s->mem + dst, cnt);
                 break;
@@ -312,12 +336,38 @@ void run(struct spu *s)
                 }
                 break;
             }
+            case O_ADD:
+            {
+                READ_DST_A_B_COUNT
 
+                printf("ADD: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                cnt = INT_FROM(s, cnt);
 
-//! (DST: void*) (A: void*) (B: void*) (COUNT: size_t*) 
-#define O_ADD                (0b00100 | ARG_NUM_4)
-//! (DST: void*) (A: void*) (B: void*) (COUNT: size_t*) 
-#define O_SUB                (0b00101 | ARG_NUM_4)
+                if (dst != a)
+                {
+                    memcpy(s->mem + dst, s->mem + a, cnt);
+                }
+                printf("%d\n", INT_FROM(s, dst));
+                printf("%d\n", INT_FROM(s, b));
+                large_integer_add(s->mem + dst, s->mem + b, cnt);
+                printf("->%d\n", INT_FROM(s, dst));
+                break;
+            }
+            case O_SUB:
+            {
+                READ_DST_A_B_COUNT
+
+                printf("SUB: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                cnt = INT_FROM(s, cnt);
+
+                if (dst != a)
+                {
+                    memcpy(s->mem + dst, s->mem + a, cnt);
+                }
+                large_integer_sub(s->mem + dst, s->mem + b, cnt);
+                break;
+            }
+
 //! (DST: void*) (A: void*) (B: void*) (COUNT: size_t*) 
 #define O_MUL                (0b00110 | ARG_NUM_4)
 //! (DST: void*) (A: void*) (B: void*) (COUNT: size_t*) 

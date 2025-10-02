@@ -2,8 +2,8 @@
 #include "stdio.h"
 #include "assert.h"
 #include "malloc.h"
-#include "string.h" 
-#include "stdlib.h" 
+#include "string.h"
+#include "stdlib.h"
 #include "ctype.h"
 
 #include "../utils/assembler.h"
@@ -59,7 +59,7 @@ static int add_label(struct compilation_table *t, char *name, ssize_t len, int32
     }
     ssize_t id = t->labels_len++;
     t->labels[id] = (struct label){name, len, offset};
-    return 0; 
+    return 0;
 }
 
 
@@ -74,13 +74,13 @@ static int parse_integer(char *s, char *e, int32_t *result)
     }
     while (s < e && isspace(s[0])) { s++; }
     while (s < e && isspace(e[-1])) { e--; }
-    
+
     char *text = malloc(e - s + 1);
     memcpy(text, s, e - s);
     text[e - s] = 0;
-    
+
     char *end_ptr = text + (e - s);
-    int32_t res = strtol(text, &end_ptr, 0);
+    int32_t res = strtoll(text, &end_ptr, 0);
 
     if (*end_ptr != 0)
     {
@@ -138,7 +138,7 @@ static int calculate_offset(struct compilation_table *t, ssize_t position, char 
         /* find name in global offsets table */
         for (ssize_t i = 0; i < t->labels_len; ++i)
         {
-            if (strncmp(t->labels[i].name, arg, t->labels[i].name_len) == 0 && 
+            if (strncmp(t->labels[i].name, arg, t->labels[i].name_len) == 0 &&
                 t->labels[i].name_len == name_end - arg)
             {
                 /* is there number shift? */
@@ -151,9 +151,9 @@ static int calculate_offset(struct compilation_table *t, ssize_t position, char 
                         /* parse integer offset */
                         if (parse_integer(n, arg_end, &add_offset) != 0)
                         {
-                            fprintf(stderr, "Error: not integer value after '+' or '-' [in arg <%*.*s>]\n", 
+                            fprintf(stderr, "Error: not integer value after '+' or '-' [in arg <%*.*s>]\n",
                                             (int)(arg_end - arg), (int)(arg_end - arg), arg);
-                            
+
                         }
                     }
                 }
@@ -162,7 +162,7 @@ static int calculate_offset(struct compilation_table *t, ssize_t position, char 
                 return 0;
             }
         }
-        fprintf(stderr, "Error: not found label with name: <%*.*s> [in arg <%*.*s>]\n", (int)(name_end - arg), (int)(name_end - arg), arg, 
+        fprintf(stderr, "Error: not found label with name: <%*.*s> [in arg <%*.*s>]\n", (int)(name_end - arg), (int)(name_end - arg), arg,
                                                                                         (int)(arg_end - arg), (int)(arg_end - arg), arg);
         return 1;
     }
@@ -203,7 +203,7 @@ static int calculate_offsets(struct compilation_table *t, ssize_t position, char
 
 
 static int encode_command(struct compilation_table *t, char *line, ssize_t position, BYTE *dst, ssize_t *result_length)
-{    
+{
     line = skip_leading_spaces(line);
 
     int pointer_mode = 0;
@@ -238,9 +238,9 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
             {
                 return 0;
             }
-            
+
             *dst++ = native_commands[i].code | (pointer_mode ? ARG_PTR_ON_PTR : ARG_PTR);
-            
+
             /* write arguments */
             if (strcmp(native_commands[i].name, "MOV_CONST") == 0)
             {
@@ -254,7 +254,7 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
                         return 1;
                     }
                     char *end = NULL;
-                    code = strtol(line + name_len, &end, 0);
+                    code = strtoll(line + name_len, &end, 0);
                     if (*end != ' ' && *end != ',')
                     {
                         fprintf(stderr, "Error: MOV_CONST must have constant integer as first argument, not <%s>\n", line + name_len);
@@ -282,7 +282,7 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
                         return 1;
                     }
                     char *end = NULL;
-                    code = strtol(line + name_len, &end, 0);
+                    code = strtoll(line + name_len, &end, 0);
                     if (*end != ' ' && *end != ',')
                     {
                         fprintf(stderr, "Error: MOV_CONST must have constant integer as first argument, not <%s>\n", line + name_len);
@@ -309,7 +309,7 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
                     printf("SET: %08x\n", dst[0]);
                     dst += sizeof(*offsets);
                 }
-   
+
             }
             fprintf(stderr, "debug: ENCODED COMMAND: %s into %zd bytes\n", native_commands[i].name, *result_length);
             return 0;
@@ -329,9 +329,9 @@ static int encode_directive(struct compilation_table *t, char *line, ssize_t pos
     (void)dst;
     (void)position;
     (void)result_length;
-    
+
     line = skip_leading_spaces(line);
-    
+
     /* end of line - start of comment or new line */
     char *line_end = strchr(line, ';');
     if (line_end == NULL)
@@ -339,16 +339,16 @@ static int encode_directive(struct compilation_table *t, char *line, ssize_t pos
         line_end = line + strlen(line);
     }
     while (line < line_end && isspace(line_end[-1])) { line_end--; }
-    
+
     if (STARTSWITH(line, ".db"))
     {
         *result_length = 1;
-        
+
         if (dst == NULL)
         {
             return 0;
         }
-        
+
         /* read integer */
         int32_t value = 0;
         char *num_start = line + 3;
@@ -357,14 +357,92 @@ static int encode_directive(struct compilation_table *t, char *line, ssize_t pos
             fprintf(stderr, "Error: cannot read value of .db directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
         }
 
-        *dst++ = value;
-        
+
+        memcpy(dst, &value, 1);
+
         return 0;
     }
-    else if (STARTSWITH(line, "data"))
+    else if (STARTSWITH(line, ".dw"))
     {
-        fprintf(stderr, "Not implemented error: data directive\n");
-        return 1;
+        *result_length = 2;
+
+        if (dst == NULL)
+        {
+            return 0;
+        }
+
+        /* read integer */
+        int32_t value = 0;
+        char *num_start = line + 3;
+        if (num_start < line_end && parse_integer(num_start, line_end, &value) != 0)
+        {
+            fprintf(stderr, "Error: cannot read value of .dw directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
+        }
+
+
+        memcpy(dst, &value, 2);
+
+        return 0;
+    }
+    else if (STARTSWITH(line, ".dd"))
+    {
+        *result_length = 4;
+
+        if (dst == NULL)
+        {
+            return 0;
+        }
+
+        /* read integer */
+        int32_t value = 0;
+        char *num_start = line + 3;
+        if (num_start < line_end && parse_integer(num_start, line_end, &value) != 0)
+        {
+            fprintf(stderr, "Error: cannot read value of .dw directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
+        }
+
+
+        memcpy(dst, &value, 4);
+
+        return 0;
+    }
+    else if (STARTSWITH(line, ".align"))
+    {
+        /* read integer */
+        int32_t value = 0;
+        char *num_start = line + 6;
+        if (num_start >= line_end)
+        {
+            fprintf(stderr, "Error: cannot read mandatory value of .align directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
+        }
+        if (parse_integer(num_start, line_end, &value) != 0)
+        {
+            fprintf(stderr, "Error: cannot read value of .align directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
+        }
+        if (value > 10000)
+        {
+            fprintf(stderr, "Error: too big .align number: %d is greated than 10000\n", value);
+        }
+
+        int32_t p = position;
+        if (p % value != 0)
+        {
+            p += ((value - p) % value + value % value);
+        }
+
+        *result_length = p - position;
+
+        if (dst == NULL)
+        {
+            return 0;
+        }
+
+        for (int i = 0; i < *result_length; ++i)
+        {
+            *dst++ = 0;
+        }
+
+        return 0;
     }
     else
     {
@@ -395,7 +473,7 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
         while (iskey(*name_end)) { name_end++; }
         char *end = name_end;
         while (isspace(*end)) { end++; }
-        
+
         /* switch line type */
         if (s[0] == '.')
         {
@@ -424,7 +502,7 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
             position += written;
         }
     }
-    
+
     printf("debug: Total assebmly size: %d bytes\n", position);
 
     /* SECOND PASS: compilation */
@@ -439,7 +517,7 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
         while (iskey(*name_end)) { name_end++; }
         char *end = name_end;
         while (isspace(*end)) { end++; }
-        
+
         /* switch line type */
         if (s[0] == '.')
         {
@@ -463,7 +541,7 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
     }
 
     printf("debug: Compiled into %zd bytes\n", out->len);
-    
+
     return 0;
 }
 
