@@ -1,12 +1,22 @@
-
 LEA start_ptr, start
+LEA counter_ptr, counter
+
 start:
+MUL res, res, counter, base
+DEC counter, counter, base
+$CLEA counter_ptr, zero, start
 
-$CLEA flag, zero, start_ptr
+.db 0xFF
 
-flag:
-.dd 00
+counter:
+.dd 4
+res:
+.dd 4
 zero:
+.dd 0
+counter_ptr:
 .dd 0
 start_ptr:
 .dd 0
+base:
+.dd 4
