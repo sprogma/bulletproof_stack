@@ -306,7 +306,6 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
                 for (ssize_t a = 0; a < native_commands[i].nargs; ++a)
                 {
                     memcpy(dst, offsets + a, sizeof(*offsets));
-                    printf("SET: %08x\n", dst[0]);
                     dst += sizeof(*offsets);
                 }
 
@@ -326,9 +325,6 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
 static int encode_directive(struct compilation_table *t, char *line, ssize_t position, BYTE *dst, ssize_t *result_length)
 {
     (void)t;
-    (void)dst;
-    (void)position;
-    (void)result_length;
 
     line = skip_leading_spaces(line);
 
@@ -340,69 +336,68 @@ static int encode_directive(struct compilation_table *t, char *line, ssize_t pos
     }
     while (line < line_end && isspace(line_end[-1])) { line_end--; }
 
-    if (STARTSWITH(line, ".db"))
+    if (STARTSWITH(line, ".db") || 
+        STARTSWITH(line, ".dw") || 
+        STARTSWITH(line, ".dd"))
     {
-        *result_length = 1;
+        int32_t element_size = 0;
 
-        if (dst == NULL)
+        if (STARTSWITH(line, ".db"))
         {
-            return 0;
+            element_size = 1;
         }
+        else if (STARTSWITH(line, ".dw"))
+        {
+            element_size = 1;
+        }
+        else if (STARTSWITH(line, ".dd"))
+        {
+            element_size = 4;
+        }
+        else
+        {
+            fprintf(stderr, "Error: not .db .dw or .dd given in .db .dw or .dd directive [strange error]\n");
+        }
+        
+        *result_length = 0;
 
         /* read integer */
         int32_t value = 0;
+        int32_t writed = 0;
         char *num_start = line + 3;
-        if (num_start < line_end && parse_integer(num_start, line_end, &value) != 0)
+        while (num_start < line_end)
         {
-            fprintf(stderr, "Error: cannot read value of .db directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
+            char *end = strchr(num_start, ',');
+            if (end == NULL)
+            {
+                end = line_end;
+            }
+
+            while (isspace(end[-1])) { end--; }
+            while (isspace(num_start[0])) { num_start++; }
+            
+            if (parse_integer(num_start, end, &value) != 0)
+            {
+                fprintf(stderr, "Error: cannot read value of .dw directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
+                return 1;
+            }
+            
+            *result_length += element_size;
+            if (dst != NULL)
+            {
+                memcpy(dst, &value, element_size);
+                dst += element_size;
+            }
+            writed = 1;
+
+            num_start = end + 1;
         }
 
-
-        memcpy(dst, &value, 1);
-
-        return 0;
-    }
-    else if (STARTSWITH(line, ".dw"))
-    {
-        *result_length = 2;
-
-        if (dst == NULL)
+        if (!writed)
         {
-            return 0;
+            fprintf(stderr, "Error: no data given in .db .dw or .dd directive\n");
+            return 1;
         }
-
-        /* read integer */
-        int32_t value = 0;
-        char *num_start = line + 3;
-        if (num_start < line_end && parse_integer(num_start, line_end, &value) != 0)
-        {
-            fprintf(stderr, "Error: cannot read value of .dw directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
-        }
-
-
-        memcpy(dst, &value, 2);
-
-        return 0;
-    }
-    else if (STARTSWITH(line, ".dd"))
-    {
-        *result_length = 4;
-
-        if (dst == NULL)
-        {
-            return 0;
-        }
-
-        /* read integer */
-        int32_t value = 0;
-        char *num_start = line + 3;
-        if (num_start < line_end && parse_integer(num_start, line_end, &value) != 0)
-        {
-            fprintf(stderr, "Error: cannot read value of .dw directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);
-        }
-
-
-        memcpy(dst, &value, 4);
 
         return 0;
     }

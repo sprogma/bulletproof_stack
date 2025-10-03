@@ -45,8 +45,6 @@
 //! (VAL: void**) (DST: void*) 
 #define O_LEA                (0b00010 | ARG_NUM_2)
 
-//#define O_ABSPTR             (0b00001 | ARG_NUM_??)
-
 
 //! (DST: void*) (SRC: void*) (COUNT: size_t*) 
 //! DST MAY INTERSECT WITH SRC
@@ -72,6 +70,9 @@
 //! (DST: size_t*) (SRC: void*) (COUNT: size_t*)
 #define O_ANY                (0b00110 | ARG_NUM_3)
 
+//! (FLAG: void *) (VAL: void**) (DST: void*) 
+#define O_CLEA               (0b00111 | ARG_NUM_3)
+
 
 
 
@@ -93,12 +94,16 @@
 //! (DST: void*) (A: void*) (B: void*) (COUNT: size_t*) 
 #define O_DIV                (0b00111 | ARG_NUM_4)
 
-//! (FLAG: size_t*) (SRC: void*) (DST: void*) (COUNT: size_t*) 
+//! (FLAG: size_t*) (DST: void*) (SRC: void*) (COUNT: size_t*) 
 #define O_CMOV               (0b01000 | ARG_NUM_4)
 
 
+// //! (FLAG: size_t*) (DST: abs_void*) (SRC: void*) (COUNT: size_t*)
+// #define O_CMOV               (0b01000 | ARG_NUM_4)
+
+
 //!  ()
-#define O_CALL
+// #define O_CALL
 
 
 
@@ -132,6 +137,7 @@ static const struct command native_commands[] = {
     {"DEC", 3, 4 | ARG_NUM_3},
     {"ALL", 3, 5 | ARG_NUM_3},
     {"ANY", 3, 6 | ARG_NUM_3},
+    {"CLEA", 3, 7 | ARG_NUM_3},
     {"EQ", 4, 0 | ARG_NUM_4},
     {"OR", 4, 1 | ARG_NUM_4},
     {"AND", 4, 2 | ARG_NUM_4},

@@ -84,6 +84,76 @@ void large_integer_sub(BYTE *s, BYTE *a, size_t size)
 }
 
 
+void large_integer_mul(BYTE *s, BYTE *a, size_t size)
+{
+    if (size == 8)
+    {
+        *(int64_t *)s = (*(int64_t *)s) * (*(int64_t *)a);
+        return;
+    }
+    if (size == 4)
+    {
+        *(int32_t *)s = (*(int32_t *)s) * (*(int32_t *)a);
+        return;
+    }
+    if (size == 2)
+    {
+        *(int16_t *)s = (*(int16_t *)s) * (*(int16_t *)a);
+        return;
+    }
+    if (size == 1)
+    {
+        *(int8_t *)s = (*(int8_t *)s) * (*(int8_t *)a);
+        return;
+    }
+    
+    BYTE *tmp = calloc(1, size);
+    memcpy(tmp, s, size);
+    memset(s, 0, size);
+
+    for (size_t k = 0; k < size; ++k)
+    {
+        int carry = 0;
+        int mul = tmp[k];
+        for (size_t i = 0; i < size - k; ++i)
+        {
+            int res = s[i + k] + a[i] * mul + carry;
+            s[i + k] = res;
+            carry = res / 256;
+        }
+    }
+    
+    free(tmp);
+}
+
+
+void large_integer_div(BYTE *s, BYTE *a, size_t size)
+{
+    if (size == 8)
+    {
+        *(int64_t *)s = (*(int64_t *)s) / (*(int64_t *)a);
+        return;
+    }
+    if (size == 4)
+    {
+        *(int32_t *)s = (*(int32_t *)s) / (*(int32_t *)a);
+        return;
+    }
+    if (size == 2)
+    {
+        *(int16_t *)s = (*(int16_t *)s) / (*(int16_t *)a);
+        return;
+    }
+    if (size == 1)
+    {
+        *(int8_t *)s = (*(int8_t *)s) / (*(int8_t *)a);
+        return;
+    }
+    fprintf(stderr, "-----: not implemented: integer division\n");
+    abort();
+}
+
+
 #define GET_ARG(s, ip, id) (*((int32_t *)((s)->mem + ip + 1 + 4 * (id))))
 #define INT_FROM(s, pos) (*((int32_t *)((s)->mem + (pos))))
 
@@ -173,7 +243,7 @@ void run(struct spu *s)
                     dst = INT_FROM(s, dst);
                 }
 
-                printf("LEA set to %08x from %08x\n", dst, ptr);
+                printf("LEA set to %08x = %08x\n", dst, ptr);
                 INT_FROM(s, dst) = ptr;
                 break;
             }
@@ -268,6 +338,26 @@ void run(struct spu *s)
                     total |= s->mem[src + i];
                 }
                 INT_FROM(s, dst) = (total == 0 ? 0 : 0xFFFFFFFF);
+                break;
+            }
+            case O_CLEA:
+            {            
+                int32_t flg = GET_ARG(s, ip, 0) + ip;
+                int32_t dst = GET_ARG(s, ip, 1) + ip;
+                int32_t ptr = GET_ARG(s, ip, 2) + ip;
+
+                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
+                {
+                    printf("dest = *%08x=%08x  flag = *%08x=%08x\n", dst, INT_FROM(s, dst), flg, INT_FROM(s, flg));
+                    flg = INT_FROM(s, flg);
+                    dst = INT_FROM(s, dst);
+                }
+
+                printf("CLEA set to %08x = %08x IF FLAG from %08x=%08x\n", dst, ptr, flg, INT_FROM(s, flg));
+                if (INT_FROM(s, flg) != 0)
+                {
+                    INT_FROM(s, dst) = ptr;
+                }
                 break;
             }
             case O_EQ:
@@ -367,18 +457,39 @@ void run(struct spu *s)
                 large_integer_sub(s->mem + dst, s->mem + b, cnt);
                 break;
             }
+            case O_MUL:
+            {
+                READ_DST_A_B_COUNT
 
-//! (DST: void*) (A: void*) (B: void*) (COUNT: size_t*) 
-#define O_MUL                (0b00110 | ARG_NUM_4)
-//! (DST: void*) (A: void*) (B: void*) (COUNT: size_t*) 
-#define O_DIV                (0b00111 | ARG_NUM_4)
+                printf("MUL: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                cnt = INT_FROM(s, cnt);
 
-//! (FLAG: size_t*) (DST: void*) (SRC: void*) (COUNT: size_t*) 
-#define O_CMOV               (0b01000 | ARG_NUM_4)
+                if (dst != a)
+                {
+                    memcpy(s->mem + dst, s->mem + a, cnt);
+                }
+                large_integer_mul(s->mem + dst, s->mem + b, cnt);
+                break;
+            }
+            case O_DIV:
+            {
+                READ_DST_A_B_COUNT
+
+                printf("DIV: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                cnt = INT_FROM(s, cnt);
+
+                if (dst != a)
+                {
+                    memcpy(s->mem + dst, s->mem + a, cnt);
+                }
+                large_integer_div(s->mem + dst, s->mem + b, cnt);
+                break;
+            }
+ 
 
         default:
         {
-            fprintf(stderr, "Error: unkown opcode: %02x\n", (opcode & (~ARG_PTR_OPCODE_MASK)));
+            fprintf(stderr, "Error: unkown opcode: 0x%02x [from 0x%02x]\n", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode);
             return;
         }
         }
@@ -389,7 +500,6 @@ void run(struct spu *s)
 int main()
 {
     char *filename = "a.bc";
-    
 
     /* allocate memory for computer */
     struct spu s;
