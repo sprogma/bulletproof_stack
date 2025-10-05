@@ -7,9 +7,9 @@
 
 
 #ifdef _WIN32
+    // #include "WinSock2.h"
+    // #include "WS2tcpip.h"
     #include "windows.h"
-    #include "WinSock2.h"
-    #include "WS2tcpip.h"
 #endif
 
 
@@ -59,24 +59,24 @@ int create_port_mapping_tcp(struct spu *s, struct port_mapping_t *mapping, int p
     printf("Open tcp connection on %d\n", num);
 
     /* create socket structure */
-    WSADATA wsData;
-    int werr = WSAStartup(MAKEWORD(2,2), &wsData);
-    if (werr != 0)
-    {
-        fprintf(stderr, "Error: WSAStartup: %d\n", WSAGetLastError());
-        return 1;
-    }
-
-    SOCKET ServSock = socket(AF_INET, SOCK_STREAM, 0);
-    if (ServSock == INVALID_SOCKET) {
-        fprintf(stderr, "Error: socket creation: %d\n", WSAGetLastError());
-        closesocket(ServSock);
-        WSACleanup();
-        return 1;
-    }
+//     WSADATA wsData;
+//     int werr = WSAStartup(MAKEWORD(2,2), &wsData);
+//     if (werr != 0)
+//     {
+//         fprintf(stderr, "Error: WSAStartup: %d\n", WSAGetLastError());
+//         return 1;
+//     }
+// 
+//     SOCKET ServSock = socket(AF_INET, SOCK_STREAM, 0);
+//     if (ServSock == INVALID_SOCKET) {
+//         fprintf(stderr, "Error: socket creation: %d\n", WSAGetLastError());
+//         closesocket(ServSock);
+//         WSACleanup();
+//         return 1;
+//     }
 
     mapping->port = port;
-    mapping->name = "stdio";
+    mapping->name = "tcp";
     // mapping->send = send_port;
     // mapping->read = read_port;
     

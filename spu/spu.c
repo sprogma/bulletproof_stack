@@ -252,6 +252,10 @@ void run(struct spu *s)
             {
                 int32_t type = GET_ARG(s, ip, 0);
                 int32_t ptr  = GET_ARG(s, ip, 1) + ip;
+
+                (void)type;
+                (void)ptr;
+                
                 VERBOSE_INFO(stderr, "Error: int command for now is unsopported [%d, %x].\n", type, ptr);
                 break;
             }
@@ -554,13 +558,11 @@ void run(struct spu *s)
                 large_integer_div(s->mem + dst, s->mem + b, cnt);
                 break;
             }
- 
-
-        default:
-        {
-            fprintf(stderr, "Error: unkown opcode: 0x%02x [from 0x%02x]\n", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode);
-            return;
-        }
+            default:
+            {
+                fprintf(stderr, "Error: unkown opcode: 0x%02x [from 0x%02x]\n", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode);
+                return;
+            }
         }
     }
 }
@@ -569,6 +571,7 @@ void run(struct spu *s)
 int main(int argc, char **argv)
 {
     struct spu s = {};
+    size_t entry_ptr = 0;
 
     for (int i = 1; i < argc; ++i)
     {
@@ -581,6 +584,11 @@ int main(int argc, char **argv)
                     fprintf(stderr, "load_spu_port_mapping error\n");
                     return 1;
                 }
+
+                printf("x...\n");
+
+                i += 1; /* skip N parameters of -map flag */
+                continue;
             }
             else
             {
@@ -588,46 +596,155 @@ int main(int argc, char **argv)
                 return 1;
             }
         }
-    }
-
-    char *filename = "a.bc";
-    
-    s.mem_size = 64 * 1024 * 1024;
-    #ifdef _WIN32
-        // size_t min_size = GetLargePageMinimum();
-        // s.mem_size /= min_size;
-        // s.mem_size *= min_size;
-        // s.mem_size += min_size;
-        // printf("%zd\n", s.mem_size);
-        s.mem = VirtualAlloc(NULL, s.mem_size, MEM_COMMIT, PAGE_READWRITE); // MEM_LARGE_PAGES
-    #else
-        s.mem = malloc(s.mem_size);
-    #endif
-    if (s.mem == NULL)
-    {
-        printf("Memory allocation denied: %ld\n", GetLastError());
-        return 1;
-    }
-    memset(s.mem, 0, s.mem_size);
-    
-
-    /* load program */
-    {
-        size_t load_address = 0x4000;
-        struct stat file_stat;
-        int f = open(filename, O_RDONLY);
-        if (fstat(f, &file_stat) != 0)
+        else if (strcmp(argv[i], "-mem") == 0)
         {
-            fprintf(stderr, "cannot open file %s\n", filename);
+            if (s.mem != NULL)
+            {
+                fprintf(stderr, "Error: -mem must be specified before any action which loads memory (for example -image flag) or there is two -mem flags\n");
+                return 1;
+            }
+            if (i + 1 < argc)
+            {
+                char *end = NULL;
+                size_t size = strtoull(argv[i + 1], &end, 0);
+                if (*end != '\0')
+                {
+                    fprintf(stderr, "Error: memory must be unsigned integer - memory size in bytes.");
+                    return 1;
+                }
+                s.mem_size = size;
+
+                i += 1; /* skip N parameters of -mem flag */
+                continue;
+            }
+            else
+            {
+                fprintf(stderr, "Error: -mem flag wasn't followed by memory size in bytes\n");
+                return 1;
+            }
+        }
+        else if (strcmp(argv[i], "-image") == 0)
+        {
+            if (i + 2 >= argc)
+            {
+                fprintf(stderr, "Error: -image flag wasn't followed by image offset in bytes, and by path to file\n");
+                return 1;
+            }
+            if (s.mem == NULL)
+            {
+                if (s.mem_size == 0)
+                {
+                    printf("Using default memory size: 64MB\n");
+                    s.mem_size = 64 * 1024 * 1024;
+                }
+                #ifdef _WIN32
+                    // size_t min_size = GetLargePageMinimum();
+                    // s.mem_size /= min_size;
+                    // s.mem_size *= min_size;
+                    // s.mem_size += min_size;
+                    // printf("%zu\n", s.mem_size);
+                    s.mem = VirtualAlloc(NULL, s.mem_size, MEM_COMMIT, PAGE_READWRITE); // MEM_LARGE_PAGES
+                    if (s.mem == NULL)
+                    {
+                        printf("Memory allocation denied: %ld\n", GetLastError());
+                        return 1;
+                    }
+                #else
+                    s.mem = malloc(s.mem_size);
+                    if (s.mem == NULL)
+                    {
+                        printf("Memory allocation denied\n");
+                        return 1;
+                    }
+                #endif
+                memset(s.mem, 0, s.mem_size);
+            }
+            /* load image into given address */
+            char *end = NULL;
+            size_t load_address = strtoull(argv[i + 1], &end, 0);
+            if (*end != '\0')
+            {
+                fprintf(stderr, "Error: image offset must be unsigned integer.");
+                return 1;
+            }
+            char *image_filename = argv[i + 2];
+            {
+                struct stat file_stat;
+                int f = open(image_filename, O_RDONLY);
+                if (fstat(f, &file_stat) != 0)
+                {
+                    fprintf(stderr, "cannot open/find image %s\n", image_filename);
+                    return 1;
+                }
+                ssize_t len = read(f, s.mem + load_address, file_stat.st_size);
+                printf("image loaded by offset %zu, read %zu bytes\n", load_address, len);
+            }
+
+            i += 2; /* skip N parameters of -image flag */
+            continue;
+        }
+        else if (strcmp(argv[i], "-entry") == 0)
+        {
+            if (entry_ptr != 0)
+            {
+                fprintf(stderr, "Error: -entry was passed twice; previous value: %zu\n", entry_ptr);
+                return 1;
+            }
+            if (i + 1 < argc)
+            {
+                char *end = NULL;
+                size_t size = strtoull(argv[i + 1], &end, 0);
+                if (*end != '\0')
+                {
+                    fprintf(stderr, "Error: entry offset must be unsigned integer - entry offset in bytes.");
+                    return 1;
+                }
+                if (size == 0)
+                {
+                    fprintf(stderr, "Error: entry offset must be non zero [zero is IP, so it is some wrong usage].");
+                    return 1;
+                }
+                entry_ptr = size;
+
+                i += 1; /* skip N parameters of -entry flag */
+                continue;
+            }
+            else
+            {
+                fprintf(stderr, "Error: -entry flag wasn't followed by entry offset size in bytes\n");
+                return 1;
+            }
+        }
+        else
+        {
+            printf("Unknown flag: %s\n", argv[i]);
             return 1;
         }
-        ssize_t len = read(f, s.mem + load_address, file_stat.st_size);
-        printf("program loaded. read %zd bytes\n", len);
+    }
+    
+    if (s.mem == NULL)
+    {
+        fprintf(stderr, "Error: no images provided.\n");
+        return 1;
     }
 
     /* set instruction pointer */
+    if (entry_ptr == 0)
+    {
+        ((uint32_t *)s.mem)[0] = 0x4000;
+        printf("Using default entry pointer: %u\n", ((uint32_t *)s.mem)[0]);
+    }
+    else
+    {
+        if (entry_ptr >= s.mem_size)
+        {
+            fprintf(stderr, "Error: entry offset is outsize of SPU memory. [%zu > %zu]\n", entry_ptr, s.mem_size);
+            return 1;
+        }
+        ((uint32_t *)s.mem)[0] = entry_ptr;
+    }
 
-    ((uint32_t *)s.mem)[0] = 0x4000;
+    printf("Running...\n");
 
     run(&s);
     

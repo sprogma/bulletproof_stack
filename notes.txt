@@ -1,2 +1,8 @@
-format to set port handlers:
-.\spu.exe -map "1:hexstdio 2:stdio"
+format to run VM:
+
+spu.exe -image 0x4000 b.bc -entry 0x4000 -map "1:hexstdio"
+
+    -image <offset> <filename>
+    -entry <offset>
+    -mem   <count> // in bytes
+    -map   (as you see:) "1:hexstdio 2:stdio 3:tcp888"

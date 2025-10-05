@@ -51,7 +51,7 @@ int load_spu_port_mapping(struct spu *s, char *mapping_scheme)
     /* count mappings */
     {
         char *tmp = mapping_scheme;
-        while (isspace(*tmp)) { tmp++; }
+        while (*tmp && isspace(*tmp)) { tmp++; }
         while (*tmp)
         {
             count += !isspace(tmp[0]) && (isspace(tmp[1]) || tmp[1] == 0);
@@ -68,7 +68,7 @@ int load_spu_port_mapping(struct spu *s, char *mapping_scheme)
         char *tmp = mapping_scheme;
         for (size_t i = 0; i < count; ++i)
         {
-            while (isspace(*tmp)) { tmp++; }
+            while (*tmp && isspace(*tmp)) { tmp++; }
             
             char buffer[128];
             int port;
@@ -88,7 +88,7 @@ int load_spu_port_mapping(struct spu *s, char *mapping_scheme)
                 return 1;
             }
 
-            while (!isspace(*tmp)) { tmp++; }
+            while (*tmp && !isspace(*tmp)) { tmp++; }
         }
     }
     

@@ -36,9 +36,25 @@ static int decode_instruction(struct string_output_buffer *s, BYTE *data, BYTE *
             size_t name_len = strlen(native_commands[i].name);
             if ((header & (~ARG_PTR_OPCODE_MASK)) == native_commands[i].code)
             {
-                reserve_string_output_buffer(s, s->len + name_len);
+                reserve_string_output_buffer(s, s->len + name_len + 128);
                 memcpy(s->buffer + s->len, native_commands[i].name, name_len);
                 s->len += name_len;
+                
+                /* decode arguments */
+                if (native_commands[i].nargs > 0)
+                {
+                    s->len += sprintf(s->buffer + s->len, " ");
+                    for (int a = 0; a < native_commands[i].nargs; ++a)
+                    {
+                        int32_t ptr = 0;
+                        memcpy(&ptr, data + 1 + 4 * a, sizeof(ptr));
+                        if (a != 0)
+                        {
+                            s->len += sprintf(s->buffer + s->len, ", ");
+                        }
+                        s->len += sprintf(s->buffer + s->len, "%d", ptr);
+                    }
+                }
                 
                 s->buffer[s->len] = '\n';
                 s->len++;

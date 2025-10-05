@@ -6,10 +6,15 @@
 #include "../utils/assembler.h"
 
 
-int main()
+int main(int argc, char **argv)
 {
-    char *filename = "a.asm";
-    char *outputname = "a.bc";
+    if (argc != 3)
+    {
+        printf("Assembler must take 2 files: source and destination.\n");
+        return 1;
+    }
+    char *filename = argv[1];
+    char *outputname = argv[2];
 
     char **lines;
     ssize_t lines_len;

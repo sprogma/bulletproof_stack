@@ -6,10 +6,16 @@
 #include "../utils/assembler.h"
 
 
-int main()
+int main(int argc, char **argv)
 {
-    char *filename = "a.bc";
-    char *outputname = "dis.asm";
+    if (argc != 3)
+    {
+        printf("Disassembler must take 2 files: source and destination.\n");
+        return 1;
+    }
+    
+    char *filename = argv[1];
+    char *outputname = argv[2];
 
     BYTE *buffer;
     ssize_t buffer_size;
