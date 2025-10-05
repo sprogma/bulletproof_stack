@@ -1,1 +1,1 @@
-gcc ((ls utils,spu)-like"*.c") -o spu.exe
+gcc ((ls utils,spu -r)-like"*.c") -o spu.exe

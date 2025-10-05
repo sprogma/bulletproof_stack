@@ -11,33 +11,44 @@
 #endif
 
 
+#ifdef VERBOSE
+    #define VERBOSE_INFO(...) printf(__VA_ARGS__)
+#else
+    #define VERBOSE_INFO(...)
+#endif
+
+
 #define NOT_DEFINE_INTEGER_TYPES
 #include "../utils/assembler.h"
 #include "../utils/specs.h"
+#include "spu.h"
 
 
-void send_port(int32_t port, BYTE *data, size_t count)
+void send_port(struct spu *s, int32_t port, BYTE *data, size_t count)
 {
-    if (port == 1)
+    for (size_t i = 0; i < s->port_mappings_len; ++i)
     {
-        for (size_t i = 0; i < count; ++i)
+        if (s->port_mappings[i].port == port)
         {
-            printf("OUT> %02x\n", data[i]);
+            if (s->port_mappings[i].send != NULL)
+            {
+                s->port_mappings[i].send(s->port_mappings + i, data, count);
+            }
         }
     }
 }
 
 
-void read_port(int32_t port, BYTE *data, size_t count)
+void read_port(struct spu *s, int32_t port, BYTE *data, size_t count)
 {
-    if (port == 1)
+    for (size_t i = 0; i < s->port_mappings_len; ++i)
     {
-        for (size_t i = 0; i < count; ++i)
+        if (s->port_mappings[i].port == port)
         {
-            printf("ENTER BYTE> ");
-            int x;
-            scanf("%d", &x);
-            data[i] = x;
+            if (s->port_mappings[i].read != NULL)
+            {
+                s->port_mappings[i].read(s->port_mappings + i, data, count);
+            }
         }
     } 
 }
@@ -190,7 +201,7 @@ void large_integer_div(BYTE *s, BYTE *a, size_t size)
     \
     if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR) \
     { \
-        printf("dest = *%08x=%08x src = *%08x=%08x cnt = *%08x=%08x\n", dst, INT_FROM(s, dst), src, INT_FROM(s, src), cnt, INT_FROM(s, cnt)); \
+        VERBOSE_INFO("dest = *%08x=%08x src = *%08x=%08x cnt = *%08x=%08x\n", dst, INT_FROM(s, dst), src, INT_FROM(s, src), cnt, INT_FROM(s, cnt)); \
         dst = INT_FROM(s, dst); \
         src = INT_FROM(s, src); \
         cnt = INT_FROM(s, cnt); \
@@ -204,7 +215,7 @@ void large_integer_div(BYTE *s, BYTE *a, size_t size)
     \
     if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR) \
     { \
-        printf("dest = *%08x=%08x a = *%08x=%08x b = *%08x=%08x cnt = *%08x=%08x\n", dst, INT_FROM(s, dst), a, INT_FROM(s, a), b, INT_FROM(s, b), cnt, INT_FROM(s, cnt)); \
+        VERBOSE_INFO("dest = *%08x=%08x a = *%08x=%08x b = *%08x=%08x cnt = *%08x=%08x\n", dst, INT_FROM(s, dst), a, INT_FROM(s, a), b, INT_FROM(s, b), cnt, INT_FROM(s, cnt)); \
         dst = INT_FROM(s, dst); \
         a   = INT_FROM(s, a); \
         b   = INT_FROM(s, b); \
@@ -216,10 +227,12 @@ void run(struct spu *s)
 {
     while (1)
     {
-        dump(s->mem, 0x3FF0, 0x4100);
+        #ifdef DUMP_MEM
+            dump(s->mem, 0x3FF0, 0x4100);
+        #endif
         /* load instruction */
         uint32_t ip = ((uint32_t *)s->mem)[0];
-        printf("IP = %08x\n", ip);
+        VERBOSE_INFO("IP = %08x\n", ip);
         
         ssize_t cmd_size = decode_instruction_length(s->mem + ip);
         
@@ -232,14 +245,14 @@ void run(struct spu *s)
             case O_NOP:
             {
                 /* step to next command */
-                printf("NOP\n");
+                VERBOSE_INFO("NOP\n");
                 break;
             }
             case O_INT:
             {
                 int32_t type = GET_ARG(s, ip, 0);
                 int32_t ptr  = GET_ARG(s, ip, 1) + ip;
-                fprintf(stderr, "Error: int command for now is unsopported [%d, %x].\n", type, ptr);
+                VERBOSE_INFO(stderr, "Error: int command for now is unsopported [%d, %x].\n", type, ptr);
                 break;
             }
             case O_MOV_CONST:
@@ -253,7 +266,7 @@ void run(struct spu *s)
                     ptr = INT_FROM(s, ptr);
                 }
 
-                printf("MOV_CONST set to %08x from %08x\n", ptr, value);
+                VERBOSE_INFO("MOV_CONST set to %08x from %08x\n", ptr, value);
                 INT_FROM(s, ptr) = value;
                 break;
             }
@@ -264,11 +277,11 @@ void run(struct spu *s)
 
                 if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
                 {
-                    printf("dest = *%08x=%08x\n", dst, INT_FROM(s, dst));
+                    VERBOSE_INFO("dest = *%08x=%08x\n", dst, INT_FROM(s, dst));
                     dst = INT_FROM(s, dst);
                 }
 
-                printf("LEA set to %08x = %08x\n", dst, ptr);
+                VERBOSE_INFO("LEA set to %08x = %08x\n", dst, ptr);
                 INT_FROM(s, dst) = ptr;
                 break;
             }
@@ -276,7 +289,7 @@ void run(struct spu *s)
             {
                 READ_DST_SRC_COUNT
                 
-                printf("MOV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("MOV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
                 memmove(s->mem + dst, s->mem + src, INT_FROM(s, cnt));
                 break;
             }
@@ -284,7 +297,7 @@ void run(struct spu *s)
             {
                 READ_DST_SRC_COUNT
 
-                printf("INV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("INV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
                 
                 for (ssize_t i = 0; i < cnt; ++i)
@@ -297,7 +310,7 @@ void run(struct spu *s)
             {
                 READ_DST_SRC_COUNT  
 
-                printf("NEG: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("NEG: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 for (ssize_t i = 0; i < cnt; ++i)
@@ -311,7 +324,7 @@ void run(struct spu *s)
             {
                 READ_DST_SRC_COUNT  
 
-                printf("INC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("INC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 if (dst != src)
@@ -325,7 +338,7 @@ void run(struct spu *s)
             {
                 READ_DST_SRC_COUNT  
 
-                printf("DEC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("DEC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 if (dst != src)
@@ -339,7 +352,7 @@ void run(struct spu *s)
             {
                 READ_DST_SRC_COUNT  
 
-                printf("ALL: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("ALL: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 BYTE total = 0xFF;
@@ -354,7 +367,7 @@ void run(struct spu *s)
             {
                 READ_DST_SRC_COUNT  
 
-                printf("ANY: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("ANY: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 BYTE total = 0;
@@ -373,12 +386,12 @@ void run(struct spu *s)
 
                 if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
                 {
-                    printf("dest = *%08x=%08x  flag = *%08x=%08x\n", dst, INT_FROM(s, dst), flg, INT_FROM(s, flg));
+                    VERBOSE_INFO("dest = *%08x=%08x  flag = *%08x=%08x\n", dst, INT_FROM(s, dst), flg, INT_FROM(s, flg));
                     flg = INT_FROM(s, flg);
                     dst = INT_FROM(s, dst);
                 }
 
-                printf("CLEA set to %08x = %08x IF FLAG from %08x=%08x\n", dst, ptr, flg, INT_FROM(s, flg));
+                VERBOSE_INFO("CLEA set to %08x = %08x IF FLAG from %08x=%08x\n", dst, ptr, flg, INT_FROM(s, flg));
                 if (INT_FROM(s, flg) != 0)
                 {
                     INT_FROM(s, dst) = ptr;
@@ -393,13 +406,13 @@ void run(struct spu *s)
 
                 if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
                 {
-                    printf("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
+                    VERBOSE_INFO("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
                     ptr = INT_FROM(s, ptr);
                     count = INT_FROM(s, count);
                 }
 
-                printf("IN read from port %08x data to %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
-                read_port(port, s->mem + ptr, INT_FROM(s, count));
+                VERBOSE_INFO("IN read from port %08x data to %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
+                read_port(s, port, s->mem + ptr, INT_FROM(s, count));
                 break;
             }
             case O_OUT:
@@ -410,20 +423,20 @@ void run(struct spu *s)
 
                 if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
                 {
-                    printf("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
+                    VERBOSE_INFO("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
                     ptr = INT_FROM(s, ptr);
                     count = INT_FROM(s, count);
                 }
 
-                printf("OUT send to port %08x data from %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
-                send_port(port, s->mem + ptr, INT_FROM(s, count));
+                VERBOSE_INFO("OUT send to port %08x data from %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
+                send_port(s, port, s->mem + ptr, INT_FROM(s, count));
                 break;
             }
             case O_EQ:
             {
                 READ_DST_A_B_COUNT  
 
-                printf("EQ: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("EQ: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 for (ssize_t i = 0; i < cnt; ++i)
@@ -436,7 +449,7 @@ void run(struct spu *s)
             {
                 READ_DST_A_B_COUNT  
 
-                printf("OR: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("OR: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 for (ssize_t i = 0; i < cnt; ++i)
@@ -449,7 +462,7 @@ void run(struct spu *s)
             {
                 READ_DST_A_B_COUNT  
 
-                printf("AND: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("AND: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 for (ssize_t i = 0; i < cnt; ++i)
@@ -462,7 +475,7 @@ void run(struct spu *s)
             {
                 READ_DST_A_B_COUNT  
 
-                printf("AND: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("XOR: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 for (ssize_t i = 0; i < cnt; ++i)
@@ -475,7 +488,7 @@ void run(struct spu *s)
             {
                 READ_DST_A_B_COUNT
 
-                printf("CMOV: set to %08x from %08x of length *%08x=%08x ONLY IF %08x=%08x != 0\n", a, b, cnt, INT_FROM(s, cnt), dst, INT_FROM(s, dst));
+                VERBOSE_INFO("CMOV: set to %08x from %08x of length *%08x=%08x ONLY IF %08x=%08x != 0\n", a, b, cnt, INT_FROM(s, cnt), dst, INT_FROM(s, dst));
                 cnt = INT_FROM(s, cnt);
                 dst = INT_FROM(s, dst);
 
@@ -489,24 +502,21 @@ void run(struct spu *s)
             {
                 READ_DST_A_B_COUNT
 
-                printf("ADD: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("ADD: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 if (dst != a)
                 {
                     memcpy(s->mem + dst, s->mem + a, cnt);
                 }
-                printf("%d\n", INT_FROM(s, dst));
-                printf("%d\n", INT_FROM(s, b));
                 large_integer_add(s->mem + dst, s->mem + b, cnt);
-                printf("->%d\n", INT_FROM(s, dst));
                 break;
             }
             case O_SUB:
             {
                 READ_DST_A_B_COUNT
 
-                printf("SUB: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("SUB: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 if (dst != a)
@@ -520,7 +530,7 @@ void run(struct spu *s)
             {
                 READ_DST_A_B_COUNT
 
-                printf("MUL: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("MUL: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 if (dst != a)
@@ -534,7 +544,7 @@ void run(struct spu *s)
             {
                 READ_DST_A_B_COUNT
 
-                printf("DIV: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                VERBOSE_INFO("DIV: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
                 cnt = INT_FROM(s, cnt);
 
                 if (dst != a)
@@ -556,20 +566,39 @@ void run(struct spu *s)
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
-    char *filename = "a.bc";
+    struct spu s = {};
 
-    /* allocate memory for computer */
-    struct spu s;
+    for (int i = 1; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "-map") == 0)
+        {
+            if (i + 1 < argc)
+            {
+                if (load_spu_port_mapping(&s, argv[i + 1]) != 0)
+                {
+                    fprintf(stderr, "load_spu_port_mapping error\n");
+                    return 1;
+                }
+            }
+            else
+            {
+                fprintf(stderr, "Error: -map flag wasn't followed by mapping string\n");
+                return 1;
+            }
+        }
+    }
+
+    char *filename = "a.bc";
     
     s.mem_size = 64 * 1024 * 1024;
     #ifdef _WIN32
-        size_t min_size = GetLargePageMinimum();
-        s.mem_size /= min_size;
-        s.mem_size *= min_size;
-        s.mem_size += min_size;
-        printf("%zd\n", s.mem_size);
+        // size_t min_size = GetLargePageMinimum();
+        // s.mem_size /= min_size;
+        // s.mem_size *= min_size;
+        // s.mem_size += min_size;
+        // printf("%zd\n", s.mem_size);
         s.mem = VirtualAlloc(NULL, s.mem_size, MEM_COMMIT, PAGE_READWRITE); // MEM_LARGE_PAGES
     #else
         s.mem = malloc(s.mem_size);
@@ -580,8 +609,7 @@ int main()
         return 1;
     }
     memset(s.mem, 0, s.mem_size);
-
-    printf("Memory allocated\n");
+    
 
     /* load program */
     {
@@ -602,5 +630,8 @@ int main()
     ((uint32_t *)s.mem)[0] = 0x4000;
 
     run(&s);
-    dump(s.mem, 0x3FF0, 0x4100);
+    
+    #ifdef DUMP_MEM
+        dump(s.mem, 0x3FF0, 0x4100);
+    #endif
 }

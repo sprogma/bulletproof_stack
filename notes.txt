@@ -1,0 +1,2 @@
+format to set port handlers:
+.\spu.exe -map "1:hexstdio 2:stdio"

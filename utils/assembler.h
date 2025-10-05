@@ -45,12 +45,6 @@ struct compilation_table
     ssize_t        labels_alloc;
 };
 
-struct spu
-{
-    BYTE *mem;
-    size_t mem_size;
-};
-
 /*
  * reads file as lines array.
  */
