@@ -9,9 +9,14 @@
 #include "../utils/assembler.h"
 
 
-int iskey(int c)
+int isstartkey(int c)
 {
     return isalpha(c) || c == '_';
+}
+
+int iskey(int c)
+{
+    return isalpha(c) || isdigit(c) || c == '_';
 }
 
 
@@ -129,7 +134,10 @@ static int calculate_offset(struct compilation_table *t, ssize_t position, char 
     /* if there is name, parse it */
     {
         char *name_end = arg;
-        while (name_end < arg_end && iskey(*name_end)) { name_end++; }
+        if (isstartkey(*name_end))
+        {
+            while (name_end < arg_end && iskey(*name_end)) { name_end++; }
+        }
         if (name_end == arg)
         {
             fprintf(stderr, "Error: argument isn't name nor absolute address [in arg <%*.*s>]\n", (int)(arg_end - arg), (int)(arg_end - arg), arg);
@@ -465,7 +473,10 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
         if (*s == '\0') { continue; }
 
         char *name_end = s;
-        while (iskey(*name_end)) { name_end++; }
+        if (isstartkey(*name_end))
+        {
+            while (iskey(*name_end)) { name_end++; }
+        }
         char *end = name_end;
         while (isspace(*end)) { end++; }
 
@@ -509,7 +520,10 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
         if (*s == '\0') { continue; }
 
         char *name_end = s;
-        while (iskey(*name_end)) { name_end++; }
+        if (isstartkey(*name_end))
+        {
+            while (iskey(*name_end)) { name_end++; }
+        }
         char *end = name_end;
         while (isspace(*end)) { end++; }
 

@@ -1,9 +1,5 @@
 LEA
+LEA
 MUL
 DEC
-$CLEA
-NOP
-$NOP
-NOP
-NOP
-NOP
+.db 0xc7
