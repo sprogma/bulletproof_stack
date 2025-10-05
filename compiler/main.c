@@ -4,20 +4,6 @@
 #include "parser/api.h"
 #include "compiler/compiler.h"
 
-// const char *source_code = "x+x+x+x"; test_grammar2.gram
-// const char *source_code = "x * x + x+ ( x + x * x * ( x + x ) ) * x"; test_grammar2.gram
-// const char *source_code = R"code(
-// aa aaaa(  )  {   "u\"uu";   abc41; $1;  "ooo";}
-// )code";
-// const char *source_code = R"code(
-// int (*(*a[5])(int, char *x))[5], bb {;}
-// )code";
-
-// struct s
-// {
-//     int a, b;
-//     int c;
-// };
 
 const char *source_code = R"code(
 int main()
@@ -33,20 +19,6 @@ int main()
     return s;
 }
 )code";
-
-// const char *source_code = R"code(
-// int main()
-// {
-//     int a = 5;
-//     int s = 0;
-//     while (a > 0)
-//     {
-//         s = s + a;
-//         a = a - 1;
-//     }
-//     return s;
-// }
-// )code";
 
 
 void print(int indent, const char *text, struct parser_tree_node_t *node)
