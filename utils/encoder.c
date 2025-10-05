@@ -250,7 +250,8 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
             *dst++ = native_commands[i].code | (pointer_mode ? ARG_PTR_ON_PTR : ARG_PTR);
 
             /* write arguments */
-            if (strcmp(native_commands[i].name, "MOV_CONST") == 0)
+            if (strcmp(native_commands[i].name, "MOV_CONST") == 0 ||
+                strcmp(native_commands[i].name, "INT") == 0)
             {
                 /* parse first argument as integer */
                 int32_t code = 0;
@@ -258,14 +259,14 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
                 {
                     if (cnt_e == NULL)
                     {
-                        fprintf(stderr, "Error: MOV_CONST have only one parameter. [excepted 2]\n");
+                        fprintf(stderr, "Error: MOV_CONST or INT have only one parameter. [excepted 2]\n");
                         return 1;
                     }
                     char *end = NULL;
                     code = strtoll(line + name_len, &end, 0);
                     if (*end != ' ' && *end != ',')
                     {
-                        fprintf(stderr, "Error: MOV_CONST must have constant integer as first argument, not <%s>\n", line + name_len);
+                        fprintf(stderr, "Error: MOV_CONST or INT must have constant integer as first argument, not <%s>\n", line + name_len);
                         return 1;
                     }
                 }
@@ -278,7 +279,8 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
                 memcpy(dst, offsets, sizeof(offsets[0]));
                 dst += sizeof(offsets[0]);
             }
-            else if (strcmp(native_commands[i].name, "INT") == 0)
+            else if (strcmp(native_commands[i].name, "IN") == 0 ||
+                     strcmp(native_commands[i].name, "OUT") == 0)
             {
                 /* parse first argument as integer */
                 int32_t code = 0;
@@ -286,25 +288,25 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
                 {
                     if (cnt_e == NULL)
                     {
-                        fprintf(stderr, "Error: MOV_CONST have only one parameter. [excepted 2]\n");
+                        fprintf(stderr, "Error: IN or OUT have only one parameter. [excepted 2]\n");
                         return 1;
                     }
                     char *end = NULL;
                     code = strtoll(line + name_len, &end, 0);
                     if (*end != ' ' && *end != ',')
                     {
-                        fprintf(stderr, "Error: MOV_CONST must have constant integer as first argument, not <%s>\n", line + name_len);
+                        fprintf(stderr, "Error: IN or OUT must have constant integer as first argument, not <%s>\n", line + name_len);
                         return 1;
                     }
                 }
                 /* parse other arguments */
                 int32_t offsets[MAX_COMMAND_ARGUMENTS] = {};
-                calculate_offsets(t, position, cnt_e + 1, line_end, 1, offsets);
+                calculate_offsets(t, position, cnt_e + 1, line_end, 2, offsets);
                 /* encode results */
                 memcpy(dst, &code, sizeof(code));
                 dst += sizeof(code);
-                memcpy(dst, offsets, sizeof(offsets[0]));
-                dst += sizeof(offsets[0]);
+                memcpy(dst, offsets, sizeof(offsets[0]) * 2);
+                dst += sizeof(offsets[0]) * 2;
             }
             else
             {

@@ -36,7 +36,7 @@
 #define O_NOP                (0b00000 | ARG_NUM_0)
 
 
-//! (INDEX:1 byte) (DATA: void*)
+//! (INDEX: const 4 byte) (DATA: void*)
 #define O_INT                (0b00000 | ARG_NUM_2)
 
 //! (VAL: size_t) (DST: void*) 
@@ -72,6 +72,12 @@
 
 //! (FLAG: void *) (VAL: void**) (DST: void*) 
 #define O_CLEA               (0b00111 | ARG_NUM_3)
+
+//! (PORT: const 4 bytes) (TO: void *) (COUNT: size_t*)
+#define O_IN                 (0b01000 | ARG_NUM_3)
+
+//! (PORT: const 4 bytes) (FROM: void *) (COUNT: size_t*)
+#define O_OUT                (0b01001 | ARG_NUM_3)
 
 
 
@@ -138,6 +144,8 @@ static const struct command native_commands[] = {
     {"ALL", 3, 5 | ARG_NUM_3},
     {"ANY", 3, 6 | ARG_NUM_3},
     {"CLEA", 3, 7 | ARG_NUM_3},
+    {"IN", 3, 8 | ARG_NUM_3},
+    {"OUT", 3, 9 | ARG_NUM_3},
     {"EQ", 4, 0 | ARG_NUM_4},
     {"OR", 4, 1 | ARG_NUM_4},
     {"AND", 4, 2 | ARG_NUM_4},

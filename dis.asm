@@ -1,5 +1,5 @@
-LEA
-LEA
-MUL
-DEC
-.db 0xc7
+OUT
+.db 0xff
+NOP
+NOP
+NOP

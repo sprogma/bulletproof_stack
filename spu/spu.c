@@ -16,6 +16,31 @@
 #include "../utils/specs.h"
 
 
+void send_port(int32_t port, BYTE *data, size_t count)
+{
+    if (port == 1)
+    {
+        for (size_t i = 0; i < count; ++i)
+        {
+            printf("OUT> %02x\n", data[i]);
+        }
+    }
+}
+
+
+void read_port(int32_t port, BYTE *data, size_t count)
+{
+    if (port == 1)
+    {
+        for (size_t i = 0; i < count; ++i)
+        {
+            printf("ENTER BYTE> ");
+            int x;
+            scanf("%d", &x);
+            data[i] = x;
+        }
+    } 
+}
 
 
 void dump(BYTE *s, size_t from, size_t to)
@@ -358,6 +383,40 @@ void run(struct spu *s)
                 {
                     INT_FROM(s, dst) = ptr;
                 }
+                break;
+            }
+            case O_IN:
+            {            
+                int32_t port  = GET_ARG(s, ip, 0);
+                int32_t ptr   = GET_ARG(s, ip, 1) + ip;
+                int32_t count = GET_ARG(s, ip, 2) + ip;
+
+                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
+                {
+                    printf("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
+                    ptr = INT_FROM(s, ptr);
+                    count = INT_FROM(s, count);
+                }
+
+                printf("IN read from port %08x data to %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
+                read_port(port, s->mem + ptr, INT_FROM(s, count));
+                break;
+            }
+            case O_OUT:
+            {            
+                int32_t port  = GET_ARG(s, ip, 0);
+                int32_t ptr   = GET_ARG(s, ip, 1) + ip;
+                int32_t count = GET_ARG(s, ip, 2) + ip;
+
+                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
+                {
+                    printf("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
+                    ptr = INT_FROM(s, ptr);
+                    count = INT_FROM(s, count);
+                }
+
+                printf("OUT send to port %08x data from %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
+                send_port(port, s->mem + ptr, INT_FROM(s, count));
                 break;
             }
             case O_EQ:

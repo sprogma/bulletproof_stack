@@ -28,6 +28,7 @@ $LEA _zero, _local2
 _local0:
 MOV main - 8, _main_s, _size4
 
+OUT 1, main - 8, _size4
 .db 0xFF
 
 _main_a:
