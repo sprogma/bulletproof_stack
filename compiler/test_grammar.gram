@@ -1,0 +1,2 @@
+!compress_spaces
+S := "x" "+" S | "x"

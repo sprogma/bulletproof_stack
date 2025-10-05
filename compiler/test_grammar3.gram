@@ -1,0 +1,9 @@
+E := function S
+function := S identifer S identifer S "(" S ")" S block
+block := S "{" S manystatements S "}" | S statement
+manystatements := S statement S manystatements | S statement
+statement := S string ";" | S name ";"
+string := S CSTRING
+name := S CNAME
+identifer := identifer_private
+identifer_private := "a" identifer_private | "a"

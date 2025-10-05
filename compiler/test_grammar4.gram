@@ -1,0 +1,72 @@
+E := global_scope_stmt_many
+
+global_scope_stmt_many := global_scope_stmt global_scope_stmt_many | S
+global_scope_stmt := structure | function | variable_declaration S ";"
+
+structure := S "struct" SS name S "{" structure_field_many S "}" S ";"
+structure_field_many := structure_field structure_field_many | structure_field
+structure_field := variable_declaration S ";"
+
+function := variable_declaration fn_block
+
+block := fn_block | statement
+fn_block := S "{" many_statements S "}" | S "{" S "}"
+many_statements := statement many_statements | S
+statement := S ";" | return_stmt S ";" | if_stmt | while_stmt | variable_declaration S ";" | expression S ";"
+
+
+return_stmt := S "return" expression
+
+
+if_stmt := S "if" S "(" expression ")" block else_stmt
+else_stmt := S "else" block | S
+
+
+while_stmt := S "while" S "(" expression ")" block
+
+
+expression := set_expr | logic_expr
+set_expr := lvalue_term S "=" expression
+logic_expr := cmp_expr expr_op_logic cmp_expr | cmp_expr
+cmp_expr := add_expr expr_op_cmp cmp_expr | add_expr
+add_expr := mul_expr expr_op_add add_expr | mul_expr
+mul_expr := expr_term expr_op_mul mul_expr | expr_term
+expr_term := int | float | string | fn_call | lvalue_term | S "(" expression S ")"
+fn_call := expression_name S "(" fn_call_arg_many S ")"
+fn_call_arg_many := expression S "," fn_call_arg_many | expression | S
+lvalue_term := expression_name | S "*" lvalue_packed_term | lvalue_packed_term "[" expression "]"
+lvalue_packed_term := S "(" expression S ")" | expression_name
+expr_op_logic := S "&&" | S "||"
+expr_op_add := S "+" | S "-"
+expr_op_mul := S "*" | S "/"
+expr_op_cmp := S "==" | S "!=" | S "<=" | S ">=" | S "<" | S ">"
+expression_name := name S "." expression_name | name S "->" expression_name | name
+
+
+
+# variable_declaration_with_value := variable_declaration S "=" initializator_expression | variable_declaration
+# initializator_expression_many := initializator_expression S "," initializator_expression_many | initializator_expression
+# initializator_expression := S "{" initializator_expression_many S "}" | expression
+
+
+variable_declaration := type variable_declaration_mods_many
+fn_variable_declaration := type variable_declaration_mods
+
+struct_keywords := S "struct" | S "enum" | S "union"
+type := struct_keywords SS name | name
+variable_declaration_mods_many := variable_declaration_mods S "," variable_declaration_mods_many | variable_declaration_mods
+mod_keyword := "const"
+variable_declaration_mods := S "(" variable_declaration_mods S ")" | S mod_keyword SS variable_declaration_mods | S "*" variable_declaration_mods | S variable_declaration_mods_fn S "(" declaration_fn_args_many S ")" | variable_declaration_mods_arr S "[" const_int S "]" | variable_name
+variable_declaration_mods_arr := S "(" variable_declaration_mods S ")" | variable_name
+variable_declaration_mods_fn := S "(" variable_declaration_mods S ")" | variable_name
+
+declaration_fn_args_many := fn_variable_declaration S "," declaration_fn_args_many | fn_variable_declaration | S
+
+variable_name := name
+const_int := int | name
+
+SS := " " S
+int := S CINT
+float := S CFLOAT
+name := S CNAME
+string := S CSTRING

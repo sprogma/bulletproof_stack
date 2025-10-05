@@ -1,0 +1,5 @@
+!compress_spaces
+E := M | S
+S := M "+" S | M
+M := "(" E ")" | ML "*" M | "x"
+ML := "(" E ")" | "x"
