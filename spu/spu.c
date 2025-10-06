@@ -272,7 +272,7 @@ void run(struct spu *s)
 
                 if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
                 {
-                    printf("ptr = *%08x=%08x\n", ptr, INT_FROM(s, ptr));
+                    VERBOSE_INFO("ptr = *%08x=%08x\n", ptr, INT_FROM(s, ptr));
                     ptr = INT_FROM(s, ptr);
                 }
 
