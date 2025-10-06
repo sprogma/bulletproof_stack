@@ -395,10 +395,10 @@ LEA aa5 - 4, _local118
 $LEA _zero, aa5
 _local118:
 MOV _main_x, aa5 - 8, _size4
-LEA aa4 - 4, _local119
-$LEA _zero, aa4
+LEA aa2 - 4, _local119
+$LEA _zero, aa2
 _local119:
-MOV _main_x, aa4 - 8, _size4
+MOV _main_x, aa2 - 8, _size4
 LEA aa1 - 4, _local120
 $LEA _zero, aa1
 _local120:
