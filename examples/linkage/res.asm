@@ -35,12 +35,8 @@ _0a__size4:
 .dd 4
 _0a__size1:
 .dd 1
-_0a__int_tmp:
-.dd 0
-_0a__byte_tmp:
-.db 0
 _0a__zero:
-.db 0
+.dd 0
 
 ; arguments
 .dd 0xBEBEBEBE
@@ -66,10 +62,6 @@ _1b__size4:
 .dd 4
 _1b__size1:
 .dd 1
-_1b__int_tmp:
-.dd 0
-_1b__byte_tmp:
-.db 0
 _1b__zero:
-.db 0
+.dd 0
 

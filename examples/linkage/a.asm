@@ -27,9 +27,5 @@ _size4:
 .dd 4
 _size1:
 .dd 1
-_int_tmp:
-.dd 0
-_byte_tmp:
-.db 0
 _zero:
-.db 0
+.dd 0

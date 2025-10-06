@@ -1734,12 +1734,8 @@ result_t compile(struct parser_tree_t *tree, char **resulting_code)
     c.vars->len += sprintf(c.vars->buffer + c.vars->len, ".dd 4\n");
     c.vars->len += sprintf(c.vars->buffer + c.vars->len, "_size1:\n");
     c.vars->len += sprintf(c.vars->buffer + c.vars->len, ".dd 1\n");
-    c.vars->len += sprintf(c.vars->buffer + c.vars->len, "_int_tmp:\n");
-    c.vars->len += sprintf(c.vars->buffer + c.vars->len, ".dd 0\n");
-    c.vars->len += sprintf(c.vars->buffer + c.vars->len, "_byte_tmp:\n");
-    c.vars->len += sprintf(c.vars->buffer + c.vars->len, ".db 0\n");
     c.vars->len += sprintf(c.vars->buffer + c.vars->len, "_zero:\n");
-    c.vars->len += sprintf(c.vars->buffer + c.vars->len, ".db 0\n");
+    c.vars->len += sprintf(c.vars->buffer + c.vars->len, ".dd 0\n");
 
     *resulting_code = calloc(1, c.code->len + c.vars->len + 1);
     memcpy(*resulting_code,               c.code->buffer, c.code->len);
