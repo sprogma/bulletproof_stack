@@ -24,7 +24,7 @@ _local0:
 MOV_CONST 20480, _aa0_s
 _local1:
 MOV _aa0_e, _aa0_s, _size4
-MOV_CONST 88200, _local5
+MOV_CONST 44100, _local5
 ADD _aa0_e, _aa0_e, _local5, _size4
 LEA _local10, _local9
 _local8:
@@ -66,7 +66,7 @@ _local15:
 MOV_CONST 20480, _aa0_s
 _local16:
 MOV _aa1_e, _aa0_s, _size4
-MOV_CONST 88200, _local20
+MOV_CONST 44100, _local20
 ADD _aa1_e, _aa1_e, _local20, _size4
 LEA _local25, _local24
 _local23:
@@ -108,7 +108,7 @@ _local30:
 MOV_CONST 20480, _aa0_s
 _local31:
 MOV _aa2_e, _aa0_s, _size4
-MOV_CONST 88200, _local35
+MOV_CONST 44100, _local35
 ADD _aa2_e, _aa2_e, _local35, _size4
 LEA _local40, _local39
 _local38:
@@ -149,7 +149,7 @@ _local_aa3_30:
 MOV_CONST 20480, _aa0_s
 _local_aa3_31:
 MOV _aa2_e, _aa0_s, _size4
-MOV_CONST 88200, _local35
+MOV_CONST 44100, _local35
 ADD _aa2_e, _aa2_e, _local35, _size4
 LEA _local40, _local39
 _local_aa3_38:
@@ -192,7 +192,7 @@ _local_aa4_30:
 MOV_CONST 20480, _aa0_s
 _local_aa4_31:
 MOV _aa2_e, _aa0_s, _size4
-MOV_CONST 88200, _local35
+MOV_CONST 44100, _local35
 ADD _aa2_e, _aa2_e, _local35, _size4
 LEA _local40, _local39
 _local_aa4_38:
@@ -235,7 +235,7 @@ _local_aa5_30:
 MOV_CONST 20480, _aa0_s
 _local_aa5_31:
 MOV _aa2_e, _aa0_s, _size4
-MOV_CONST 88200, _local35
+MOV_CONST 44100, _local35
 ADD _aa2_e, _aa2_e, _local35, _size4
 LEA _local40, _local39
 _local_aa5_38:
@@ -351,6 +351,10 @@ LEA aa3 - 4, _local107
 $LEA _zero, aa3
 _local107:
 MOV _main_x, aa3 - 8, _size4
+LEA aa3 - 4, _local107a
+$LEA _zero, aa3
+_local107a:
+MOV _main_x, aa3 - 8, _size4
 LEA aa4 - 4, _local108
 $LEA _zero, aa4
 _local108:
@@ -459,7 +463,7 @@ local_queue:
 
 .align 4
 count:
-.dd 3704400
+.dd 1940400
 _aa0_e:
 .dd 0
 _aa0_s:
