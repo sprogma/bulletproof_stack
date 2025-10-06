@@ -6,7 +6,7 @@ $LEA _zero, main
 .dd 0xBEBEBEBE
 
 main:
-MOV_CONST 10, _main_a
+MOV_CONST 10000, _main_a
 MOV_CONST 1, _main_s
 LEA _local4, _local3
 _local2:
@@ -20,15 +20,15 @@ $LEA _zero, _local0
 _local1:
 MOV _main_s, _main_s, _size4
 MOV _local6, _main_a, _size4
-MUL _main_s, _main_s, _local6, _size4
+ADD _main_s, _main_s, _local6, _size4
 MOV _main_a, _main_a, _size4
 MOV_CONST 1, _local7
 SUB _main_a, _main_a, _local7, _size4
+OUT 1, _main_s, _size4
 $LEA _zero, _local2
 _local0:
 MOV main - 8, _main_s, _size4
 
-OUT 1, main - 8, _size4
 OUT 2, main - 8, _size4
 .db 0xFF
 

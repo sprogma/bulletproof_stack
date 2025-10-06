@@ -127,7 +127,8 @@ struct compiler_instance_t
 };
 
 
-result_t compile(struct parser_tree_t *tree);
+
+result_t compile(struct parser_tree_t *tree, char **resulting_code);
 
 
 result_t reserve_buffer(struct code_buffer_t *b, size_t size);

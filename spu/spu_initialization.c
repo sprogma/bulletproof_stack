@@ -33,6 +33,10 @@ int create_port_mapping(struct spu *s, struct port_mapping_t *mapping, int port,
     {
         return create_port_mapping_hex_stdio(s, mapping, port, command);
     }
+    else if (strncmp(command, "audio", 5) == 0)
+    {
+        return create_port_mapping_audio(s, mapping, port, command);
+    }
     fprintf(stderr, "Unknown port mapping command: %s\n", command);
     return 1;
 }

@@ -560,7 +560,7 @@ void run(struct spu *s)
             }
             default:
             {
-                fprintf(stderr, "Error: unkown opcode: 0x%02x [from 0x%02x]\n", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode);
+                fprintf(stderr, "Error: unkown opcode: 0x%02x [from 0x%02x] at %08x\n", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode, ip);
                 return;
             }
         }

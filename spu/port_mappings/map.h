@@ -18,4 +18,11 @@ int create_port_mapping_hex_stdio(struct spu *s, struct port_mapping_t *mapping,
 int create_port_mapping_tcp(struct spu *s, struct port_mapping_t *mapping, int port, char *command);
 
 
+#ifdef SDL_MAPPINGS
+
+/* write S32 bytes with music data, read count of bytes in buffer */
+int create_port_mapping_audio(struct spu *s, struct port_mapping_t *mapping, int port, char *command);
+
+#endif
+
 #endif

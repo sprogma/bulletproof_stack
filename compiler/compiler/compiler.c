@@ -772,6 +772,7 @@ result_t register_function_variable(struct compiler_instance_t *c,
         return 1;
     }
 
+
     PRINT_INFO("varaible type: %p : %s %s", variable_type, variable_type->keyword, variable_type->name);
 
     /* decode mods_node */
@@ -1124,8 +1125,8 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
 
     PRINT_INFO("function!");
 
-    struct function_t f;
-    struct function_compile_time_t fc;
+    struct function_t f = {};
+    struct function_compile_time_t fc = {};
 
     struct parser_tree_node_t *declaration = node->childs[0];
     ASSERT_NODE(declaration, "variable_declaration");
@@ -1278,7 +1279,7 @@ result_t compile_global_scope_stmt(struct compiler_instance_t *c, struct parser_
 
 
 
-result_t compile(struct parser_tree_t *tree)
+result_t compile(struct parser_tree_t *tree, char **resulting_code)
 {
     assert(tree != NULL);
 
@@ -1343,9 +1344,9 @@ result_t compile(struct parser_tree_t *tree)
     c.vars->len += sprintf(c.vars->buffer + c.vars->len, "_zero:\n");
     c.vars->len += sprintf(c.vars->buffer + c.vars->len, ".db 0\n");
 
-    printf("RESULTING CODE:\n");
-    printf("%*.*s\n", (int)c.code->len, (int)c.code->len, c.code->buffer);
-    printf("%*.*s\n", (int)c.vars->len, (int)c.vars->len, c.vars->buffer);
+    *resulting_code = calloc(1, c.code->len + c.vars->len + 1);
+    memcpy(*resulting_code,               c.code->buffer, c.code->len);
+    memcpy(*resulting_code + c.code->len, c.vars->buffer, c.vars->len);
 
     free(c.code);
     free(c.vars);
