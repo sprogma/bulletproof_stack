@@ -63,6 +63,57 @@ static struct type_t *get_type(struct compiler_instance_t *c, char *keyword, cha
 }
 
 
+static result_t get_type_node(struct compiler_instance_t *c, 
+                              struct parser_tree_t *tree, 
+                              struct parser_tree_node_t *node, 
+                              struct type_t **result)
+{
+    assert(c != NULL);
+    assert(tree != NULL);
+    ASSERT_NODE(node, "type");
+
+    struct type_t *return_type = NULL;
+    
+    if (node->variant == 0)
+    {
+        /* struct/union/enum + name */
+        struct parser_tree_node_t *keyword_node = node->childs[0];
+        ASSERT_NODE(keyword_node, "struct_keywords");
+
+        struct parser_tree_node_t *name_node = node->childs[1];
+        ASSERT_NODE(name_node, "name");
+
+        char *keyword = get_node_text_no_spaces(tree, keyword_node);
+        char *name = get_node_text_no_spaces(tree, name_node);
+
+        return_type = get_type(c, keyword, name);
+
+        free(keyword);
+        free(name);
+    }
+    else if (node->variant == 1)
+    {
+        /* name */
+        struct parser_tree_node_t *name_node = node->childs[0];
+        ASSERT_NODE(name_node, "name");
+
+        char *name = get_node_text_no_spaces(tree, name_node);
+
+        return_type = get_type(c, "", name);
+
+        free(name);
+    }
+    else
+    {
+        PRINT_ERROR("Unknown <type> node variant");
+        return 1;
+    }
+
+    *result = return_type;
+    return 0;
+}
+
+
 static result_t get_function(struct compiler_instance_t *c,
                                struct parser_tree_t *tree,
                                struct parser_tree_node_t *expression_node,
@@ -933,10 +984,6 @@ result_t register_function_variable_with_label(struct compiler_instance_t *c,
 
     char *label_name = strdup(label);
 
-    reserve_buffer(c->vars, c->vars->len + 128);
-    c->vars->len += sprintf(c->vars->buffer + c->vars->len, "%s:\n", label_name);
-    c->vars->len += sprintf(c->vars->buffer + c->vars->len, ".dd 0\n");
-
     fc->locals[fc->locals_len++] = (struct variable_t) {
         .label = label_name,
         .name = variable_name,
@@ -1398,41 +1445,7 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
 
 
         struct type_t *return_type = NULL;
-
-        if (type_node->variant == 0)
-        {
-            /* struct/union/enum + name */
-            struct parser_tree_node_t *keyword_node = type_node->childs[0];
-            ASSERT_NODE(keyword_node, "struct_keywords");
-
-            struct parser_tree_node_t *name_node = type_node->childs[1];
-            ASSERT_NODE(name_node, "name");
-
-            char *keyword = get_node_text_no_spaces(tree, keyword_node);
-            char *name = get_node_text_no_spaces(tree, name_node);
-
-            return_type = get_type(c, keyword, name);
-
-            free(keyword);
-            free(name);
-        }
-        else if (type_node->variant == 1)
-        {
-            /* name */
-            struct parser_tree_node_t *name_node = type_node->childs[0];
-            ASSERT_NODE(name_node, "name");
-
-            char *name = get_node_text_no_spaces(tree, name_node);
-
-            return_type = get_type(c, "", name);
-
-            free(name);
-        }
-        else
-        {
-            PRINT_ERROR("Unknown <type> node variant");
-            return 1;
-        }
+        HANDLE_ERROR(get_type_node(c, tree, type_node, &return_type));
 
         if (return_type == NULL)
         {
@@ -1485,32 +1498,9 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
         ASSERT_NODE(function_args, "declaration_fn_args_many");
 
         int count = 0;
-        // {
-        //     struct parser_tree_node_t *args = function_args;
-        //     while (args != NULL)
-        //     {
-        //         if (args->variant == 0)
-        //         {
-        //             args = args->childs[1];
-        //             ASSERT_NODE(args, "declaration_fn_args_many");
-        //             count++;
-        //         }
-        //         else if (args->variant == 1)
-        //         {
-        //             args = NULL;
-        //             count++;
-        //         }
-        //         else if (args->variant == 2)
-        //         {
-        //             args = NULL;
-        //         }
-        //         else
-        //         {
-        //             PRINT_ERROR("Unknown declaration_fn_args_many variant: %d", args->variant);
-        //         }
-        //     }
-        // }
 
+        reserve_buffer(c->code, c->code->len + 256);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "; arguments\n");
         {
             struct parser_tree_node_t *args = function_args;
             while (args != NULL)
@@ -1530,6 +1520,9 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
 
                     char *label = calloc(1, 128);
                     sprintf(label, "%s - %d", f->label, 4 + (int)get_type_size(c, f->ret) + (count + 1) * 4);
+                    
+                    reserve_buffer(c->code, c->code->len + 256);
+                    c->code->len += sprintf(c->code->buffer + c->code->len, ".dd 0xBEBEBEBE\n");
                      
                     HANDLE_ERROR(register_function_variable_with_label(c, tree, f, &fc, type_node, mods_node, label));
                     
@@ -1551,6 +1544,9 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
 
                     char *label = calloc(1, 128);
                     sprintf(label, "%s - %d", f->label, 4 + (int)get_type_size(c, f->ret) + (count + 1) * 4);
+
+                    reserve_buffer(c->code, c->code->len + 256);
+                    c->code->len += sprintf(c->code->buffer + c->code->len, ".dd 0xBEBEBEBE\n");
                      
                     HANDLE_ERROR(register_function_variable_with_label(c, tree, f, &fc, type_node, mods_node, label));
 
@@ -1611,6 +1607,60 @@ result_t compile_global_scope_stmt(struct compiler_instance_t *c, struct parser_
     }
     else if (node->variant == 2)
     {
+        struct parser_tree_node_t *decl = node->childs[0];
+        ASSERT_NODE(decl, "variable_declaration");
+        
+        struct parser_tree_node_t *type_node = decl->childs[0];
+        ASSERT_NODE(type_node, "type");
+        
+        struct parser_tree_node_t *mods_node = decl->childs[1];
+        ASSERT_NODE(mods_node, "variable_declaration_mods_many");
+        
+        /* check, if this is function declaration, then add this function to list */
+        if (mods_node->variant == 1)
+        {
+            struct parser_tree_node_t *one_mods = mods_node->childs[0];
+            ASSERT_NODE(one_mods, "variable_declaration_mods");
+
+            if (one_mods->variant == 3)
+            {
+                struct parser_tree_node_t *fn_decl = one_mods->childs[0];
+                ASSERT_NODE(fn_decl, "variable_declaration_mods_fn");
+                
+                struct parser_tree_node_t *fn_args = one_mods->childs[1];
+                ASSERT_NODE(fn_args, "declaration_fn_args_many");
+
+                (void)fn_args;
+
+                if (fn_decl->variant == 1)
+                {
+                    struct parser_tree_node_t *fn_name = fn_decl->childs[0];
+                    ASSERT_NODE(fn_name, "variable_name");
+
+                    char *name = get_node_text_no_spaces(tree, fn_name);
+                    
+                    struct function_t *f = &c->functions[c->functions_len++];
+                    f->label = name;
+
+                    struct type_t *return_type = NULL;
+                    HANDLE_ERROR(get_type_node(c, tree, type_node, &return_type));
+                    
+                    f->ret = return_type;
+
+                    if (return_type == NULL)
+                    {
+                        char *text = get_node_text_no_spaces(tree, type_node);
+                        PRINT_ERROR("Unknown type: %s\n", text);
+                        free(text);
+                        return 1;
+                    }
+                        
+                    PRINT_INFO("Find function <%s> declaration.", f->label);
+                    
+                    return 0;
+                }
+            }
+        }
         PRINT_INFO("global variable!");
         PRINT_ERROR("Global variables isn't supported for now.");
         return 1;
