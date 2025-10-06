@@ -52,6 +52,15 @@ static char *skip_leading_spaces(char *s)
 
 static int add_label(struct compilation_table *t, char *name, ssize_t len, int32_t offset)
 {
+    for (ssize_t i = 0; i < t->labels_len; ++i)
+    {
+        if (strcmp(t->labels[i].name, name) == 0)
+        {
+            fprintf(stderr, "Error: redefenition of label <%s>\n", name);
+            return 1;
+        }
+    }
+
     if (t->labels_len == t->labels_alloc)
     {
         t->labels_alloc = 2 * t->labels_alloc + !(t->labels_alloc);
@@ -64,6 +73,7 @@ static int add_label(struct compilation_table *t, char *name, ssize_t len, int32
     }
     ssize_t id = t->labels_len++;
     t->labels[id] = (struct label){name, len, offset};
+    printf("debug: register label <%*.*s> with offset: %08x\n", (int)len, (int)len, name, offset);
     return 0;
 }
 
@@ -358,7 +368,7 @@ static int encode_directive(struct compilation_table *t, char *line, ssize_t pos
         }
         else if (STARTSWITH(line, ".dw"))
         {
-            element_size = 1;
+            element_size = 2;
         }
         else if (STARTSWITH(line, ".dd"))
         {
@@ -432,7 +442,7 @@ static int encode_directive(struct compilation_table *t, char *line, ssize_t pos
         int32_t p = position;
         if (p % value != 0)
         {
-            p += ((value - p) % value + value % value);
+            p += ((value - p) % value + value) % value;
         }
 
         *result_length = p - position;
@@ -469,7 +479,7 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
     /* FIRST PASS: calculation of positions */
     int32_t position = 0;
     for (ssize_t i = 0; i < lines_len; ++i)
-    {
+    {    
         /* skip leading spaces */
         char *s = skip_leading_spaces(lines[i]);
         if (*s == '\0') { continue; }

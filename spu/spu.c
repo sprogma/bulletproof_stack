@@ -228,7 +228,7 @@ void run(struct spu *s)
     while (1)
     {
         #ifdef DUMP_MEM
-            dump(s->mem, 0x3FF0, 0x4100);
+            dump(s->mem, 0x3FF0, 0x4200);
         #endif
         /* load instruction */
         uint32_t ip = ((uint32_t *)s->mem)[0];
@@ -262,7 +262,7 @@ void run(struct spu *s)
                 (void)type;
                 (void)ptr;
                 
-                VERBOSE_INFO(stderr, "Error: int command for now is unsopported [%d, %x].\n", type, ptr);
+                VERBOSE_INFO("Error: int command for now is unsopported [%d, %x].\n", type, ptr);
                 break;
             }
             case O_MOV_CONST:
@@ -676,14 +676,15 @@ int main(int argc, char **argv)
             char *image_filename = argv[i + 2];
             {
                 struct stat file_stat;
-                int f = open(image_filename, O_RDONLY);
-                if (fstat(f, &file_stat) != 0)
+                FILE *f = fopen(image_filename, "rb");
+                if (fstat(fileno(f), &file_stat) != 0)
                 {
                     fprintf(stderr, "cannot open/find image %s\n", image_filename);
                     return 1;
                 }
-                ssize_t len = read(f, s.mem + load_address, file_stat.st_size);
+                ssize_t len = fread(s.mem + load_address, 1, file_stat.st_size, f);
                 printf("image loaded by offset %zu, read %zu bytes\n", load_address, len);
+                fclose(f);
             }
 
             i += 2; /* skip N parameters of -image flag */

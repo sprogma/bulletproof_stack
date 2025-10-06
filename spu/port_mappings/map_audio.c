@@ -30,7 +30,6 @@ static void send_port(struct port_mapping_t *mapping, BYTE *data, size_t count)
     }
     SDL_PauseAudioDevice((int)(size_t)mapping->private_data, 0);
     printf("audio: writed %zd bytes\n", count);
-    SDL_Delay(1000);
 }
 
 
