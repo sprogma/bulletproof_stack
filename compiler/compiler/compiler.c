@@ -283,7 +283,7 @@ result_t register_structure_field(struct compiler_instance_t *c,
     if (field_type == NULL)
     {
         char *text = get_node_text_no_spaces(tree, type_node);
-        PRINT_ERROR("Unknown type: %s\n", text);
+        PRINT_ERROR("Unknown type: %s", text);
         free(text);
         return 1;
     }
@@ -293,7 +293,7 @@ result_t register_structure_field(struct compiler_instance_t *c,
     /* decode mods_node */
     if (mods_node->variant != 5)
     {
-        PRINT_ERROR("For now, any pointer/array fields are unsupported\n");
+        PRINT_ERROR("For now, any pointer/array fields are unsupported");
         return 1;
     }
 
@@ -446,7 +446,6 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
         struct parser_tree_node_t *args = fn_call_node->childs[1];
         ASSERT_NODE(args, "fn_call_arg_many");
 
-        PRINT_WARNING("Ignoring any arguments, if them was specified [in fn_call_arg_many]");
 
         struct function_t *function = NULL;
         HANDLE_ERROR(get_function(c, tree, name, &function));
@@ -457,10 +456,52 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
             return 1;
         }
 
+        int arg_id = 0;
+
+        while (args != NULL)
+        {
+            if (args->variant == 0)
+            {   
+                struct parser_tree_node_t *expr = args->childs[0];
+                ASSERT_NODE(expr, "expression");
+                
+                args = args->childs[1];
+                ASSERT_NODE(args, "fn_call_arg_many");
+
+                char *label = calloc(1, 128);
+                sprintf(label, "%s - %d", function->label, 4 + (int)get_type_size(c, f->ret) + (arg_id + 1) * 4);
+                HANDLE_ERROR(compile_expression(c, tree, f, fc, expr, label, get_type(c, "", "int")));
+                free(label);
+                arg_id++;
+            }
+            else if (args->variant == 1)
+            {
+                struct parser_tree_node_t *expr = args->childs[0];
+                ASSERT_NODE(expr, "expression");
+
+                char *label = calloc(1, 128);
+                sprintf(label, "%s - %d", function->label, 4 + (int)get_type_size(c, f->ret) + (arg_id + 1) * 4);
+                HANDLE_ERROR(compile_expression(c, tree, f, fc, expr, label, get_type(c, "", "int")));
+                free(label);
+                arg_id++;
+
+                args = NULL;
+            }
+            else if (args->variant == 2)
+            {
+                args = NULL;
+            }
+            else
+            {
+                PRINT_ERROR("Unknown fn_call_arg_many variant: %d", args->variant);
+                return 1;
+            }
+        }
+        
         /* 1. need to cast? */
         /* TODO: cast */
 
-        char *call_label = calloc(1, 32);
+        char *call_label = calloc(1, 128);
         sprintf(call_label, "_local%zd", c->unique_id++);
 
         reserve_buffer(c->code, c->code->len + 128);
@@ -525,7 +566,7 @@ result_t compile_mul_expression(struct compiler_instance_t *c,
         ASSERT_NODE(node_2, "mul_expr");
 
         /* create local storage */
-        char *local_label = calloc(1, 32);
+        char *local_label = calloc(1, 128);
         sprintf(local_label, "_local%zd", c->unique_id++);
 
         reserve_buffer(c->vars, c->vars->len + 128);
@@ -601,7 +642,7 @@ result_t compile_add_expression(struct compiler_instance_t *c,
         ASSERT_NODE(node_2, "add_expr");
 
         /* create local storage */
-        char *local_label = calloc(1, 32);
+        char *local_label = calloc(1, 128);
         sprintf(local_label, "_local%zd", c->unique_id++);
 
         reserve_buffer(c->vars, c->vars->len + 128);
@@ -672,7 +713,7 @@ result_t compile_compare_expression(struct compiler_instance_t *c,
         ASSERT_NODE(node_2, "cmp_expr");
 
         /* create local storage */
-        char *local_label = calloc(1, 32);
+        char *local_label = calloc(1, 128);
         sprintf(local_label, "_local%zd", c->unique_id++);
 
         reserve_buffer(c->vars, c->vars->len + 128);
@@ -816,6 +857,98 @@ result_t compile_expression(struct compiler_instance_t *c,
 }
 
 
+result_t register_function_variable_with_label(struct compiler_instance_t *c,
+                                    struct parser_tree_t *tree,
+                                    struct function_t *f,
+                                    struct function_compile_time_t *fc,
+                                    struct parser_tree_node_t *type_node,
+                                    struct parser_tree_node_t *mods_node,
+                                    char *label)
+{
+    (void)f;
+    ASSERT_NODE(type_node, "type");
+    ASSERT_NODE(mods_node, "variable_declaration_mods");
+
+    struct type_t *variable_type = NULL;
+
+    if (type_node->variant == 0)
+    {
+        /* struct/union/enum + name */
+        struct parser_tree_node_t *keyword_node = type_node->childs[0];
+        ASSERT_NODE(keyword_node, "struct_keywords");
+
+        struct parser_tree_node_t *name_node = type_node->childs[1];
+        ASSERT_NODE(name_node, "name");
+
+        char *keyword = get_node_text_no_spaces(tree, keyword_node);
+        char *name = get_node_text_no_spaces(tree, name_node);
+
+        variable_type = get_type(c, keyword, name);
+
+        free(keyword);
+        free(name);
+    }
+    else if (type_node->variant == 1)
+    {
+        /* name */
+        struct parser_tree_node_t *name_node = type_node->childs[0];
+        ASSERT_NODE(name_node, "name");
+
+        char *name = get_node_text_no_spaces(tree, name_node);
+
+        variable_type = get_type(c, "", name);
+
+        free(name);
+    }
+    else
+    {
+        PRINT_ERROR("Unknown <type> node variant");
+        return 1;
+    }
+
+    if (variable_type == NULL)
+    {
+        char *text = get_node_text_no_spaces(tree, type_node);
+        PRINT_ERROR("Unknown type: %s\n", text);
+        free(text);
+        return 1;
+    }
+
+
+    PRINT_INFO("varaible type: %p : %s %s", variable_type, variable_type->keyword, variable_type->name);
+
+    /* decode mods_node */
+    if (mods_node->variant != 5)
+    {
+        PRINT_ERROR("For now, any pointer/array variables are unsupported\n");
+        return 1;
+    }
+
+    struct parser_tree_node_t *variable_name_node = mods_node->childs[0];
+    ASSERT_NODE(variable_name_node, "variable_name");
+
+    char *variable_name = get_node_text_no_spaces(tree, variable_name_node);
+
+    PRINT_INFO("varaible name: %s", variable_name);
+
+    char *label_name = strdup(label);
+
+    reserve_buffer(c->vars, c->vars->len + 128);
+    c->vars->len += sprintf(c->vars->buffer + c->vars->len, "%s:\n", label_name);
+    c->vars->len += sprintf(c->vars->buffer + c->vars->len, ".dd 0\n");
+
+    fc->locals[fc->locals_len++] = (struct variable_t) {
+        .label = label_name,
+        .name = variable_name,
+        .type = variable_type,
+    };
+
+    PRINT_INFO("variable <%s> created!", variable_name);
+
+    return 0;
+}
+
+
 result_t register_function_variable(struct compiler_instance_t *c,
                                     struct parser_tree_t *tree,
                                     struct function_t *f,
@@ -930,13 +1063,13 @@ result_t compile_function_statement(struct compiler_instance_t *c,
         PRINT_INFO("return statement");
 
         /* need to calculate "expression" */
-        char *ret_label = calloc(1, 32);
+        char *ret_label = calloc(1, 128);
         sprintf(ret_label, "%s - %zd", f->label, 4 + get_type_size(c, f->ret));
 
         HANDLE_ERROR(compile_expression(c, tree, f, fc, expr, ret_label, f->ret));
 
-        char *local_tmp1 = calloc(1, 32);
-        char *local_tmp2 = calloc(1, 32);
+        char *local_tmp1 = calloc(1, 128);
+        char *local_tmp2 = calloc(1, 128);
         sprintf(local_tmp1, "_local%zd", c->unique_id++);
         sprintf(local_tmp2, "_local%zd", c->unique_id++);
 
@@ -971,10 +1104,10 @@ result_t compile_function_statement(struct compiler_instance_t *c,
 
         struct parser_tree_node_t *else_block = NULL;
 
-        char *if_label = calloc(1, 32);
-        char *end_label = calloc(1, 32);
-        char *expr_label = calloc(1, 32);
-        char *expr_label_ptr = calloc(1, 32);
+        char *if_label = calloc(1, 128);
+        char *end_label = calloc(1, 128);
+        char *expr_label = calloc(1, 128);
+        char *expr_label_ptr = calloc(1, 128);
         sprintf(if_label, "_local%zd", c->unique_id++);
         sprintf(end_label, "_local%zd", c->unique_id++);
         sprintf(expr_label, "_local%zd", c->unique_id++);
@@ -1041,11 +1174,11 @@ result_t compile_function_statement(struct compiler_instance_t *c,
         struct parser_tree_node_t *body_node = whilestmt->childs[1];
         ASSERT_NODE(body_node, "block");
 
-        char *end_label = calloc(1, 32);
-        char *begin_label = calloc(1, 32);
-        char *check_label = calloc(1, 32);
-        char *expr_label = calloc(1, 32);
-        char *expr_label_ptr = calloc(1, 32);
+        char *end_label = calloc(1, 128);
+        char *begin_label = calloc(1, 128);
+        char *check_label = calloc(1, 128);
+        char *expr_label = calloc(1, 128);
+        char *expr_label_ptr = calloc(1, 128);
         sprintf(end_label, "_local%zd", c->unique_id++);
         sprintf(begin_label, "_local%zd", c->unique_id++);
         sprintf(check_label, "_local%zd", c->unique_id++);
@@ -1249,6 +1382,8 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
     struct parser_tree_node_t *body = node->childs[1];
     ASSERT_NODE(body, "fn_block");
 
+    struct parser_tree_node_t *function_args = NULL;
+
     /* read return type */
     {
 
@@ -1319,6 +1454,9 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
         struct parser_tree_node_t *function_mods_node = mods_node->childs[0];
         ASSERT_NODE(function_mods_node, "variable_declaration_mods_fn");
 
+        function_args = mods_node->childs[1];
+        ASSERT_NODE(function_args, "declaration_fn_args_many");
+
         if (function_mods_node->variant != 1)
         {
             PRINT_ERROR("Function mods node must have 1st variant (others are unsupported for now)");
@@ -1336,8 +1474,102 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
         f->label = function_name;
     }
 
+    if (function_args == NULL)
+    {
+        PRINT_ERROR("Error: [unreachable] function_args is NULL.");
+        return 1;
+    }
+
     /* fill local variables table */
     {
+        ASSERT_NODE(function_args, "declaration_fn_args_many");
+
+        int count = 0;
+        // {
+        //     struct parser_tree_node_t *args = function_args;
+        //     while (args != NULL)
+        //     {
+        //         if (args->variant == 0)
+        //         {
+        //             args = args->childs[1];
+        //             ASSERT_NODE(args, "declaration_fn_args_many");
+        //             count++;
+        //         }
+        //         else if (args->variant == 1)
+        //         {
+        //             args = NULL;
+        //             count++;
+        //         }
+        //         else if (args->variant == 2)
+        //         {
+        //             args = NULL;
+        //         }
+        //         else
+        //         {
+        //             PRINT_ERROR("Unknown declaration_fn_args_many variant: %d", args->variant);
+        //         }
+        //     }
+        // }
+
+        {
+            struct parser_tree_node_t *args = function_args;
+            while (args != NULL)
+            {
+                if (args->variant == 0)
+                {
+                    struct parser_tree_node_t *expr = args->childs[0];
+                    ASSERT_NODE(expr, "fn_variable_declaration");
+                    
+                    args = args->childs[1];
+                    ASSERT_NODE(args, "declaration_fn_args_many");
+
+                    struct parser_tree_node_t *type_node = expr->childs[0];
+                    ASSERT_NODE(type_node, "type");
+                    struct parser_tree_node_t *mods_node = expr->childs[1];
+                    ASSERT_NODE(mods_node, "variable_declaration_mods");
+
+                    char *label = calloc(1, 128);
+                    sprintf(label, "%s - %d", f->label, 4 + (int)get_type_size(c, f->ret) + (count + 1) * 4);
+                     
+                    HANDLE_ERROR(register_function_variable_with_label(c, tree, f, &fc, type_node, mods_node, label));
+                    
+                    free(label);
+                    
+                    count++;
+                }
+                else if (args->variant == 1)
+                {
+                    struct parser_tree_node_t *expr = args->childs[0];
+                    ASSERT_NODE(expr, "fn_variable_declaration");
+                    
+                    args = NULL;
+
+                    struct parser_tree_node_t *type_node = expr->childs[0];
+                    ASSERT_NODE(type_node, "type");
+                    struct parser_tree_node_t *mods_node = expr->childs[1];
+                    ASSERT_NODE(mods_node, "variable_declaration_mods");
+
+                    char *label = calloc(1, 128);
+                    sprintf(label, "%s - %d", f->label, 4 + (int)get_type_size(c, f->ret) + (count + 1) * 4);
+                     
+                    HANDLE_ERROR(register_function_variable_with_label(c, tree, f, &fc, type_node, mods_node, label));
+
+                    free(label);
+                    
+                    count++;
+                }
+                else if (args->variant == 2)
+                {
+                    args = NULL;
+                }
+                else
+                {
+                    PRINT_ERROR("Unknown declaration_fn_args_many variant: %d", args->variant);
+                }
+            }
+        }
+
+        /* using count  */
         // TODO: no arguments for now.
         // f->locals
     }

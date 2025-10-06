@@ -261,7 +261,7 @@ void run(struct spu *s)
 
                 (void)type;
                 (void)ptr;
-                
+
                 VERBOSE_INFO("Error: int command for now is unsopported [%d, %x].\n", type, ptr);
                 break;
             }
