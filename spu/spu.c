@@ -233,6 +233,12 @@ void run(struct spu *s)
         /* load instruction */
         uint32_t ip = ((uint32_t *)s->mem)[0];
         VERBOSE_INFO("IP = %08x\n", ip);
+
+        if (ip > s->mem_size)
+        {
+            fprintf(stderr, "Error: ip is outside of memory bounds.\n");
+            break;
+        }
         
         ssize_t cmd_size = decode_instruction_length(s->mem + ip);
         

@@ -62,6 +62,74 @@ static struct type_t *get_type(struct compiler_instance_t *c, char *keyword, cha
     return NULL;
 }
 
+
+static result_t get_function(struct compiler_instance_t *c,
+                               struct parser_tree_t *tree,
+                               struct parser_tree_node_t *expression_node,
+                               struct function_t **result)
+{
+    assert(c != NULL);
+    ASSERT_NODE(expression_node, "expression_name");
+
+    if (expression_node->variant == 0)
+    {
+        PRINT_ERROR("Unsupported variant of expression_name: %d", expression_node->variant);
+        *result = NULL;
+        return 1;
+    }
+    else if (expression_node->variant == 1)
+    {
+        PRINT_ERROR("Unsupported variant of expression_name: %d", expression_node->variant);
+        *result = NULL;
+        return 1;
+    }
+    else if (expression_node->variant == 2)
+    {
+        struct function_t *variable = NULL;
+        char *name = get_node_text_no_spaces(tree, expression_node);
+        for (size_t i = 0; i < c->functions_len; ++i)
+        {
+            if (strcmp(name, c->functions[i].label) == 0)
+            {
+                variable = c->functions + i;
+                break;
+            }
+        }
+        if (variable == NULL)
+        {
+            PRINT_ERROR("Cannot find variable <%s>", name);
+            for (size_t i = 0; i < c->functions_len; ++i)
+            {
+                printf("func> %s\n", c->functions[i].label);
+            }
+            if (c->functions_len == 0)
+            {
+                printf("There is no functions at all!\n");
+            }
+            
+            free(name);
+            
+            *result = NULL;
+            return 1;
+        }
+        
+        free(name);
+
+        *result = variable;
+        return 0;
+    }
+    else
+    {
+        PRINT_ERROR("Unknown variant of expression_name: %d", expression_node->variant);
+        *result = NULL;
+        return 1;
+    }
+    PRINT_ERROR("This error is mostly impossible, in get_function function type maching was wrong");
+    *result = NULL;
+    return 1;
+}
+
+
 static result_t get_variable(struct compiler_instance_t *c,
                                struct parser_tree_t *tree,
                                struct function_t *f,
@@ -369,8 +437,39 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
     }
     else if (node->variant == 3)
     {
-        PRINT_ERROR("Not implemented: <functioncall term> for now");
-        return 1;
+        struct parser_tree_node_t *fn_call_node = node->childs[0];
+        ASSERT_NODE(fn_call_node, "fn_call");
+
+        struct parser_tree_node_t *name = fn_call_node->childs[0];
+        ASSERT_NODE(name, "expression_name");
+
+        struct parser_tree_node_t *args = fn_call_node->childs[1];
+        ASSERT_NODE(args, "fn_call_arg_many");
+
+        PRINT_WARNING("Ignoring any arguments, if them was specified [in fn_call_arg_many]");
+
+        struct function_t *function = NULL;
+        HANDLE_ERROR(get_function(c, tree, name, &function));
+
+        if (function == NULL)
+        {
+            PRINT_ERROR("Not found function");
+            return 1;
+        }
+
+        /* 1. need to cast? */
+        /* TODO: cast */
+
+        char *call_label = calloc(1, 32);
+        sprintf(call_label, "_local%zd", c->unique_id++);
+
+        reserve_buffer(c->code, c->code->len + 128);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "LEA %s - 4, %s\n", function->label, call_label);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "$LEA %s, %s\n", "_zero", function->label);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "%s:\n", call_label);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "MOV %s, %s - %zd, %s\n", result_label, function->label, 4 + get_type_size(c, function->ret), "_size4");
+        
+        return 0;
     }
     else if (node->variant == 4)
     {
@@ -836,6 +935,22 @@ result_t compile_function_statement(struct compiler_instance_t *c,
 
         HANDLE_ERROR(compile_expression(c, tree, f, fc, expr, ret_label, f->ret));
 
+        char *local_tmp1 = calloc(1, 32);
+        char *local_tmp2 = calloc(1, 32);
+        sprintf(local_tmp1, "_local%zd", c->unique_id++);
+        sprintf(local_tmp2, "_local%zd", c->unique_id++);
+
+        reserve_buffer(c->vars, c->vars->len + 128);
+        c->vars->len += sprintf(c->vars->buffer + c->vars->len, "%s:\n", local_tmp1);
+        c->vars->len += sprintf(c->vars->buffer + c->vars->len, ".dd 0\n");
+        c->vars->len += sprintf(c->vars->buffer + c->vars->len, "%s:\n", local_tmp2);
+        c->vars->len += sprintf(c->vars->buffer + c->vars->len, ".dd 0\n");
+                
+        reserve_buffer(c->code, c->code->len + 128);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "LEA %s, %s\n", local_tmp1, "_size4");
+        c->code->len += sprintf(c->code->buffer + c->code->len, "LEA %s, %s - 4\n", local_tmp2, f->label);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "$MOV %s, %s, %s\n", "_zero", local_tmp2, local_tmp1);
+
         free(ret_label);
 
         return 0;
@@ -1125,7 +1240,7 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
 
     PRINT_INFO("function!");
 
-    struct function_t f = {};
+    struct function_t *f = &c->functions[c->functions_len++];
     struct function_compile_time_t fc = {};
 
     struct parser_tree_node_t *declaration = node->childs[0];
@@ -1217,27 +1332,27 @@ result_t compile_function(struct compiler_instance_t *c, struct parser_tree_t *t
 
         PRINT_INFO("function name: %s", function_name);
 
-        f.ret = return_type;
-        f.label = function_name;
+        f->ret = return_type;
+        f->label = function_name;
     }
 
     /* fill local variables table */
     {
         // TODO: no arguments for now.
-        // f.locals
+        // f->locals
     }
 
     reserve_buffer(c->code, c->code->len + 512);
-    if (f.ret != NULL)
+    if (f->ret != NULL)
     {
         c->code->len += sprintf(c->code->buffer + c->code->len, "; return value\n");
         c->code->len += sprintf(c->code->buffer + c->code->len, ".dd 0xBEBEBEBE\n");
     }
     c->code->len += sprintf(c->code->buffer + c->code->len, "; return address\n");
     c->code->len += sprintf(c->code->buffer + c->code->len, ".dd 0xBEBEBEBE\n");
-    c->code->len += sprintf(c->code->buffer + c->code->len, "%s:\n", f.label);
+    c->code->len += sprintf(c->code->buffer + c->code->len, "%s:\n", f->label);
 
-    HANDLE_ERROR(compile_block(c, tree, &f, &fc, body));
+    HANDLE_ERROR(compile_block(c, tree, f, &fc, body));
 
     return 0;
 }

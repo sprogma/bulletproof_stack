@@ -534,6 +534,7 @@ int build_program(char **lines, ssize_t lines_len, struct output_buffer *out)
         {
             /* compilation directives */
             ssize_t written = 0;
+            reserve_output_buffer(out, out->len + MAX_MACRO_INSTRUCTION_LENGTH);
             encode_directive(&t, s, out->len, out->buffer + out->len, &written);
             out->len += written;
         }
