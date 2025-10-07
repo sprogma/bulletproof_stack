@@ -792,10 +792,23 @@ result_t compile_compare_expression(struct compiler_instance_t *c,
             c->code->len += sprintf(c->code->buffer + c->code->len, "ALL %s, %s, %s\n", result_label, result_label, "_size4");
             c->code->len += sprintf(c->code->buffer + c->code->len, "INV %s, %s, %s\n", result_label, result_label, "_size4");
         }
+        else if (node_op->variant == 4)
+        {
+            /* < */
+            reserve_buffer(c->code, c->code->len + 128);
+            c->code->len += sprintf(c->code->buffer + c->code->len, "LT %s, %s, %s, %s\n", result_label, result_label, local_label, "_size4");
+        }
+        else if (node_op->variant == 5)
+        {
+            /* > */
+            reserve_buffer(c->code, c->code->len + 128);
+            c->code->len += sprintf(c->code->buffer + c->code->len, "LT %s, %s, %s, %s\n", result_label, result_label, local_label, "_size4");
+            c->code->len += sprintf(c->code->buffer + c->code->len, "INV %s, %s, %s\n", result_label, result_label, "_size4");
+        }
         else
         {
             /* other */
-            PRINT_ERROR("All other comparsions other than == and != isn't supported for now.");
+            PRINT_ERROR("All other comparsions other than == and != AND < AND > isn't supported for now.");
             return 1;
         }
 

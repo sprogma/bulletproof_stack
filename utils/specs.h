@@ -103,6 +103,9 @@
 //! (FLAG: size_t*) (DST: void*) (SRC: void*) (COUNT: size_t*) 
 #define O_CMOV               (0b01000 | ARG_NUM_4)
 
+//! (FLAG: size_t*) (a: void*) (b: void*) (COUNT: size_t*) 
+#define O_LT                 (0b01001 | ARG_NUM_4)
+
 
 // //! (FLAG: size_t*) (DST: abs_void*) (SRC: void*) (COUNT: size_t*)
 // #define O_CMOV               (0b01000 | ARG_NUM_4)
@@ -155,6 +158,7 @@ static const struct command native_commands[] = {
     {"MUL", 4, 6 | ARG_NUM_4},
     {"DIV", 4, 7 | ARG_NUM_4},
     {"CMOV", 4, 8 | ARG_NUM_4},
+    {"LT", 4, 9 | ARG_NUM_4},
 };
 
                                                                                 

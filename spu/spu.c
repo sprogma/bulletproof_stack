@@ -113,9 +113,17 @@ void large_integer_sub(BYTE *s, BYTE *a, size_t size)
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
     {
-        int res = s[i] - a[i] + carry;
+        int res = (int)s[i] - (int)a[i] + carry;
+        if (res < 0)
+        {
+            res += 256;
+            carry = -1;
+        }
+        else
+        {
+            carry = 0;
+        }
         s[i] = res;
-        carry = res / 256;
     }
 }
 
@@ -187,6 +195,18 @@ void large_integer_div(BYTE *s, BYTE *a, size_t size)
     }
     fprintf(stderr, "-----: not implemented: integer division\n");
     abort();
+}
+
+int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
+{
+    for (size_t x = size - 1; x < size; --x)
+    {
+        if (a[x] != b[x])
+        {
+            return (a[x] < b[x] ? -1 : 0);
+        }
+    }
+    return 0;
 }
 
 
@@ -506,6 +526,16 @@ void run(struct spu *s)
                 {
                     memmove(s->mem + a, s->mem + b, cnt);
                 }
+                break;
+            }
+            case O_LT:
+            {
+                READ_DST_A_B_COUNT
+
+                VERBOSE_INFO("LT: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+                cnt = INT_FROM(s, cnt);
+
+                INT_FROM(s, dst) = large_integer_less(s->mem + a, s->mem + b, cnt);
                 break;
             }
             case O_ADD:
