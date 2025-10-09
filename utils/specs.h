@@ -9,17 +9,6 @@
 
 
 
-/*******************************************************
-//! 1 bit for arguments size:
-//! 0 - 2 byte (WORD) argument size
-//! 1 - 4 byte (DWORD) argument size
-//!
-//! 2 bits for arguments number
-//! binary number means exactly number of arguments
-//!
-//! 5 bits for opcode
-********************************************************/
-
 #define ARG_PTR_OPCODE_MASK  0b10000000
 #define ARG_PTR              0b00000000
 #define ARG_PTR_ON_PTR       0b10000000
@@ -124,15 +113,18 @@ struct command
     const char *name;
     const int nargs;
     const int code;
+    const int const_first_argument;
 };
 
 
 
 
 static const struct command native_commands[] = {
-#define INSTRUCTION(opcode_macro, name, nargs, opcode, handler) {name, nargs, opcode},
-#include "instructions.inc"
-#undef INSTRUCTION
+
+    #define INSTRUCTION(opcode_macro, name, nargs, const_first_argument, opcode, handler) {name, nargs, opcode, const_first_argument},
+    #include "instructions.inc"
+    #undef INSTRUCTION
+    
 };
 
                                                                                 

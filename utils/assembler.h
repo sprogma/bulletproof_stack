@@ -66,12 +66,8 @@ result_t read_binary_file(const char *filename, BYTE **buffer, int64_t *buffer_l
 /*
  * get instruction length from line
  */
+/* located in helping_functions.c */
 int64_t decode_instruction_length(BYTE *line);
-
-/*
- * compile program into buffer out
- */
-result_t build_program(char **lines, int64_t lines_len, struct output_buffer *out);
 
 /*
  * decompile program into buffer out
@@ -94,10 +90,15 @@ result_t print_buffer(struct output_buffer *b, char *format_string, ...);
  */
 result_t copy_to_end(struct output_buffer *b, void *data, size_t size);
 
-/*
- * return pointer to next nonspace character
- */
+
+/* helping functions */
+int64_t decode_instruction_length(BYTE *line);
+int isstartkey(int c);
+int iskey(int c);
+int is_all_digits(char *s, char *e);
 char *skip_leading_spaces(char *s);
+void str_trim(char **p_s, char **p_e);
+result_t parse_integer(char *s, char *e, int32_t *result);
 
 
 #endif

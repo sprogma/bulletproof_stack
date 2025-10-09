@@ -274,9 +274,11 @@ void run(struct spu *s)
         BYTE opcode = s->mem[ip];
         switch (opcode & (~ARG_PTR_OPCODE_MASK))
         {
-            #define INSTRUCTION(opcode_macro, name, nargs, opcode, handler) case opcode: {handler} break;
+        
+            #define INSTRUCTION(opcode_macro, name, nargs, const_first_argument, opcode, handler) case opcode: {handler} break;
             #include "../utils/instructions.inc"
             #undef INSTRUCTION
+            
             default:
             {
                 PRINT_ERROR("unkown opcode: 0x%02x [from 0x%02x] at %08x", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode, ip);

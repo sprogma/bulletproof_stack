@@ -3,7 +3,7 @@
 #include "malloc.h"
 #include "assert.h"
 
-#include "../utils/assembler.h"
+#include "./assembler_internal.h"
 #include "../logger/logger.h"
 
 
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     HANDLE_ERROR(read_file(in_file, &lines, &lines_len));
 
     
-    struct output_buffer b = {NULL, 0, 0};
+    struct output_buffer b = {{NULL}, 0, 0};
     HANDLE_ERROR(build_program(lines, lines_len, &b));
     
     /* free input text */
