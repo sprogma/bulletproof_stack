@@ -12,7 +12,7 @@
 
 
 #ifdef VERBOSE
-    #define VERBOSE_INFO(...) printf(__VA_ARGS__)
+    #define VERBOSE_INFO(...) PRINT_INFO(__VA_ARGS__)
 #else
     #define VERBOSE_INFO(...)
 #endif
@@ -21,6 +21,7 @@
 #define NOT_DEFINE_INTEGER_TYPES
 #include "../utils/assembler.h"
 #include "../utils/specs.h"
+#include "../logger/logger.h"
 #include "spu.h"
 
 
@@ -56,13 +57,18 @@ void read_port(struct spu *s, int32_t port, BYTE *data, size_t count)
 
 void dump(BYTE *s, size_t from, size_t to)
 {
+    const int STEP = 16;
     size_t i = from;
-    printf("         _ %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X _\n", 
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15); // TODO: WHY?
+    printf("         _ ");
+    for (int i = 0; i < STEP; ++i)
+    {
+        printf("%02X ", i); // TODO: WHY?
+    }
+    printf(" _\n");
     while (i <= to)
     {
         printf("%08x : ", (int)i);
-        for (int x = 0; x < 16; ++x)
+        for (int x = 0; x < STEP; ++x)
         {
             printf("%02x ", s[i]);
             i++;
@@ -77,9 +83,9 @@ void large_integer_inc(BYTE *s, size_t size)
     int carry = 1;
     for (size_t i = 0; i < size && carry != 0; ++i)
     {
-        int res = s[i] + carry;
-        s[i] = res; // TODO: make truncation explicit
-        carry = res >> 8; // TODO: sizeof(char) * CHAR_BIT
+        uint32_t res = s[i] + carry;
+        s[i] = (BYTE)res;
+        carry = res >> (sizeof(BYTE) * CHAR_BIT);
     }
 }
 
@@ -101,9 +107,9 @@ void large_integer_add(BYTE *s, BYTE *a, size_t size)
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
     {
-        int res = s[i] + a[i] + carry;
+        uint32_t res = s[i] + a[i] + carry;
         s[i] = res;
-        carry = res / 256; // TODO: 256?
+        carry = res >> (sizeof(BYTE) * CHAR_BIT);
     }
 }
 
@@ -127,8 +133,6 @@ void large_integer_sub(BYTE *s, BYTE *a, size_t size)
     }
 }
 
-
-// TODO: uint64_t as base?
 
 void large_integer_mul(BYTE *s, BYTE *a, size_t size)
 {
@@ -163,9 +167,9 @@ void large_integer_mul(BYTE *s, BYTE *a, size_t size)
         int mul = tmp[k];
         for (size_t i = 0; i < size - k; ++i)
         {
-            int res = s[i + k] + a[i] * mul + carry;
+            uint32_t res = s[i + k] + a[i] * mul + carry;
             s[i + k] = res;
-            carry = res / 256;
+            carry = res >> (sizeof(BYTE) * CHAR_BIT);
         }
     }
     
@@ -195,7 +199,8 @@ void large_integer_div(BYTE *s, BYTE *a, size_t size)
         *(int8_t *)s = (*(int8_t *)s) / (*(int8_t *)a);
         return;
     }
-    fprintf(stderr, "-----: not implemented: integer division\n");
+    
+    PRINT_ERROR("-----: not implemented: integer division");
     abort();
 }
 
@@ -215,17 +220,6 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
 #define GET_ARG(s, ip, id) (*((int32_t *)((s)->mem + ip + 1 + 4 * (id))))
 #define INT_FROM(s, pos) (*((int32_t *)((s)->mem + (pos))))
 
-
-
-// instructions.inc
-// INSTRUCTION(MOV, 2, DO(OUT = IN))
-// ...
-
-// #define INSTRUCTION(name, count, block) else if (strcmp(command_name, #name) == 0)...
-// #include "instruction.inc"
-
-// TODO: don't, just don't
-// X-macro
 #define READ_DST_SRC_COUNT \
     int32_t dst = GET_ARG(s, ip, 0) + ip; \
     int32_t src = GET_ARG(s, ip, 1) + ip; \
@@ -268,7 +262,7 @@ void run(struct spu *s)
 
         if (ip > s->mem_size)
         {
-            fprintf(stderr, "Error: ip is outside of memory bounds.\n");
+            PRINT_ERROR("ip is outside of memory bounds.");
             break;
         }
         
@@ -280,341 +274,60 @@ void run(struct spu *s)
         BYTE opcode = s->mem[ip];
         switch (opcode & (~ARG_PTR_OPCODE_MASK))
         {
-            case O_NOP:
-            {
-                /* step to next command */
-                VERBOSE_INFO("NOP\n");
-                break;
-            }
-            case O_INT:
-            {
-                int32_t type = GET_ARG(s, ip, 0);
-                int32_t ptr  = GET_ARG(s, ip, 1) + ip;
-
-                (void)type;
-                (void)ptr;
-
-                VERBOSE_INFO("Error: int command for now is unsopported [%d, %x].\n", type, ptr);
-                break;
-            }
-            case O_MOV_CONST:
-            {
-                uint32_t value = GET_ARG(s, ip, 0);
-                int32_t ptr    = GET_ARG(s, ip, 1) + ip;
-
-                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
-                {
-                    VERBOSE_INFO("ptr = *%08x=%08x\n", ptr, INT_FROM(s, ptr));
-                    ptr = INT_FROM(s, ptr);
-                }
-
-                VERBOSE_INFO("MOV_CONST set to %08x from %08x\n", ptr, value);
-                INT_FROM(s, ptr) = value;
-                break;
-            }
-            case O_LEA:
-            {
-                int32_t dst = GET_ARG(s, ip, 0) + ip;
-                int32_t ptr = GET_ARG(s, ip, 1) + ip;
-
-                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
-                {
-                    VERBOSE_INFO("dest = *%08x=%08x\n", dst, INT_FROM(s, dst));
-                    dst = INT_FROM(s, dst);
-                }
-
-                VERBOSE_INFO("LEA set to %08x = %08x\n", dst, ptr);
-                INT_FROM(s, dst) = ptr;
-                break;
-            }
-            case O_MOV:
-            {
-                READ_DST_SRC_COUNT
-                
-                VERBOSE_INFO("MOV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
-                memmove(s->mem + dst, s->mem + src, INT_FROM(s, cnt));
-                break;
-            }
-            case O_INV:
-            {
-                READ_DST_SRC_COUNT
-
-                VERBOSE_INFO("INV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-                
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    s->mem[dst + i] = ~s->mem[src + i];
-                }
-                break;
-            }
-            case O_NEG:
-            {
-                READ_DST_SRC_COUNT  
-
-                VERBOSE_INFO("NEG: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    s->mem[dst + i] = ~s->mem[src + i];
-                }
-                large_integer_inc(s->mem + dst, cnt);
-                break;
-            }
-            case O_INC:
-            {
-                READ_DST_SRC_COUNT  
-
-                VERBOSE_INFO("INC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                if (dst != src)
-                {
-                    memcpy(s->mem + dst, s->mem + src, cnt);
-                }
-                large_integer_inc(s->mem + dst, cnt);
-                break;
-            }
-            case O_DEC:
-            {
-                READ_DST_SRC_COUNT  
-
-                VERBOSE_INFO("DEC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                if (dst != src)
-                {
-                    memcpy(s->mem + dst, s->mem + src, cnt);
-                }
-                large_integer_dec(s->mem + dst, cnt);
-                break;
-            }
-            case O_ALL:
-            {
-                READ_DST_SRC_COUNT  
-
-                VERBOSE_INFO("ALL: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                BYTE total = 0xFF;
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    total &= s->mem[src + i];
-                }
-                INT_FROM(s, dst) = (total == 0xFF ? 0xFFFFFFFF : 0);
-                break;
-            }
-            case O_ANY:
-            {
-                READ_DST_SRC_COUNT  
-
-                VERBOSE_INFO("ANY: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                BYTE total = 0;
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    total |= s->mem[src + i];
-                }
-                INT_FROM(s, dst) = (total == 0 ? 0 : 0xFFFFFFFF);
-                break;
-            }
-            case O_CLEA:
-            {            
-                int32_t flg = GET_ARG(s, ip, 0) + ip;
-                int32_t dst = GET_ARG(s, ip, 1) + ip;
-                int32_t ptr = GET_ARG(s, ip, 2) + ip;
-
-                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
-                {
-                    VERBOSE_INFO("dest = *%08x=%08x  flag = *%08x=%08x\n", dst, INT_FROM(s, dst), flg, INT_FROM(s, flg));
-                    flg = INT_FROM(s, flg);
-                    dst = INT_FROM(s, dst);
-                }
-
-                VERBOSE_INFO("CLEA set to %08x = %08x IF FLAG from %08x=%08x\n", dst, ptr, flg, INT_FROM(s, flg));
-                if (INT_FROM(s, flg) != 0)
-                {
-                    INT_FROM(s, dst) = ptr;
-                }
-                break;
-            }
-            case O_IN:
-            {            
-                int32_t port  = GET_ARG(s, ip, 0);
-                int32_t ptr   = GET_ARG(s, ip, 1) + ip;
-                int32_t count = GET_ARG(s, ip, 2) + ip;
-
-                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
-                {
-                    VERBOSE_INFO("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
-                    ptr = INT_FROM(s, ptr);
-                    count = INT_FROM(s, count);
-                }
-
-                VERBOSE_INFO("IN read from port %08x data to %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
-                read_port(s, port, s->mem + ptr, INT_FROM(s, count));
-                break;
-            }
-            case O_OUT:
-            {            
-                int32_t port  = GET_ARG(s, ip, 0);
-                int32_t ptr   = GET_ARG(s, ip, 1) + ip;
-                int32_t count = GET_ARG(s, ip, 2) + ip;
-
-                if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
-                {
-                    VERBOSE_INFO("ptr = *%08x=%08x  count = *%08x=%08x\n", ptr, INT_FROM(s, ptr), count, INT_FROM(s, count));
-                    ptr = INT_FROM(s, ptr);
-                    count = INT_FROM(s, count);
-                }
-
-                VERBOSE_INFO("OUT send to port %08x data from %08x of count *%08x=%08x\n", port, ptr, count, INT_FROM(s, count));
-                send_port(s, port, s->mem + ptr, INT_FROM(s, count));
-                break;
-            }
-            case O_EQ:
-            {
-                READ_DST_A_B_COUNT  
-
-                VERBOSE_INFO("EQ: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    s->mem[dst + i] = ~(s->mem[a + i] ^ s->mem[b + i]);
-                }
-                break;
-            }
-            case O_OR:
-            {
-                READ_DST_A_B_COUNT  
-
-                VERBOSE_INFO("OR: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    s->mem[dst + i] = s->mem[a + i] | s->mem[b + i];
-                }
-                break;
-            }
-            case O_AND:
-            {
-                READ_DST_A_B_COUNT  
-
-                VERBOSE_INFO("AND: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    s->mem[dst + i] = s->mem[a + i] & s->mem[b + i];
-                }
-                break;
-            }
-            case O_XOR:
-            {
-                READ_DST_A_B_COUNT  
-
-                VERBOSE_INFO("XOR: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                for (ssize_t i = 0; i < cnt; ++i)
-                {
-                    s->mem[dst + i] = s->mem[a + i] ^ s->mem[b + i];
-                }
-                break;
-            }
-            case O_CMOV:
-            {
-                READ_DST_A_B_COUNT
-
-                VERBOSE_INFO("CMOV: set to %08x from %08x of length *%08x=%08x ONLY IF %08x=%08x != 0\n", a, b, cnt, INT_FROM(s, cnt), dst, INT_FROM(s, dst));
-                cnt = INT_FROM(s, cnt);
-                dst = INT_FROM(s, dst);
-
-                if (dst != 0)
-                {
-                    memmove(s->mem + a, s->mem + b, cnt);
-                }
-                break;
-            }
-            case O_LT:
-            {
-                READ_DST_A_B_COUNT
-
-                VERBOSE_INFO("LT: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                INT_FROM(s, dst) = large_integer_less(s->mem + a, s->mem + b, cnt);
-                break;
-            }
-            case O_ADD:
-            {
-                READ_DST_A_B_COUNT
-
-                VERBOSE_INFO("ADD: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                if (dst != a)
-                {
-                    memcpy(s->mem + dst, s->mem + a, cnt);
-                }
-                large_integer_add(s->mem + dst, s->mem + b, cnt);
-                break;
-            }
-            case O_SUB:
-            {
-                READ_DST_A_B_COUNT
-
-                VERBOSE_INFO("SUB: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                if (dst != a)
-                {
-                    memcpy(s->mem + dst, s->mem + a, cnt);
-                }
-                large_integer_sub(s->mem + dst, s->mem + b, cnt);
-                break;
-            }
-            case O_MUL:
-            {
-                READ_DST_A_B_COUNT
-
-                VERBOSE_INFO("MUL: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                if (dst != a)
-                {
-                    memcpy(s->mem + dst, s->mem + a, cnt);
-                }
-                large_integer_mul(s->mem + dst, s->mem + b, cnt);
-                break;
-            }
-            case O_DIV:
-            {
-                READ_DST_A_B_COUNT
-
-                VERBOSE_INFO("DIV: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-                cnt = INT_FROM(s, cnt);
-
-                if (dst != a)
-                {
-                    memcpy(s->mem + dst, s->mem + a, cnt);
-                }
-                large_integer_div(s->mem + dst, s->mem + b, cnt);
-                break;
-            }
+            #define INSTRUCTION(opcode, handler) case opcode: {handler} break;
+            #include "../utils/instructions.inc"
+            #undef INSTRUCTION
             default:
             {
-                fprintf(stderr, "Error: unkown opcode: 0x%02x [from 0x%02x] at %08x\n", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode, ip);
+                PRINT_ERROR("unkown opcode: 0x%02x [from 0x%02x] at %08x", (opcode & (~ARG_PTR_OPCODE_MASK)), opcode, ip);
                 return;
             }
         }
     }
 }
 
+
+static result_t allocate_memory(struct spu *s, size_t memsize)
+{
+    s->mem_size = memsize;
+    #ifdef _WIN32
+        // size_t min_size = GetLargePageMinimum();
+        // s.mem_size /= min_size;
+        // s.mem_size *= min_size;
+        // s.mem_size += min_size;
+        // printf("%zu\n", s.mem_size);
+        s->mem = VirtualAlloc(NULL, s->mem_size, MEM_COMMIT, PAGE_READWRITE); // MEM_LARGE_PAGES
+        if (s->mem == NULL)
+        {
+            PRINT_ERROR("Memory allocation denied: %ld", GetLastError());
+            return 1;
+        }
+    #else
+        s->mem = malloc(s->mem_size);
+        if (s.mem == NULL)
+        {
+            PRINT_ERROR("Memory allocation denied");
+            return 1;
+        }
+    #endif
+    
+    memset(s->mem, 0, s->mem_size);
+    return 0;
+}
+
+static result_t load_image(struct spu *s, char *filename, size_t load_address)
+{
+    struct stat file_stat;
+    FILE *f = fopen(filename, "rb");
+    if (fstat(fileno(f), &file_stat) != 0)
+    {
+        PRINT_ERROR("cannot open/find image %s", filename);
+        return 1;
+    }
+    ssize_t len = fread(s->mem + load_address, 1, file_stat.st_size, f);
+    PRINT_INFO("image loaded by offset %zu, read %zu bytes", load_address, len);
+    fclose(f);
+}
 
 int main(int argc, char **argv)
 {
@@ -629,18 +342,16 @@ int main(int argc, char **argv)
             {
                 if (load_spu_port_mapping(&s, argv[i + 1]) != 0)
                 {
-                    fprintf(stderr, "load_spu_port_mapping error\n");
+                    PRINT_ERROR("load_spu_port_mapping error");
                     return 1;
                 }
-
-                printf("x...\n");
 
                 i += 1; /* skip N parameters of -map flag */
                 continue;
             }
             else
             {
-                fprintf(stderr, "Error: -map flag wasn't followed by mapping string\n");
+                PRINT_ERROR("-map flag wasn't followed by mapping string");
                 return 1;
             }
         }
@@ -648,7 +359,7 @@ int main(int argc, char **argv)
         {
             if (s.mem != NULL)
             {
-                fprintf(stderr, "Error: -mem must be specified before any action which loads memory (for example -image flag) or there is two -mem flags\n");
+                PRINT_ERROR("-mem must be specified before any action which loads memory (for example -image flag) or there is two -mem flags");
                 return 1;
             }
             if (i + 1 < argc)
@@ -657,7 +368,7 @@ int main(int argc, char **argv)
                 size_t size = strtoull(argv[i + 1], &end, 0);
                 if (*end != '\0')
                 {
-                    fprintf(stderr, "Error: memory must be unsigned integer - memory size in bytes.");
+                    PRINT_ERROR("memory must be unsigned integer - memory size in bytes.");
                     return 1;
                 }
                 s.mem_size = size;
@@ -667,7 +378,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                fprintf(stderr, "Error: -mem flag wasn't followed by memory size in bytes\n");
+                PRINT_ERROR("-mem flag wasn't followed by memory size in bytes");
                 return 1;
             }
         }
@@ -675,59 +386,31 @@ int main(int argc, char **argv)
         {
             if (i + 2 >= argc)
             {
-                fprintf(stderr, "Error: -image flag wasn't followed by image offset in bytes, and by path to file\n");
+                PRINT_ERROR("-image flag wasn't followed by image offset in bytes, and by path to file");
                 return 1;
             }
             if (s.mem == NULL)
             {
                 if (s.mem_size == 0)
                 {
-                    printf("Using default memory size: 64MB\n");
+                    PRINT_INFO("Using default memory size: 64MB");
                     s.mem_size = 64 * 1024 * 1024;
                 }
-                #ifdef _WIN32
-                    // size_t min_size = GetLargePageMinimum();
-                    // s.mem_size /= min_size;
-                    // s.mem_size *= min_size;
-                    // s.mem_size += min_size;
-                    // printf("%zu\n", s.mem_size);
-                    s.mem = VirtualAlloc(NULL, s.mem_size, MEM_COMMIT, PAGE_READWRITE); // MEM_LARGE_PAGES
-                    if (s.mem == NULL)
-                    {
-                        printf("Memory allocation denied: %ld\n", GetLastError());
-                        return 1;
-                    }
-                #else
-                    s.mem = malloc(s.mem_size);
-                    if (s.mem == NULL)
-                    {
-                        printf("Memory allocation denied\n");
-                        return 1;
-                    }
-                #endif
-                memset(s.mem, 0, s.mem_size);
+                allocate_memory(&s, s.mem_size);
             }
+            
             /* load image into given address */
             char *end = NULL;
             size_t load_address = strtoull(argv[i + 1], &end, 0);
             if (*end != '\0')
             {
-                fprintf(stderr, "Error: image offset must be unsigned integer.");
+                PRINT_ERROR("image offset must be unsigned integer.");
                 return 1;
             }
             char *image_filename = argv[i + 2];
-            {
-                struct stat file_stat;
-                FILE *f = fopen(image_filename, "rb");
-                if (fstat(fileno(f), &file_stat) != 0)
-                {
-                    fprintf(stderr, "cannot open/find image %s\n", image_filename);
-                    return 1;
-                }
-                ssize_t len = fread(s.mem + load_address, 1, file_stat.st_size, f);
-                printf("image loaded by offset %zu, read %zu bytes\n", load_address, len);
-                fclose(f);
-            }
+
+
+            load_image(&s, image_filename, load_address);
 
             i += 2; /* skip N parameters of -image flag */
             continue;
@@ -736,7 +419,7 @@ int main(int argc, char **argv)
         {
             if (entry_ptr != 0)
             {
-                fprintf(stderr, "Error: -entry was passed twice; previous value: %zu\n", entry_ptr);
+                PRINT_ERROR("-entry was passed twice; previous value: %zu", entry_ptr);
                 return 1;
             }
             if (i + 1 < argc)
@@ -745,12 +428,12 @@ int main(int argc, char **argv)
                 size_t size = strtoull(argv[i + 1], &end, 0);
                 if (*end != '\0')
                 {
-                    fprintf(stderr, "Error: entry offset must be unsigned integer - entry offset in bytes.");
+                    PRINT_ERROR("entry offset must be unsigned integer - entry offset in bytes.");
                     return 1;
                 }
                 if (size == 0)
                 {
-                    fprintf(stderr, "Error: entry offset must be non zero [zero is IP, so it is some wrong usage].");
+                    PRINT_ERROR("entry offset must be non zero [zero is IP, so it is some wrong usage].");
                     return 1;
                 }
                 entry_ptr = size;
@@ -760,20 +443,20 @@ int main(int argc, char **argv)
             }
             else
             {
-                fprintf(stderr, "Error: -entry flag wasn't followed by entry offset size in bytes\n");
+                PRINT_ERROR("-entry flag wasn't followed by entry offset size in bytes");
                 return 1;
             }
         }
         else
         {
-            printf("Unknown flag: %s\n", argv[i]);
+            PRINT_ERROR("Unknown flag: %s", argv[i]);
             return 1;
         }
     }
     
     if (s.mem == NULL)
     {
-        fprintf(stderr, "Error: no images provided.\n");
+        PRINT_ERROR("no images provided.");
         return 1;
     }
 
@@ -781,19 +464,19 @@ int main(int argc, char **argv)
     if (entry_ptr == 0)
     {
         ((uint32_t *)s.mem)[0] = 0x4000;
-        printf("Using default entry pointer: %u\n", ((uint32_t *)s.mem)[0]);
+        PRINT_INFO("Using default entry pointer: %u", ((uint32_t *)s.mem)[0]);
     }
     else
     {
         if (entry_ptr >= s.mem_size)
         {
-            fprintf(stderr, "Error: entry offset is outsize of SPU memory. [%zu > %zu]\n", entry_ptr, s.mem_size);
+            PRINT_ERROR("entry offset is outsize of SPU memory. [%zu > %zu]", entry_ptr, s.mem_size);
             return 1;
         }
         ((uint32_t *)s.mem)[0] = entry_ptr;
     }
 
-    printf("Running...\n");
+    PRINT_INFO("Running...");
 
     run(&s);
     

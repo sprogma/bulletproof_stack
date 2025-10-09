@@ -14,12 +14,13 @@
 #define NOT_DEFINE_INTEGER_TYPES
 #include "../utils/assembler.h"
 #include "../utils/specs.h"
+#include "../logger/logger.h"
 #include "port_mappings/map.h"
 #include "spu.h"
 
 
 
-int create_port_mapping(struct spu *s, struct port_mapping_t *mapping, int port, char *command)
+result_t create_port_mapping(struct spu *s, struct port_mapping_t *mapping, int port, char *command)
 {
     if (strncmp(command, "tcp", 3) == 0)
     {
@@ -43,16 +44,16 @@ int create_port_mapping(struct spu *s, struct port_mapping_t *mapping, int port,
         return create_port_mapping_video(s, mapping, port, command);
     }
     #endif
-    fprintf(stderr, "Unknown port mapping command: %s\n", command);
+    PRINT_ERROR("Unknown port mapping command: %s", command);
     return 1;
 }
 
 
-int load_spu_port_mapping(struct spu *s, char *mapping_scheme)
+result_t load_spu_port_mapping(struct spu *s, char *mapping_scheme)
 {
     if (s->port_mappings_parsed != 0)
     {
-        fprintf(stderr, "ERROR: Port mappings were given twice\n");
+        PRINT_ERROR("Port mappings were given twice");
         return 1;
     }
     s->port_mappings_parsed = 1;
@@ -69,8 +70,7 @@ int load_spu_port_mapping(struct spu *s, char *mapping_scheme)
         }
     }   
 
-    printf("Found %zd mappings.\n", count);
-
+    PRINT_INFO("Found %zd mappings.", count);
     s->port_mappings = malloc(sizeof(*s->port_mappings) * count);
 
     /* parse mappings */
@@ -78,7 +78,7 @@ int load_spu_port_mapping(struct spu *s, char *mapping_scheme)
         char *tmp = mapping_scheme;
         for (size_t i = 0; i < count; ++i)
         {
-            while (*tmp && isspace(*tmp)) { tmp++; }
+            tmp = skip_leading_spaces(tmp);
             
             char buffer[128];
             int port;
@@ -94,11 +94,11 @@ int load_spu_port_mapping(struct spu *s, char *mapping_scheme)
             s->port_mappings[s->port_mappings_len - 1].port = port;
             if (create_port_mapping(s, &s->port_mappings[s->port_mappings_len - 1], port, buffer) != 0)
             {
-                fprintf(stderr, "create_port_mapping error\n");
+                PRINT_ERROR("create_port_mapping error");
                 return 1;
             }
 
-            while (*tmp && !isspace(*tmp)) { tmp++; }
+            tmp = skip_leading_spaces(tmp);
         }
     }
     

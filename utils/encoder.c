@@ -55,7 +55,7 @@ static int is_all_digits(char *s, char *e)
     }
 }
 
-static char *skip_leading_spaces(char *s)
+char *skip_leading_spaces(char *s)
 {
     while (*s != '\0' && isspace(*s)) { s++; }
     return s;

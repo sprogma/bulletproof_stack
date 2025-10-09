@@ -26,7 +26,7 @@ struct spu
 
 
 
-int load_spu_port_mapping(struct spu *s, char *mapping_scheme);
+result_t load_spu_port_mapping(struct spu *s, char *mapping_scheme);
 
 
 #endif

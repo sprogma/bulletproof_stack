@@ -94,5 +94,10 @@ result_t print_buffer(struct output_buffer *b, char *format_string, ...);
  */
 result_t copy_to_end(struct output_buffer *b, void *data, size_t size);
 
+/*
+ * return pointer to next nonspace character
+ */
+char *skip_leading_spaces(char *s);
+
 
 #endif
