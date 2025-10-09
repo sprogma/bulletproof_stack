@@ -274,7 +274,7 @@ void run(struct spu *s)
         BYTE opcode = s->mem[ip];
         switch (opcode & (~ARG_PTR_OPCODE_MASK))
         {
-            #define INSTRUCTION(opcode, handler) case opcode: {handler} break;
+            #define INSTRUCTION(opcode_macro, name, nargs, opcode, handler) case opcode: {handler} break;
             #include "../utils/instructions.inc"
             #undef INSTRUCTION
             default:

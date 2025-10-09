@@ -1,9 +1,9 @@
 
-INSTRUCTION( O_NOP,
+INSTRUCTION( O_NOP, "NOP", 0, (0b00000 | ARG_NUM_0),
     VERBOSE_INFO("NOP\n");
 )
 
-INSTRUCTION( O_INT,
+INSTRUCTION( O_INT, "INT", 2, (0b00000 | ARG_NUM_2),
     int32_t type = GET_ARG(s, ip, 0);
     int32_t ptr  = GET_ARG(s, ip, 1) + ip;
 
@@ -13,7 +13,7 @@ INSTRUCTION( O_INT,
     VERBOSE_INFO("Error: int command for now is unsopported [%d, %x].\n", type, ptr);
 )
 
-INSTRUCTION( O_MOV_CONST,
+INSTRUCTION( O_MOV_CONST, "MOV_CONST", 2, (0b00001 | ARG_NUM_2),
     uint32_t value = GET_ARG(s, ip, 0);
     int32_t ptr    = GET_ARG(s, ip, 1) + ip;
 
@@ -27,7 +27,7 @@ INSTRUCTION( O_MOV_CONST,
     INT_FROM(s, ptr) = value;
 )
 
-INSTRUCTION( O_LEA,
+INSTRUCTION( O_LEA, "LEA", 2, (0b00010 | ARG_NUM_2),
     int32_t dst = GET_ARG(s, ip, 0) + ip;
     int32_t ptr = GET_ARG(s, ip, 1) + ip;
 
@@ -41,14 +41,14 @@ INSTRUCTION( O_LEA,
     INT_FROM(s, dst) = ptr;
 )
 
-INSTRUCTION( O_MOV,    
+INSTRUCTION( O_MOV, "MOV", 3, (0b00000 | ARG_NUM_3),
     READ_DST_SRC_COUNT
     
     VERBOSE_INFO("MOV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
     memmove(s->mem + dst, s->mem + src, INT_FROM(s, cnt));
 )
 
-INSTRUCTION( O_INV,    
+INSTRUCTION( O_INV, "INV", 3, (0b00001 | ARG_NUM_3),
     READ_DST_SRC_COUNT
 
     VERBOSE_INFO("INV: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
@@ -60,7 +60,7 @@ INSTRUCTION( O_INV,
     }
 )
 
-INSTRUCTION(O_NEG,
+INSTRUCTION(O_NEG, "NEG", 3, (0b00010 | ARG_NUM_3),
     READ_DST_SRC_COUNT  
 
     VERBOSE_INFO("NEG: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
@@ -73,7 +73,7 @@ INSTRUCTION(O_NEG,
     large_integer_inc(s->mem + dst, cnt);
 )
 
-INSTRUCTION(O_INC,
+INSTRUCTION(O_INC, "INC", 3, (0b00011 | ARG_NUM_3),
     READ_DST_SRC_COUNT  
 
     VERBOSE_INFO("INC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
@@ -86,7 +86,7 @@ INSTRUCTION(O_INC,
     large_integer_inc(s->mem + dst, cnt);
 )
 
-INSTRUCTION(O_DEC,
+INSTRUCTION(O_DEC, "DEC", 3, (0b00100 | ARG_NUM_3),
     READ_DST_SRC_COUNT  
 
     VERBOSE_INFO("DEC: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
@@ -99,7 +99,7 @@ INSTRUCTION(O_DEC,
     large_integer_dec(s->mem + dst, cnt);
 )
 
-INSTRUCTION(O_ALL,
+INSTRUCTION(O_ALL, "ALL", 3, (0b00101 | ARG_NUM_3),
     READ_DST_SRC_COUNT  
 
     VERBOSE_INFO("ALL: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
@@ -113,7 +113,7 @@ INSTRUCTION(O_ALL,
     INT_FROM(s, dst) = (total == 0xFF ? 0xFFFFFFFF : 0);
 )
 
-INSTRUCTION(O_ANY,
+INSTRUCTION(O_ANY, "ANY", 3, (0b00110 | ARG_NUM_3),
     READ_DST_SRC_COUNT  
 
     VERBOSE_INFO("ANY: set to %08x from %08x of length *%08x=%08x\n", dst, src, cnt, INT_FROM(s, cnt));
@@ -127,7 +127,7 @@ INSTRUCTION(O_ANY,
     INT_FROM(s, dst) = (total == 0 ? 0 : 0xFFFFFFFF);
 )
 
-INSTRUCTION(O_CLEA,
+INSTRUCTION(O_CLEA, "CLEA", 3, (0b00111 | ARG_NUM_3),
     int32_t flg = GET_ARG(s, ip, 0) + ip;
     int32_t dst = GET_ARG(s, ip, 1) + ip;
     int32_t ptr = GET_ARG(s, ip, 2) + ip;
@@ -146,7 +146,7 @@ INSTRUCTION(O_CLEA,
     }
 )
 
-INSTRUCTION(O_IN,            
+INSTRUCTION(O_IN, "IN", 3, (0b01000 | ARG_NUM_3),        
     int32_t port  = GET_ARG(s, ip, 0);
     int32_t ptr   = GET_ARG(s, ip, 1) + ip;
     int32_t count = GET_ARG(s, ip, 2) + ip;
@@ -162,7 +162,7 @@ INSTRUCTION(O_IN,
     read_port(s, port, s->mem + ptr, INT_FROM(s, count));
 )
 
-INSTRUCTION(O_OUT,
+INSTRUCTION(O_OUT, "OUT", 3, (0b01001 | ARG_NUM_3),
     int32_t port  = GET_ARG(s, ip, 0);
     int32_t ptr   = GET_ARG(s, ip, 1) + ip;
     int32_t count = GET_ARG(s, ip, 2) + ip;
@@ -178,7 +178,7 @@ INSTRUCTION(O_OUT,
     send_port(s, port, s->mem + ptr, INT_FROM(s, count));
 )
 
-INSTRUCTION(O_EQ,
+INSTRUCTION(O_EQ, "EQ", 4, (0b00000 | ARG_NUM_4),
     READ_DST_A_B_COUNT  
 
     VERBOSE_INFO("EQ: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -190,7 +190,7 @@ INSTRUCTION(O_EQ,
     }
 )
 
-INSTRUCTION(O_OR,
+INSTRUCTION(O_OR, "OR", 4, (0b00001 | ARG_NUM_4),
     READ_DST_A_B_COUNT  
 
     VERBOSE_INFO("OR: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -202,7 +202,7 @@ INSTRUCTION(O_OR,
     }
 )
 
-INSTRUCTION(O_AND,
+INSTRUCTION(O_AND, "AND", 4, (0b00010 | ARG_NUM_4),
     READ_DST_A_B_COUNT  
 
     VERBOSE_INFO("AND: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -214,7 +214,7 @@ INSTRUCTION(O_AND,
     }
 )
 
-INSTRUCTION(O_XOR,
+INSTRUCTION(O_XOR, "XOR", 4, (0b00011 | ARG_NUM_4),
     READ_DST_A_B_COUNT  
 
     VERBOSE_INFO("XOR: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -225,30 +225,7 @@ INSTRUCTION(O_XOR,
         s->mem[dst + i] = s->mem[a + i] ^ s->mem[b + i];
     }
 )
-
-INSTRUCTION(O_CMOV,
-    READ_DST_A_B_COUNT
-
-    VERBOSE_INFO("CMOV: set to %08x from %08x of length *%08x=%08x ONLY IF %08x=%08x != 0\n", a, b, cnt, INT_FROM(s, cnt), dst, INT_FROM(s, dst));
-    cnt = INT_FROM(s, cnt);
-    dst = INT_FROM(s, dst);
-
-    if (dst != 0)
-    {
-        memmove(s->mem + a, s->mem + b, cnt);
-    }
-)
-
-INSTRUCTION(O_LT,
-    READ_DST_A_B_COUNT
-
-    VERBOSE_INFO("LT: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
-    cnt = INT_FROM(s, cnt);
-
-    INT_FROM(s, dst) = large_integer_less(s->mem + a, s->mem + b, cnt);
-)
-
-INSTRUCTION(O_ADD,
+INSTRUCTION(O_ADD, "ADD", 4, (0b00100 | ARG_NUM_4),
     READ_DST_A_B_COUNT
 
     VERBOSE_INFO("ADD: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -261,7 +238,7 @@ INSTRUCTION(O_ADD,
     large_integer_add(s->mem + dst, s->mem + b, cnt);
 )
 
-INSTRUCTION(O_SUB,
+INSTRUCTION(O_SUB, "SUB", 4, (0b00101 | ARG_NUM_4),
     READ_DST_A_B_COUNT
 
     VERBOSE_INFO("SUB: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -274,7 +251,7 @@ INSTRUCTION(O_SUB,
     large_integer_sub(s->mem + dst, s->mem + b, cnt);
 )
 
-INSTRUCTION(O_MUL,
+INSTRUCTION(O_MUL, "MUL", 4, (0b00110 | ARG_NUM_4),
     READ_DST_A_B_COUNT
 
     VERBOSE_INFO("MUL: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -287,7 +264,7 @@ INSTRUCTION(O_MUL,
     large_integer_mul(s->mem + dst, s->mem + b, cnt);
 )
 
-INSTRUCTION(O_DIV,
+INSTRUCTION(O_DIV, "DIV", 4, (0b00111 | ARG_NUM_4),
     READ_DST_A_B_COUNT
 
     VERBOSE_INFO("DIV: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
@@ -299,3 +276,26 @@ INSTRUCTION(O_DIV,
     }
     large_integer_div(s->mem + dst, s->mem + b, cnt);
 )
+
+INSTRUCTION(O_CMOV, "CMOV", 4, (0b01000 | ARG_NUM_4),
+    READ_DST_A_B_COUNT
+
+    VERBOSE_INFO("CMOV: set to %08x from %08x of length *%08x=%08x ONLY IF %08x=%08x != 0\n", a, b, cnt, INT_FROM(s, cnt), dst, INT_FROM(s, dst));
+    cnt = INT_FROM(s, cnt);
+    dst = INT_FROM(s, dst);
+
+    if (dst != 0)
+    {
+        memmove(s->mem + a, s->mem + b, cnt);
+    }
+)
+
+INSTRUCTION(O_LT, "LT", 4, (0b01001 | ARG_NUM_4),
+    READ_DST_A_B_COUNT
+
+    VERBOSE_INFO("LT: set to %08x from %08x and %08x of length *%08x=%08x\n", dst, a, b, cnt, INT_FROM(s, cnt));
+    cnt = INT_FROM(s, cnt);
+
+    INT_FROM(s, dst) = large_integer_less(s->mem + a, s->mem + b, cnt);
+)
+
