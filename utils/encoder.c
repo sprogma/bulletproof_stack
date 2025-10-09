@@ -88,8 +88,9 @@ static int parse_integer(char *s, char *e, int32_t *result)
         s++;
     }
     while (s < e && isspace(s[0])) { s++; }
-    while (s < e && isspace(e[-1])) { e--; }
+    while (s < e && isspace(e[-1])) { e--; } // TODO: -1??
 
+    // malloc used to add \0 to end of string, to call strtoll
     char *text = malloc(e - s + 1);
     memcpy(text, s, e - s);
     text[e - s] = 0;
@@ -128,6 +129,7 @@ static int calculate_offset(struct compilation_table *t, ssize_t position, char 
     }
     /* if there is no name, show error */
     {
+        // TODO: make function of check is all integer
         for (char *s = arg; s < arg_end; ++s)
         {
             if (!isdigit(*s))
@@ -189,7 +191,7 @@ static int calculate_offset(struct compilation_table *t, ssize_t position, char 
 
 
 static int calculate_offsets(struct compilation_table *t, ssize_t position, char *args, char *args_end, ssize_t nargs, int32_t *offsets_length)
-{
+{ // TODO: naming "t"
     char *arg = args;
     for (ssize_t i = 0; i < nargs; ++i)
     {
@@ -245,7 +247,7 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
     }
 
     /* encode native_command */
-    for (ssize_t i = 0; i < (ssize_t)sizeof(native_commands) / (ssize_t)sizeof(*native_commands); ++i)
+    for (ssize_t i = 0; i < (ssize_t)sizeof(native_commands) / (ssize_t)sizeof(*native_commands); ++i) // TODO: ARRAY_SIZE??
     {
         size_t name_len = strlen(native_commands[i].name);
         if (strncmp(line, native_commands[i].name, name_len) == 0 && !iskey(line[name_len]))
@@ -259,6 +261,7 @@ static int encode_command(struct compilation_table *t, char *line, ssize_t posit
 
             *dst++ = native_commands[i].code | (pointer_mode ? ARG_PTR_ON_PTR : ARG_PTR);
 
+            // TODO: corner cases, this isn't pretty :(
             /* write arguments */
             if (strcmp(native_commands[i].name, "MOV_CONST") == 0 ||
                 strcmp(native_commands[i].name, "INT") == 0)
@@ -425,7 +428,7 @@ static int encode_directive(struct compilation_table *t, char *line, ssize_t pos
     {
         /* read integer */
         int32_t value = 0;
-        char *num_start = line + 6;
+        char *num_start = line + 6; // TODO: WTF??
         if (num_start >= line_end)
         {
             fprintf(stderr, "Error: cannot read mandatory value of .align directive from <%*.*s>\n", (int)(line_end - num_start), (int)(line_end - num_start), num_start);

@@ -58,7 +58,7 @@ void dump(BYTE *s, size_t from, size_t to)
 {
     size_t i = from;
     printf("         _ %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X _\n", 
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15); // TODO: WHY?
     while (i <= to)
     {
         printf("%08x : ", (int)i);
@@ -78,8 +78,8 @@ void large_integer_inc(BYTE *s, size_t size)
     for (size_t i = 0; i < size && carry != 0; ++i)
     {
         int res = s[i] + carry;
-        s[i] = res;
-        carry = res >> 8;
+        s[i] = res; // TODO: make truncation explicit
+        carry = res >> 8; // TODO: sizeof(char) * CHAR_BIT
     }
 }
 
@@ -103,7 +103,7 @@ void large_integer_add(BYTE *s, BYTE *a, size_t size)
     {
         int res = s[i] + a[i] + carry;
         s[i] = res;
-        carry = res / 256;
+        carry = res / 256; // TODO: 256?
     }
 }
 
@@ -127,6 +127,8 @@ void large_integer_sub(BYTE *s, BYTE *a, size_t size)
     }
 }
 
+
+// TODO: uint64_t as base?
 
 void large_integer_mul(BYTE *s, BYTE *a, size_t size)
 {
@@ -214,6 +216,16 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
 #define INT_FROM(s, pos) (*((int32_t *)((s)->mem + (pos))))
 
 
+
+// instructions.inc
+// INSTRUCTION(MOV, 2, DO(OUT = IN))
+// ...
+
+// #define INSTRUCTION(name, count, block) else if (strcmp(command_name, #name) == 0)...
+// #include "instruction.inc"
+
+// TODO: don't, just don't
+// X-macro
 #define READ_DST_SRC_COUNT \
     int32_t dst = GET_ARG(s, ip, 0) + ip; \
     int32_t src = GET_ARG(s, ip, 1) + ip; \
