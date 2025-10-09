@@ -1,2 +1,2 @@
 
-gcc -g ((ls utils,disassembler)-like"*.c") -o dis.exe
+gcc -g ((ls logger,utils,disassembler)-like"*.c") -o dis.exe

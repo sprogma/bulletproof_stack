@@ -1,1 +1,1 @@
-gcc -g ((ls utils,assembler)-like"*.c") -o asm.exe
+gcc -g ((ls logger,utils,assembler)-like"*.c") -o asm.exe

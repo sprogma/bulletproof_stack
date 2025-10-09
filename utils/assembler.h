@@ -6,6 +6,12 @@
 #include "inttypes.h"
 #include "specs.h"
 
+#include "../logger/logger.h"
+
+
+#define ARRAYLEN(array) (sizeof(array) / sizeof(*(array)))
+static inline void *OR(void *a, void *b) { return (a ? a : b); }
+
 
 #ifndef NOT_DEFINE_INTEGER_TYPES
     typedef unsigned char    BYTE;
@@ -16,24 +22,19 @@
 
 struct output_buffer
 {
-    BYTE *buffer;
-    ssize_t len;
-    ssize_t alloc;
-};
-
-
-struct string_output_buffer
-{
-    char *buffer;
-    ssize_t len;
-    ssize_t alloc;
+    union {
+        char *text;
+        BYTE *buffer;
+    };
+    int64_t len;
+    int64_t alloc;
 };
 
 
 struct label
 {
     const char *name;
-    ssize_t name_len;
+    int64_t name_len;
     int32_t position;
 };
 
@@ -41,47 +42,57 @@ struct label
 struct compilation_table
 {
     struct label *labels;
-    ssize_t        labels_len;
-    ssize_t        labels_alloc;
+    int64_t        labels_len;
+    int64_t        labels_alloc;
 };
+
+
+/*
+ * write text into file
+ */
+result_t write_file(const char *filename, char *buffer, int64_t size);
 
 /*
  * reads file as lines array.
  */
-int read_file(const char *filename, char ***lines, ssize_t *lines_len);
+result_t read_file(const char *filename, char ***lines, int64_t *lines_len);
 
 /*
  * reads binary file as array.
  */
-int read_binary_file(const char *filename, BYTE **buffer, ssize_t *buffer_len);
+result_t read_binary_file(const char *filename, BYTE **buffer, int64_t *buffer_len);
 
 
 /*
  * get instruction length from line
  */
-ssize_t decode_instruction_length(BYTE *line);
+int64_t decode_instruction_length(BYTE *line);
 
 /*
  * compile program into buffer out
  */
-int build_program(char **lines, ssize_t lines_len, struct output_buffer *out);
+result_t build_program(char **lines, int64_t lines_len, struct output_buffer *out);
 
 /*
  * decompile program into buffer out
  */
-int decode_program(BYTE *code, ssize_t code_len, struct string_output_buffer *out);
+result_t decode_program(BYTE *code, int64_t code_len, struct output_buffer *out);
 
 
 /*
  * C++ vector-like byte array structure
  */
-int reserve_output_buffer(struct output_buffer *b, ssize_t size);
-
+result_t reserve_output_buffer(struct output_buffer *b, int64_t size);
 
 /*
- * C++ vector-like char array structure
+ * Printf into output buffer
  */
-int reserve_string_output_buffer(struct string_output_buffer *b, ssize_t size);
+result_t print_buffer(struct output_buffer *b, char *format_string, ...);
+
+/*
+ * Add text to buffer end
+ */
+result_t copy_to_end(struct output_buffer *b, void *data, size_t size);
 
 
 #endif

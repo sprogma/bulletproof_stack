@@ -4,39 +4,34 @@
 #include "assert.h"
 
 #include "../utils/assembler.h"
+#include "../logger/logger.h"
 
 
 int main(int argc, char **argv)
 {
     if (argc != 3)
     {
-        printf("Assembler must take 2 files: source and destination.\n");
+        PRINT_ERROR("Assembler must take 2 files: source and destination.");
         return 1;
     }
-    char *filename = argv[1];
-    char *outputname = argv[2];
+    
+    char *in_file = argv[1];
+    char *out_file = argv[2];
+
 
     char **lines;
-    ssize_t lines_len;
+    int64_t lines_len;
+    HANDLE_ERROR(read_file(in_file, &lines, &lines_len));
 
-    read_file(filename, &lines, &lines_len);
-
-    ssize_t output_size = 128;
-    char *output_buffer = calloc(1, sizeof(*output_buffer) * output_size);
-
+    
     struct output_buffer b = {NULL, 0, 0};
+    HANDLE_ERROR(build_program(lines, lines_len, &b));
     
-
-    build_program(lines, lines_len, &b);
-    
-
-    /* free text */
+    /* free input text */
     free(lines[0]);
 
     /* write result to file */
-    FILE *f = fopen(outputname, "wb");
-    fwrite(b.buffer, 1, b.len, f);
-    fclose(f);
+    write_file(out_file, (char *)b.buffer, b.len);
     
     return 0;
 }

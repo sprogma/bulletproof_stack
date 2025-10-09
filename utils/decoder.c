@@ -10,84 +10,77 @@
 #include "../utils/assembler.h"
 
 
-static int decode_instruction(struct string_output_buffer *s, BYTE *data, BYTE *end, size_t *decoded_length)
+static result_t decode_instruction(struct output_buffer *s, BYTE *data, BYTE *end, size_t *decoded_length)
 {
-    if (data >= end)
-    {
-        return 0;
-    }
-
-    BYTE header = *data;
+    assert(data < end);
+    
     int32_t length = decode_instruction_length(data);
     
-    /* for each command: try to guess it */
-    
-    if (end - data >= length)
+    if (end - data < length)
     {
-        if ((header & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
-        {
-            reserve_string_output_buffer(s, s->len + 1);
-            
-            s->buffer[s->len] = '$';
-            s->len++;
-        }
-        for (ssize_t i = 0; i < (ssize_t)sizeof(native_commands) / (ssize_t)sizeof(*native_commands); ++i)
-        {
-            size_t name_len = strlen(native_commands[i].name);
-            if ((header & (~ARG_PTR_OPCODE_MASK)) == native_commands[i].code)
-            {
-                reserve_string_output_buffer(s, s->len + name_len + 128);
-                memcpy(s->buffer + s->len, native_commands[i].name, name_len);
-                s->len += name_len;
-                
-                /* decode arguments */
-                if (native_commands[i].nargs > 0)
-                {
-                    s->len += sprintf(s->buffer + s->len, " ");
-                    for (int a = 0; a < native_commands[i].nargs; ++a)
-                    {
-                        int32_t ptr = 0;
-                        memcpy(&ptr, data + 1 + 4 * a, sizeof(ptr));
-                        if (a != 0)
-                        {
-                            s->len += sprintf(s->buffer + s->len, ", ");
-                        }
-                        s->len += sprintf(s->buffer + s->len, "%d", ptr);
-                    }
-                }
-                
-                s->buffer[s->len] = '\n';
-                s->len++;
-            }
-        }
-        *decoded_length = length;
+        PRINT_WARNING("Instruction length is greater than rest of file size. Parsing as byte");
+
+        print_buffer(s, ".db 0x%02x\n", *data);
+        
+        *decoded_length = 1;
         return 0;
     }
+    
+    BYTE header = *data;
+    if ((header & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
+    {    
+        print_buffer(s, "$");
+    }
 
-    reserve_string_output_buffer(s, s->len + 3 + 1 + 6);
-    memcpy(s->buffer + s->len, ".db 0x", 3 + 1 + 2);
-    s->len += 3 + 1 + 2;
+    const struct command *cmd = NULL;
+    for (size_t i = 0; i < ARRAYLEN(native_commands); ++i)
+    {
+        if ((header & (~ARG_PTR_OPCODE_MASK)) == native_commands[i].code)
+        {
+            cmd = native_commands + i;
+        }
+    }
+
+    if (cmd == NULL)
+    {
+        PRINT_WARNING("Unknown command. Parsing as bytes");
+        print_buffer(s, ".db 0x%02x\n", *data);
+
+        *decoded_length = 1;
+        return 0;
+    }
     
-    sprintf(s->buffer + s->len, "%02x", *data);
-    s->len += 2;
+    print_buffer(s, "%s", cmd->name);
     
-    s->buffer[s->len] = '\n';
-    s->len++;
+    /* decode arguments */
+    if (cmd->nargs > 0)
+    {
+        for (int a = 0; a < cmd->nargs; ++a)
+        {
+            int32_t ptr = *(int *)(data + 1 + 4 * a);
+            if (a != 0)
+            {
+                print_buffer(s, ",");
+            }
+            print_buffer(s, " %d", ptr);
+        }
+    }
+
+    print_buffer(s, "\n");
     
-    *decoded_length = 1;
-    
+    *decoded_length = length;
     return 0;
 }
 
 
-int decode_program(BYTE *code, ssize_t code_len, struct string_output_buffer *out)
+result_t decode_program(BYTE *code, int64_t code_len, struct output_buffer *out)
 {
     BYTE *code_end = code + code_len;
 
     while (code < code_end)
     {
         size_t decoded_length;
-        decode_instruction(out, code, code_end, &decoded_length);
+        HANDLE_ERROR(decode_instruction(out, code, code_end, &decoded_length));
         code += decoded_length;
     }
 }

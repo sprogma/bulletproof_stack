@@ -10,32 +10,30 @@ int main(int argc, char **argv)
 {
     if (argc != 3)
     {
-        printf("Disassembler must take 2 files: source and destination.\n");
+        PRINT_ERROR("Disassembler must take 2 files: source and destination.");
         return 1;
     }
+
     
-    char *filename = argv[1];
-    char *outputname = argv[2];
+    char *in_file = argv[1];
+    char *out_file = argv[2];
+
 
     BYTE *buffer;
     ssize_t buffer_size;
+    HANDLE_ERROR(read_binary_file(in_file, &buffer, &buffer_size));
 
-    read_binary_file(filename, &buffer, &buffer_size);
 
-    ssize_t output_size = 128;
-    char *output_buffer = calloc(1, sizeof(*output_buffer) * output_size);
+    struct output_buffer b = {{NULL}, 0, 0};
+    HANDLE_ERROR(decode_program(buffer, buffer_size, &b));
 
-    struct string_output_buffer b = {NULL, 0, 0};
-
-    decode_program(buffer, buffer_size, &b);
 
     /* free text */
     free(buffer);    
+    
 
     /* write result to file */
-    FILE *f = fopen(outputname, "wb");
-    fwrite(b.buffer, 1, b.len, f);
-    fclose(f);
+    write_file(out_file, b.text, b.len);
     
     return 0;
 }
