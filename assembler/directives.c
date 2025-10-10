@@ -13,7 +13,12 @@
 #define STARTSWITH(s, str) (strncmp((s), str, sizeof(str) - 1) == 0 && !iskey((s)[sizeof(str) - 1]))
 
 
-static result_t encode_directive_data(struct compilation_table *table, char *line, char *line_end, int64_t position, struct output_buffer *dst, int64_t *result_length)
+static result_t encode_directive_data(struct compilation_table *table, 
+                                      char *line, 
+                                      char *line_end, 
+                                      int64_t position, 
+                                      struct output_buffer *dst, 
+                                      int64_t *result_length)
 {
     (void)table;
     (void)position;
@@ -61,7 +66,12 @@ static result_t encode_directive_data(struct compilation_table *table, char *lin
 }
 
 
-static result_t encode_directive_align(struct compilation_table *table, char *line, char *line_end, int64_t position, struct output_buffer *dst, int64_t *result_length)
+static result_t encode_directive_align(struct compilation_table *table, 
+                                       char *line, 
+                                       char *line_end, 
+                                       int64_t position, 
+                                       struct output_buffer *dst, 
+                                       int64_t *result_length)
 {
     (void)table;
     
@@ -102,7 +112,11 @@ static result_t encode_directive_align(struct compilation_table *table, char *li
 }
 
 
-result_t encode_directive(struct compilation_table *table, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length)
+result_t encode_directive(struct compilation_table *table, 
+                          char *line, 
+                          int64_t position, 
+                          struct output_buffer *dst, 
+                          int64_t *result_length)
 {
     /* end of line - start of comment or new line */
     char *line_end = OR(strchr(line, ';'), line + strlen(line));
