@@ -1,4 +1,3 @@
-
 function build($a, $b)
 {
     if (!(Test-Path $b) -or (gi $a).LastWriteTime -gt (gi $b).LastWriteTime)
@@ -7,7 +6,7 @@ function build($a, $b)
     }
     Write-Host "Skip build of $b"
 }
-build .\examples\raytracer\gl.c .\examples\raytracer\gl.asm
-build .\examples\raytracer\math.c .\examples\raytracer\math.asm
-.\linker\linker.ps1 .\examples\raytracer\gl.asm, .\examples\raytracer\math.asm, .\stdlib\io.asm -Destination res.asm
+build .\examples\raycaster\math.c .\examples\raycaster\math.asm
+build .\examples\raycaster\main.c .\examples\raycaster\main.asm
+.\linker\linker.ps1 .\examples\raycaster\curvedY.asm, .\examples\raycaster\math.asm, .\examples\raycaster\main.asm, .\stdlib\io.asm -Destination res.asm
 .\asm.exe res.asm a.bc

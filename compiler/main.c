@@ -87,7 +87,9 @@ int main(int argc, char **argv)
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     
     /* print tree */
-    print(0, tree.source, tree.root);
+    #ifdef PRINT_TREE
+        print(0, tree.source, tree.root);
+    #endif
 
     printf("Parsing took %lf seconds\n", time_spent);
     

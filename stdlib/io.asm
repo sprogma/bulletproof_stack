@@ -1,4 +1,58 @@
 
+; int get4(int) function:
+; 
+; ptr - pointer to write data
+; value - data to write
+; 
+; writes only 4 byte slices
+
+; arguments
+.dd 0xBEBEBEBE
+; return value
+.dd 0xBEBEBEBE
+; return address
+.dd 0xBEBEBEBE
+
+get4:
+
+; read data from memory
+LEA _size4_ptr, _size4
+LEA _value_ptr, put4 - 8
+$MOV _value_ptr, put4 - 12, _size4_ptr
+
+; return to caller
+LEA _ptr_ptr, put4 - 4
+$MOV _zero, _ptr_ptr, _size4_ptr
+
+
+; int get1(int) function:
+; 
+; ptr - pointer to write data
+; value - data to write
+; 
+; writes only 1 byte slices
+
+; arguments
+.dd 0xBEBEBEBE
+; return value
+.dd 0xBEBEBEBE
+; return address
+.dd 0xBEBEBEBE
+
+get1:
+
+; write data to memory
+LEA _size1_ptr, _size1
+LEA _size4_ptr, _size4
+LEA _value_ptr, put1 - 8
+$MOV _value_ptr, put1 - 12, _size1_ptr
+
+; return to caller
+LEA _ptr_ptr, put1 - 4
+$MOV _zero, _ptr_ptr, _size4_ptr
+
+
+
 ; [void=int] put4(int, int) function:
 ; 
 ; ptr - pointer to write data
