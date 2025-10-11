@@ -73,7 +73,7 @@ result_t encode_command(struct compilation_table *table, char *line, int64_t pos
         cnt_e = OR(cnt_e, line_end);
         
         HANDLE_ERROR(parse_integer(line + name_len, cnt_e, offsets + 0));
-        if (cmd->nargs == 1)
+        if (cmd->nargs != 1)
         { 
             HANDLE_ERROR(calculate_offsets(table, position, cnt_e + 1, line_end, cmd->nargs - 1, offsets + 1));
         }

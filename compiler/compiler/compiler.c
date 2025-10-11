@@ -148,7 +148,7 @@ static result_t get_function(struct compiler_instance_t *c,
         }
         if (variable == NULL)
         {
-            PRINT_ERROR("Cannot find variable <%s>", name);
+            PRINT_ERROR("Cannot find function <%s>", name);
             for (size_t i = 0; i < c->functions_len; ++i)
             {
                 printf("func> %s\n", c->functions[i].label);
@@ -499,7 +499,8 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
 
 
         struct function_t *function = NULL;
-        HANDLE_ERROR(get_function(c, tree, name, &function));
+        // TODO: not ignore this function
+        // HANDLE_ERROR(get_function(c, tree, name, &function));
 
         if (function == NULL)
         {
@@ -510,7 +511,7 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
         static struct function_t tmp_function;
         function = &tmp_function;
         function->label = get_node_text_no_spaces(tree, name);
-        function->ret = (void *)0xBEBEBEBE;
+        function->ret = get_type(c, "", "int");
 
         int arg_id = 0;
 
@@ -553,8 +554,6 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
                 return 1;
             }
         }
-
-        free(function->label);
         
         /* 1. need to cast? */
         /* TODO: cast */
@@ -567,7 +566,10 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
         c->code->len += sprintf(c->code->buffer + c->code->len, "$LEA %s, %s\n", "_zero", function->label);
         c->code->len += sprintf(c->code->buffer + c->code->len, "%s:\n", call_label);
         c->code->len += sprintf(c->code->buffer + c->code->len, "MOV %s, %s - %zd, %s\n", result_label, function->label, 4 + get_type_size(c, function->ret), "_size4");
-        
+
+
+        free(function->label);
+                
         return 0;
     }
     else if (node->variant == 4)
