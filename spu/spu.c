@@ -104,6 +104,27 @@ void large_integer_dec(BYTE *s, size_t size)
 
 void large_integer_add(BYTE *s, BYTE *a, size_t size)
 {
+    if (size == 8)
+    {
+        *(int64_t *)s = (*(int64_t *)s) + (*(int64_t *)a);
+        return;
+    }
+    if (size == 4)
+    {
+        *(int32_t *)s = (*(int32_t *)s) + (*(int32_t *)a);
+        return;
+    }
+    if (size == 2)
+    {
+        *(int16_t *)s = (*(int16_t *)s) + (*(int16_t *)a);
+        return;
+    }
+    if (size == 1)
+    {
+        *(int8_t *)s = (*(int8_t *)s) + (*(int8_t *)a);
+        return;
+    }
+    
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
     {
@@ -116,6 +137,27 @@ void large_integer_add(BYTE *s, BYTE *a, size_t size)
 
 void large_integer_sub(BYTE *s, BYTE *a, size_t size)
 {
+    if (size == 8)
+    {
+        *(int64_t *)s = (*(int64_t *)s) - (*(int64_t *)a);
+        return;
+    }
+    if (size == 4)
+    {
+        *(int32_t *)s = (*(int32_t *)s) - (*(int32_t *)a);
+        return;
+    }
+    if (size == 2)
+    {
+        *(int16_t *)s = (*(int16_t *)s) - (*(int16_t *)a);
+        return;
+    }
+    if (size == 1)
+    {
+        *(int8_t *)s = (*(int8_t *)s) - (*(int8_t *)a);
+        return;
+    }
+    
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
     {
@@ -204,8 +246,8 @@ void large_integer_div(BYTE *s, BYTE *a, size_t size)
     abort();
 }
 
-int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
-{
+int32_t large_unsigned_integer_less(BYTE *a, BYTE *b, size_t size)
+{    
     for (size_t x = size - 1; x < size; --x)
     {
         if (a[x] != b[x])
@@ -214,6 +256,38 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
         }
     }
     return 0;
+}
+
+int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
+{
+    if (size == 8)
+    {
+        return (*(int64_t *)a) < (*(int64_t *)b);
+    }
+    if (size == 4)
+    {
+        return (*(int32_t *)a) < (*(int32_t *)b);
+    }
+    if (size == 2)
+    {
+        return (*(int16_t *)a) < (*(int16_t *)b);
+    }
+    if (size == 1)
+    {
+        return (*(int8_t *)a) < (*(int8_t *)b);
+    }
+    int a_neg = a[size - 1] & 0x80;
+    int b_neg = b[size - 1] & 0x80;
+
+    if (!a_neg && !b_neg)
+    {
+        return large_unsigned_integer_less(a, b, size);
+    }
+    if (a_neg != b_neg)
+    {
+        return a_neg > b_neg;
+    }
+    return large_unsigned_integer_less(b, a, size);
 }
 
 

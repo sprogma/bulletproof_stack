@@ -508,7 +508,7 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
             // return 1;
         }
 
-        static struct function_t tmp_function;
+        struct function_t tmp_function;
         function = &tmp_function;
         function->label = get_node_text_no_spaces(tree, name);
         function->ret = get_type(c, "", "int");
@@ -561,14 +561,13 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
         char *call_label = calloc(1, 128);
         sprintf(call_label, "_local%zd", c->unique_id++);
 
-        reserve_buffer(c->code, c->code->len + 128);
+        reserve_buffer(c->code, c->code->len + 256);
         c->code->len += sprintf(c->code->buffer + c->code->len, "LEA %s - 4, %s\n", function->label, call_label);
         c->code->len += sprintf(c->code->buffer + c->code->len, "$LEA %s, %s\n", "_zero", function->label);
         c->code->len += sprintf(c->code->buffer + c->code->len, "%s:\n", call_label);
         c->code->len += sprintf(c->code->buffer + c->code->len, "MOV %s, %s - %zd, %s\n", result_label, function->label, 4 + get_type_size(c, function->ret), "_size4");
 
-
-        free(function->label);
+        // free(function->label);
                 
         return 0;
     }
@@ -811,8 +810,7 @@ result_t compile_compare_expression(struct compiler_instance_t *c,
         {
             /* > */
             reserve_buffer(c->code, c->code->len + 128);
-            c->code->len += sprintf(c->code->buffer + c->code->len, "LT %s, %s, %s, %s\n", result_label, result_label, local_label, "_size4");
-            c->code->len += sprintf(c->code->buffer + c->code->len, "INV %s, %s, %s\n", result_label, result_label, "_size4");
+            c->code->len += sprintf(c->code->buffer + c->code->len, "LT %s, %s, %s, %s\n", result_label, local_label, result_label, "_size4");
         }
         else
         {
@@ -902,7 +900,17 @@ result_t compile_expression(struct compiler_instance_t *c,
 
         HANDLE_ERROR(get_variable(c, tree, f, fc, lvalue_node, &variable));
 
-        HANDLE_ERROR(compile_expression(c, tree, f, fc, expr_node, variable->label, variable->type));
+        char *local_label = calloc(1, 128);
+        sprintf(local_label, "_local%zd", c->unique_id++);
+
+        reserve_buffer(c->vars, c->vars->len + 128);
+        c->vars->len += sprintf(c->vars->buffer + c->vars->len, "%s:\n", local_label);
+        c->vars->len += sprintf(c->vars->buffer + c->vars->len, ".dd 0\n");
+
+        HANDLE_ERROR(compile_expression(c, tree, f, fc, expr_node, local_label, variable->type));
+
+        reserve_buffer(c->code, c->code->len + 128);
+        c->code->len += sprintf(c->code->buffer + c->code->len, "MOV %s, %s, %s\n", variable->label, local_label, "_size4");
 
         return 0;
     }

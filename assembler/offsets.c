@@ -15,8 +15,6 @@ static result_t calculate_offset(struct compilation_table *table, int64_t positi
     /* skip leading and trailing spaces */
     str_trim(&arg, &arg_end);
 
-    printf("Get: %*.*s\n", (int)(arg_end - arg), (int)(arg_end - arg), arg);
-
     if (arg == arg_end)
     {
         PRINT_ERROR("empty command argument");
