@@ -7,206 +7,132 @@ end_proc:
 __ld_zero:
 .dd 0
 ; arguments
+.dd 0xBEBEBEBE
+.dd 0xBEBEBEBE
 ; return value
 .dd 0xBEBEBEBE
 ; return address
 .dd 0xBEBEBEBE
-main:
-MOV_CONST 24576, _0a__main_end
-MOV_CONST 24576, _0a__main_start
-LEA _0a__local4, _0a__local3
-_0a__local2:
-MOV_CONST 1, _0a__local3
-$CLEA _0a__local4, _0a__zero, _0a__local1 
-$LEA _0a__zero, _0a__local0
-_0a__local1:
-MOV_CONST 0, _0a__main_y
-LEA _0a__local9, _0a__local8
-_0a__local7:
-MOV _0a__local8, _0a__main_y, _0a__size4
-MOV_CONST 90, _0a__local10
-EQ _0a__local8, _0a__local8, _0a__local10, _0a__size4
-ALL _0a__local8, _0a__local8, _0a__size4
-INV _0a__local8, _0a__local8, _0a__size4
-$CLEA _0a__local9, _0a__zero, _0a__local6 
-$LEA _0a__zero, _0a__local5
-_0a__local6:
-MOV_CONST 0, _0a__main_x
-LEA _0a__local15, _0a__local14
-_0a__local13:
-MOV _0a__local14, _0a__main_x, _0a__size4
-MOV_CONST 160, _0a__local16
-EQ _0a__local14, _0a__local14, _0a__local16, _0a__size4
-ALL _0a__local14, _0a__local14, _0a__size4
-INV _0a__local14, _0a__local14, _0a__size4
-$CLEA _0a__local15, _0a__zero, _0a__local12 
-$LEA _0a__zero, _0a__local11
-_0a__local12:
-MOV put4 - 12, _0a__main_end, _0a__size4
-MOV_CONST 0, put4 - 16
-LEA put4 - 4, _0a__local17
-$LEA _0a__zero, put4
-_0a__local17:
-MOV _0a__main_t, put4 - 8, _0a__size4
-MOV _0a__main_a, _0a__main_x, _0a__size4
-MOV_CONST 80, _0a__local18
-SUB _0a__main_a, _0a__main_a, _0a__local18, _0a__size4
-MOV _0a__main_b, _0a__main_y, _0a__size4
-MOV_CONST 45, _0a__local19
-SUB _0a__main_b, _0a__main_b, _0a__local19, _0a__size4
-MOV _0a__main_a, _0a__main_a, _0a__size4
-MOV_CONST 1, _0a__local21
-MUL _0a__main_a, _0a__main_a, _0a__local21, _0a__size4
-MOV_CONST 2, _0a__local20
-DIV _0a__main_a, _0a__main_a, _0a__local20, _0a__size4
-MOV _0a__main_b, _0a__main_b, _0a__size4
-MOV_CONST 1, _0a__local23
-MUL _0a__main_b, _0a__main_b, _0a__local23, _0a__size4
-MOV_CONST 2, _0a__local22
-DIV _0a__main_b, _0a__main_b, _0a__local22, _0a__size4
-MOV_CONST 0, _0a__main_ta
-MOV_CONST 0, _0a__main_tb
-MOV_CONST 0, _0a__main_i
-LEA _0a__local28, _0a__local27
-_0a__local26:
-MOV _0a__local27, _0a__main_i, _0a__size4
-MOV_CONST 100, _0a__local29
-EQ _0a__local27, _0a__local27, _0a__local29, _0a__size4
-ALL _0a__local27, _0a__local27, _0a__size4
-INV _0a__local27, _0a__local27, _0a__size4
-$CLEA _0a__local28, _0a__zero, _0a__local25 
-$LEA _0a__zero, _0a__local24
-_0a__local25:
-MOV _0a__main_t, _0a__main_ta, _0a__size4
-MOV _0a__local33, _0a__main_ta, _0a__size4
-MUL _0a__main_t, _0a__main_t, _0a__local33, _0a__size4
-MOV _0a__local32, _0a__main_tb, _0a__size4
-MOV _0a__local34, _0a__main_tb, _0a__size4
-MUL _0a__local32, _0a__local32, _0a__local34, _0a__size4
-SUB _0a__main_t, _0a__main_t, _0a__local32, _0a__size4
-MOV_CONST 100, _0a__local31
-DIV _0a__main_t, _0a__main_t, _0a__local31, _0a__size4
-MOV _0a__local30, _0a__main_a, _0a__size4
-ADD _0a__main_t, _0a__main_t, _0a__local30, _0a__size4
-MOV_CONST 2, _0a__main_tb
-MOV _0a__local37, _0a__main_ta, _0a__size4
-MOV _0a__local38, _0a__main_tb, _0a__size4
-MUL _0a__local37, _0a__local37, _0a__local38, _0a__size4
-MUL _0a__main_tb, _0a__main_tb, _0a__local37, _0a__size4
-MOV_CONST 100, _0a__local36
-DIV _0a__main_tb, _0a__main_tb, _0a__local36, _0a__size4
-MOV _0a__local35, _0a__main_b, _0a__size4
-ADD _0a__main_tb, _0a__main_tb, _0a__local35, _0a__size4
-MOV _0a__main_ta, _0a__main_t, _0a__size4
-MOV _0a__local41, _0a__main_ta, _0a__size4
-MOV _0a__local45, _0a__main_ta, _0a__size4
-MUL _0a__local41, _0a__local41, _0a__local45, _0a__size4
-MOV _0a__local44, _0a__main_tb, _0a__size4
-MOV _0a__local46, _0a__main_tb, _0a__size4
-MUL _0a__local44, _0a__local44, _0a__local46, _0a__size4
-ADD _0a__local41, _0a__local41, _0a__local44, _0a__size4
-MOV_CONST 4, _0a__local43
-MOV_CONST 100, _0a__local47
-MUL _0a__local43, _0a__local43, _0a__local47, _0a__size4
-LT _0a__local41, _0a__local41, _0a__local43, _0a__size4
-INV _0a__local41, _0a__local41, _0a__size4
-LEA _0a__local42, _0a__local41
-$CLEA _0a__local42, _0a__zero, _0a__local39 
-$LEA _0a__zero, _0a__local40 
-_0a__local39:
-MOV _0a__local50, _0a__main_i, _0a__size4
-MOV_CONST 2, _0a__local54
-DIV _0a__local50, _0a__local50, _0a__local54, _0a__size4
-MOV_CONST 2, _0a__local53
-MUL _0a__local50, _0a__local50, _0a__local53, _0a__size4
-MOV _0a__local52, _0a__main_i, _0a__size4
-EQ _0a__local50, _0a__local50, _0a__local52, _0a__size4
-ALL _0a__local50, _0a__local50, _0a__size4
-LEA _0a__local51, _0a__local50
-$CLEA _0a__local51, _0a__zero, _0a__local48 
-$LEA _0a__zero, _0a__local49 
-_0a__local48:
-MOV put4 - 12, _0a__main_end, _0a__size4
-MOV_CONST 16711680, put4 - 16
-LEA put4 - 4, _0a__local55
-$LEA _0a__zero, put4
-_0a__local55:
-MOV _0a__main_t, put4 - 8, _0a__size4
-MOV_CONST 99, _0a__main_i
-_0a__local49:
-_0a__local40:
-MOV _0a__main_i, _0a__main_i, _0a__size4
-MOV_CONST 1, _0a__local56
-ADD _0a__main_i, _0a__main_i, _0a__local56, _0a__size4
-$LEA _0a__zero, _0a__local26 
-_0a__local24:
-MOV _0a__main_end, _0a__main_end, _0a__size4
-MOV_CONST 4, _0a__local57
-ADD _0a__main_end, _0a__main_end, _0a__local57, _0a__size4
-MOV _0a__main_x, _0a__main_x, _0a__size4
-MOV_CONST 1, _0a__local58
-ADD _0a__main_x, _0a__main_x, _0a__local58, _0a__size4
-$LEA _0a__zero, _0a__local13 
+fmul:
+MOV fmul - 8, fmul - 12, _0a__size4
+MOV _0a__local1, fmul - 16, _0a__size4
+MUL fmul - 8, fmul - 8, _0a__local1, _0a__size4
+MOV_CONST 1000, _0a__local0
+DIV fmul - 8, fmul - 8, _0a__local0, _0a__size4
+LEA _0a__local2, _0a__size4
+LEA _0a__local3, fmul - 4
+$MOV _0a__zero, _0a__local3, _0a__local2
+; arguments
+.dd 0xBEBEBEBE
+.dd 0xBEBEBEBE
+; return value
+.dd 0xBEBEBEBE
+; return address
+.dd 0xBEBEBEBE
+fdiv:
+MOV fdiv - 8, fdiv - 12, _0a__size4
+MOV_CONST 1000, _0a__local5
+MUL fdiv - 8, fdiv - 8, _0a__local5, _0a__size4
+MOV _0a__local4, fdiv - 16, _0a__size4
+DIV fdiv - 8, fdiv - 8, _0a__local4, _0a__size4
+LEA _0a__local6, _0a__size4
+LEA _0a__local7, fdiv - 4
+$MOV _0a__zero, _0a__local7, _0a__local6
+; arguments
+.dd 0xBEBEBEBE
+; return value
+.dd 0xBEBEBEBE
+; return address
+.dd 0xBEBEBEBE
+sqrt:
+MOV _0a__sqrt_aa, sqrt - 12, _0a__size4
+MOV_CONST 1000, _0a__local8
+MUL _0a__sqrt_aa, _0a__sqrt_aa, _0a__local8, _0a__size4
+MOV_CONST 0, _0a__sqrt_res
+MOV_CONST 46340, _0a__sqrt_add
+LEA _0a__local13, _0a__local12
 _0a__local11:
-MOV _0a__main_y, _0a__main_y, _0a__size4
-MOV_CONST 1, _0a__local59
-ADD _0a__main_y, _0a__main_y, _0a__local59, _0a__size4
-$LEA _0a__zero, _0a__local7 
-_0a__local5:
-MOV out - 12, _0a__main_start, _0a__size4
-MOV out - 16, _0a__main_end, _0a__size4
-MOV _0a__local60, _0a__main_start, _0a__size4
-SUB out - 16, out - 16, _0a__local60, _0a__size4
-LEA out - 4, _0a__local61
-$LEA _0a__zero, out
-_0a__local61:
-MOV _0a__main_t, out - 8, _0a__size4
-MOV _0a__main_end, _0a__main_start, _0a__size4
-$LEA _0a__zero, _0a__local2 
+MOV _0a__local12, _0a__sqrt_add, _0a__size4
+MOV_CONST 1, _0a__local14
+LT _0a__local12, _0a__local12, _0a__local14, _0a__size4
+INV _0a__local12, _0a__local12, _0a__size4
+$CLEA _0a__local13, _0a__zero, _0a__local10 
+$LEA _0a__zero, _0a__local9
+_0a__local10:
+MOV _0a__local17, _0a__sqrt_res, _0a__size4
+MOV _0a__local21, _0a__sqrt_add, _0a__size4
+ADD _0a__local17, _0a__local17, _0a__local21, _0a__size4
+MOV _0a__local20, _0a__sqrt_res, _0a__size4
+MOV _0a__local22, _0a__sqrt_add, _0a__size4
+ADD _0a__local20, _0a__local20, _0a__local22, _0a__size4
+MUL _0a__local17, _0a__local17, _0a__local20, _0a__size4
+MOV _0a__local19, _0a__sqrt_aa, _0a__size4
+LT _0a__local17, _0a__local17, _0a__local19, _0a__size4
+LEA _0a__local18, _0a__local17
+$CLEA _0a__local18, _0a__zero, _0a__local15 
+$LEA _0a__zero, _0a__local16 
+_0a__local15:
+MOV _0a__sqrt_res, _0a__sqrt_res, _0a__size4
+MOV _0a__local23, _0a__sqrt_add, _0a__size4
+ADD _0a__sqrt_res, _0a__sqrt_res, _0a__local23, _0a__size4
+_0a__local16:
+MOV _0a__sqrt_add, _0a__sqrt_add, _0a__size4
+MOV_CONST 2, _0a__local24
+DIV _0a__sqrt_add, _0a__sqrt_add, _0a__local24, _0a__size4
+$LEA _0a__zero, _0a__local11 
+_0a__local9:
+MOV sqrt - 8, _0a__sqrt_res, _0a__size4
+LEA _0a__local25, _0a__size4
+LEA _0a__local26, sqrt - 4
+$MOV _0a__zero, _0a__local26, _0a__local25
+; arguments
+.dd 0xBEBEBEBE
+; return value
+.dd 0xBEBEBEBE
+; return address
+.dd 0xBEBEBEBE
+f:
+MOV f - 8, f - 12, _0a__size4
+MOV_CONST 1000, _0a__local27
+MUL f - 8, f - 8, _0a__local27, _0a__size4
+LEA _0a__local28, _0a__size4
+LEA _0a__local29, f - 4
+$MOV _0a__zero, _0a__local29, _0a__local28
 _0a__local0:
-MOV_CONST 0, main - 8
-LEA _0a__local62, _0a__size4
-LEA _0a__local63, main - 4
-$MOV _0a__zero, _0a__local63, _0a__local62
-_0a__main_end:
 .dd 0
-_0a__main_start:
+_0a__local1:
 .dd 0
-_0a__main_t:
-.dd 0
-_0a__main_x:
-.dd 0
-_0a__main_y:
+_0a__local2:
 .dd 0
 _0a__local3:
 .dd 0
 _0a__local4:
 .dd 0
+_0a__local5:
+.dd 0
+_0a__local6:
+.dd 0
+_0a__local7:
+.dd 0
+_0a__sqrt_aa:
+.dd 0
+_0a__sqrt_res:
+.dd 0
+_0a__sqrt_add:
+.dd 0
 _0a__local8:
 .dd 0
-_0a__local9:
+_0a__local12:
 .dd 0
-_0a__local10:
+_0a__local13:
 .dd 0
 _0a__local14:
 .dd 0
-_0a__local15:
-.dd 0
-_0a__local16:
-.dd 0
-_0a__main_a:
-.dd 0
-_0a__main_b:
-.dd 0
-_0a__main_i:
+_0a__local17:
 .dd 0
 _0a__local18:
 .dd 0
 _0a__local19:
-.dd 0
-_0a__main_ta:
-.dd 0
-_0a__main_tb:
 .dd 0
 _0a__local20:
 .dd 0
@@ -216,73 +142,109 @@ _0a__local22:
 .dd 0
 _0a__local23:
 .dd 0
+_0a__local24:
+.dd 0
+_0a__local25:
+.dd 0
+_0a__local26:
+.dd 0
 _0a__local27:
 .dd 0
 _0a__local28:
 .dd 0
 _0a__local29:
 .dd 0
-_0a__local30:
-.dd 0
-_0a__local31:
-.dd 0
-_0a__local32:
-.dd 0
-_0a__local33:
-.dd 0
-_0a__local34:
-.dd 0
-_0a__local35:
-.dd 0
-_0a__local36:
-.dd 0
-_0a__local37:
-.dd 0
-_0a__local38:
-.dd 0
-_0a__local41:
-.dd 0
-_0a__local42:
-.dd 0
-_0a__local43:
-.dd 0
-_0a__local44:
-.dd 0
-_0a__local45:
-.dd 0
-_0a__local46:
-.dd 0
-_0a__local47:
-.dd 0
-_0a__local50:
-.dd 0
-_0a__local51:
-.dd 0
-_0a__local52:
-.dd 0
-_0a__local53:
-.dd 0
-_0a__local54:
-.dd 0
-_0a__local56:
-.dd 0
-_0a__local57:
-.dd 0
-_0a__local58:
-.dd 0
-_0a__local59:
-.dd 0
-_0a__local60:
-.dd 0
-_0a__local62:
-.dd 0
-_0a__local63:
-.dd 0
 _0a__size4:
 .dd 4
 _0a__size1:
 .dd 1
 _0a__zero:
+.dd 0
+
+; arguments
+; return value
+.dd 0xBEBEBEBE
+; return address
+.dd 0xBEBEBEBE
+draw:
+MOV_CONST 10, put4 - 12
+MOV_CONST 5, f - 12
+LEA f - 4, _1b__local0
+$LEA _1b__zero, f
+_1b__local0:
+MOV fmul - 12, f - 8, _1b__size4
+MOV_CONST 5, f - 12
+LEA f - 4, _1b__local1
+$LEA _1b__zero, f
+_1b__local1:
+MOV fmul - 16, f - 8, _1b__size4
+LEA fmul - 4, _1b__local2
+$LEA _1b__zero, fmul
+_1b__local2:
+MOV sqrt - 12, fmul - 8, _1b__size4
+LEA sqrt - 4, _1b__local3
+$LEA _1b__zero, sqrt
+_1b__local3:
+MOV put4 - 16, sqrt - 8, _1b__size4
+LEA put4 - 4, _1b__local4
+$LEA _1b__zero, put4
+_1b__local4:
+MOV _1b__draw_t, put4 - 8, _1b__size4
+MOV_CONST 10, out - 12
+MOV_CONST 4, out - 16
+LEA out - 4, _1b__local5
+$LEA _1b__zero, out
+_1b__local5:
+MOV _1b__draw_t, out - 8, _1b__size4
+; arguments
+; return value
+.dd 0xBEBEBEBE
+; return address
+.dd 0xBEBEBEBE
+main:
+MOV_CONST 24576, _1b__main_end
+MOV_CONST 24576, _1b__main_start
+LEA _1b__local10, _1b__local9
+_1b__local8:
+MOV_CONST 1, _1b__local9
+$CLEA _1b__local10, _1b__zero, _1b__local7 
+$LEA _1b__zero, _1b__local6
+_1b__local7:
+LEA draw - 4, _1b__local11
+$LEA _1b__zero, draw
+_1b__local11:
+MOV _1b__main_t, draw - 8, _1b__size4
+$LEA _1b__zero, _1b__local8 
+_1b__local6:
+MOV_CONST 0, main - 8
+LEA _1b__local12, _1b__size4
+LEA _1b__local13, main - 4
+$MOV _1b__zero, _1b__local13, _1b__local12
+_1b__draw_t:
+.dd 0
+_1b__main_end:
+.dd 0
+_1b__main_start:
+.dd 0
+_1b__main_t:
+.dd 0
+_1b__main_x:
+.dd 0
+_1b__main_y:
+.dd 0
+_1b__local9:
+.dd 0
+_1b__local10:
+.dd 0
+_1b__local12:
+.dd 0
+_1b__local13:
+.dd 0
+_1b__size4:
+.dd 4
+_1b__size1:
+.dd 1
+_1b__zero:
 .dd 0
 
 
@@ -304,13 +266,13 @@ _0a__zero:
 put4:
 
 ; write data to memory
-LEA _1io__size4_ptr, _1io__size4
-LEA _1io__value_ptr, put4 - 16
-$MOV put4 - 12, _1io__value_ptr, _1io__size4_ptr
+LEA _2io__size4_ptr, _2io__size4
+LEA _2io__value_ptr, put4 - 16
+$MOV put4 - 12, _2io__value_ptr, _2io__size4_ptr
 
 ; return to caller
-LEA _1io__ptr_ptr, put4 - 4
-$MOV _1io__zero, _1io__ptr_ptr, _1io__size4_ptr
+LEA _2io__ptr_ptr, put4 - 4
+$MOV _2io__zero, _2io__ptr_ptr, _2io__size4_ptr
 
 
 ; [void=int] put1(int, int) function:
@@ -331,14 +293,14 @@ $MOV _1io__zero, _1io__ptr_ptr, _1io__size4_ptr
 put1:
 
 ; write data to memory
-LEA _1io__size1_ptr, _1io__size1
-LEA _1io__size4_ptr, _1io__size4
-LEA _1io__value_ptr, put1 - 16
-$MOV put1 - 12, _1io__value_ptr, _1io__size1_ptr
+LEA _2io__size1_ptr, _2io__size1
+LEA _2io__size4_ptr, _2io__size4
+LEA _2io__value_ptr, put1 - 16
+$MOV put1 - 12, _2io__value_ptr, _2io__size1_ptr
 
 ; return to caller
-LEA _1io__ptr_ptr, put1 - 4
-$MOV _1io__zero, _1io__ptr_ptr, _1io__size4_ptr
+LEA _2io__ptr_ptr, put1 - 4
+$MOV _2io__zero, _2io__ptr_ptr, _2io__size4_ptr
 
 
 ; [void=int] out(int, int) function:
@@ -360,28 +322,28 @@ $MOV _1io__zero, _1io__ptr_ptr, _1io__size4_ptr
 out:
 
 ; send output data
-LEA _1io__ptr_ptr, out - 16
-$OUT 1, out - 12, _1io__ptr_ptr
+LEA _2io__ptr_ptr, out - 16
+$OUT 1, out - 12, _2io__ptr_ptr
 
 ; return to caller
-LEA _1io__size4_ptr, _1io__size4
-LEA _1io__ptr_ptr, out - 4
-$MOV _1io__zero, _1io__ptr_ptr, _1io__size4_ptr
+LEA _2io__size4_ptr, _2io__size4
+LEA _2io__ptr_ptr, out - 4
+$MOV _2io__zero, _2io__ptr_ptr, _2io__size4_ptr
 
-_1io__ptr_ptr:
+_2io__ptr_ptr:
 .dd 0
-_1io__value_ptr:
+_2io__value_ptr:
 .dd 0
-_1io__size4_ptr:
+_2io__size4_ptr:
 .dd 0
-_1io__size1_ptr:
+_2io__size1_ptr:
 .dd 0
 
 
-_1io__size4:
+_2io__size4:
 .dd 4
-_1io__size1:
+_2io__size1:
 .dd 4
-_1io__zero:
+_2io__zero:
 .dd 0
 

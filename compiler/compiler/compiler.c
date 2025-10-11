@@ -503,9 +503,14 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
 
         if (function == NULL)
         {
-            PRINT_ERROR("Not found function");
-            return 1;
+            PRINT_ERROR("Not found function [Warning: ignore this]");
+            // return 1;
         }
+
+        static struct function_t tmp_function;
+        function = &tmp_function;
+        function->label = get_node_text_no_spaces(tree, name);
+        function->ret = (void *)0xBEBEBEBE;
 
         int arg_id = 0;
 
@@ -548,6 +553,8 @@ result_t compile_expr_term_expression(struct compiler_instance_t *c,
                 return 1;
             }
         }
+
+        free(function->label);
         
         /* 1. need to cast? */
         /* TODO: cast */
