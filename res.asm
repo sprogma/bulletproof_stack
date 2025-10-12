@@ -528,9 +528,9 @@ MOV_CONST 0, _3balls__i
 _3balls__loop_3:
 
 ; global coodinates
-MOV intersect_ball - 12, _3balls__gx, _3balls__flt_size
-MOV intersect_ball - 16, _3balls__gy, _3balls__flt_size
-MOV intersect_ball - 20, _3balls__gz, _3balls__flt_size
+MOV intersect_ball - 12, gx, _3balls__flt_size
+MOV intersect_ball - 16, gy, _3balls__flt_size
+MOV intersect_ball - 20, gz, _3balls__flt_size
 ; ray coordinates
 MOV intersect_ball - 24, _3balls__rx, _3balls__flt_size
 MOV intersect_ball - 28, _3balls__ry, _3balls__flt_size
@@ -570,20 +570,20 @@ MOV _3balls__dst, intersect_ball - 8, _3balls__flt_size
 ; calculate point of intersection
 MUL _3balls__px, _3balls__rx, intersect_ball - 8, _3balls__flt_size
 DIV _3balls__px, _3balls__px, _3balls__flt_base, _3balls__flt_size
-ADD _3balls__px, _3balls__px, _3balls__gx, _3balls__flt_size
+ADD _3balls__px, _3balls__px, gx, _3balls__flt_size
 MUL _3balls__py, _3balls__ry, intersect_ball - 8, _3balls__flt_size
 DIV _3balls__py, _3balls__py, _3balls__flt_base, _3balls__flt_size
-ADD _3balls__py, _3balls__py, _3balls__gy, _3balls__flt_size
+ADD _3balls__py, _3balls__py, gy, _3balls__flt_size
 MUL _3balls__pz, _3balls__rz, intersect_ball - 8, _3balls__flt_size
 DIV _3balls__pz, _3balls__pz, _3balls__flt_base, _3balls__flt_size
-ADD _3balls__pz, _3balls__pz, _3balls__gz, _3balls__flt_size
+ADD _3balls__pz, _3balls__pz, gz, _3balls__flt_size
 ; calculate color using phong model
 MOV phong - 12, _3balls__ldx, _3balls__flt_size
 MOV phong - 16, _3balls__ldy, _3balls__flt_size
 MOV phong - 20, _3balls__ldz, _3balls__flt_size
-SUB phong - 24, _3balls__px, _3balls__gx, _3balls__flt_size
-SUB phong - 28, _3balls__py, _3balls__gy, _3balls__flt_size
-SUB phong - 32, _3balls__pz, _3balls__gz, _3balls__flt_size
+SUB phong - 24, _3balls__px, gx, _3balls__flt_size
+SUB phong - 28, _3balls__py, gy, _3balls__flt_size
+SUB phong - 32, _3balls__pz, gz, _3balls__flt_size
 SUB phong - 36, _3balls__px, _3balls__bx, _3balls__flt_size
 SUB phong - 40, _3balls__py, _3balls__by, _3balls__flt_size
 SUB phong - 44, _3balls__pz, _3balls__bz, _3balls__flt_size
@@ -632,6 +632,11 @@ SUB _3balls__tmp1, _3balls__memend, _3balls__membase, _3balls__size4
 LEA _3balls__tmp_ptr1, _3balls__tmp1
 $OUT 1, _3balls__membase, _3balls__tmp_ptr1
 
+; read one event
+LEA read_key - 4, _3balls__key_input_ret_1
+$LEA _3balls__zero, read_key
+_3balls__key_input_ret_1:
+
 ; infite loop
 $LEA _3balls__zero, _3balls__inf_loop
 
@@ -650,11 +655,11 @@ _3balls__ldy:
 _3balls__ldz:
 .dd -500
 
-_3balls__gx:
+gx:
 .dd 0
-_3balls__gy:
+gy:
 .dd 0
-_3balls__gz:
+gz:
 .dd 0
 
 _3balls__px:
@@ -736,4 +741,68 @@ _3balls__membase:
 .dd 0x10000
 _3balls__memend:
 .dd 0
+
+
+.dd 0xBEBEBEBE
+.dd 0xBEBEBEBE
+read_key:
+
+IN 2, _4keyinput__scancode, _4keyinput__size8
+
+; if read SDL_SCANCODE_W = 26, move forward
+MOV_CONST 26, _4keyinput__tmp1
+EQ _4keyinput__tmp1, _4keyinput__tmp1, _4keyinput__scancode, _4keyinput__size4
+ALL _4keyinput__tmp1, _4keyinput__tmp1, _4keyinput__size4
+LEA _4keyinput__tmp_ptr1, _4keyinput__tmp1
+$CLEA _4keyinput__tmp_ptr1, _4keyinput__zero, _4keyinput__equal
+$LEA _4keyinput__zero, _4keyinput__not_equal
+_4keyinput__equal:
+MOV_CONST 200, _4keyinput__tmp1
+ADD gx, gx, _4keyinput__tmp1, _4keyinput__flt_size
+_4keyinput__not_equal:
+; [ working ]
+; OUT 3, _4keyinput__scancode, _4keyinput__size8
+
+
+LEA _4keyinput__tmp_ptr2, read_key - 4
+LEA _4keyinput__tmp_ptr1, _4keyinput__size4
+$MOV _4keyinput__zero, _4keyinput__tmp_ptr2, _4keyinput__tmp_ptr1
+
+_4keyinput__scancode:
+.dd 0
+_4keyinput__is_up:
+.dd 0
+
+_4keyinput__tmp1:
+.dd 0
+_4keyinput__tmp2:
+.dd 0
+_4keyinput__tmp3:
+.dd 0
+_4keyinput__tmp4:
+.dd 0
+_4keyinput__tmp_ptr1:
+.dd 0
+_4keyinput__tmp_ptr2:
+.dd 0
+_4keyinput__tmp_ptr3:
+.dd 0
+_4keyinput__tmp_ptr4:
+.dd 0
+
+_4keyinput__one:
+.dd 1
+_4keyinput__four:
+.dd 4
+
+_4keyinput__zero:
+.dd 0
+_4keyinput__flt_size:
+.dd 4
+_4keyinput__flt_base:
+.dd 1000
+_4keyinput__size4:
+.dd 4
+_4keyinput__size8:
+.dd 8
 

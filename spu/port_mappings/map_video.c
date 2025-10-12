@@ -58,9 +58,6 @@ static void send_port(struct port_mapping_t *mapping, BYTE *data, size_t count)
     SDL_RenderCopy(videodata->ren, txt, NULL, NULL);
     SDL_RenderPresent(videodata->ren);
     SDL_DestroyTexture(txt);
-
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {}
 }
 
 

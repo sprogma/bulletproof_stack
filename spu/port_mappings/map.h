@@ -26,6 +26,9 @@ int create_port_mapping_audio(struct spu *s, struct port_mapping_t *mapping, int
 /* write S32 bytes for 160x90 screen */
 int create_port_mapping_video(struct spu *s, struct port_mapping_t *mapping, int port, char *command);
 
+/* read actions in format: 2dwords: SDL_Scancode + 1 if pess, 0 if release */
+int create_port_mapping_keyboard(struct spu *s, struct port_mapping_t *mapping, int port, char *command);
+
 #endif
 
 #endif

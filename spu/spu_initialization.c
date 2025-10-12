@@ -43,6 +43,10 @@ result_t create_port_mapping(struct spu *s, struct port_mapping_t *mapping, int 
     {
         return create_port_mapping_video(s, mapping, port, command);
     }
+    else if (strncmp(command, "keyboard", 8) == 0)
+    {
+        return create_port_mapping_keyboard(s, mapping, port, command);
+    }
     #endif
     PRINT_ERROR("Unknown port mapping command: %s", command);
     return 1;
@@ -98,7 +102,7 @@ result_t load_spu_port_mapping(struct spu *s, char *mapping_scheme)
                 return 1;
             }
 
-            tmp = skip_leading_spaces(tmp);
+            tmp = strchr(tmp, ' ');
         }
     }
     
