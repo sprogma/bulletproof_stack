@@ -1214,6 +1214,10 @@ _main_tim:
 .dd 0
 _main_ggdx:
 .dd 0
+_main_spec:
+.dd 0
+_main_color:
+.dd 0
 _local126:
 .dd 0
 _local127:
@@ -1414,12 +1418,6 @@ _main_ny:
 .dd 0
 _main_nz:
 .dd 0
-_main_ldx:
-.dd 0
-_main_ldy:
-.dd 0
-_main_ldz:
-.dd 0
 _local248:
 .dd 0
 _local249:
@@ -1480,11 +1478,7 @@ _local283:
 .dd 0
 _local284:
 .dd 0
-_main_spec:
-.dd 0
 _local285:
-.dd 0
-_main_color:
 .dd 0
 _local287:
 .dd 0
@@ -1556,11 +1550,7 @@ _local329:
 .dd 0
 _local330:
 .dd 0
-_main_spec:
-.dd 0
 _local331:
-.dd 0
-_main_color:
 .dd 0
 _local333:
 .dd 0

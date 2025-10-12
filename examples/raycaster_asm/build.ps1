@@ -6,7 +6,10 @@ function build($a, $b)
     }
     Write-Host "Skip build of $b"
 }
-build .\examples\raycaster\math.c .\examples\raycaster\math.asm
-build .\examples\raycaster\main.c .\examples\raycaster\main.asm
-.\linker\linker.ps1 .\examples\raycaster\curvedY.asm, .\examples\raycaster\math.asm, .\examples\raycaster\main.asm, .\stdlib\io.asm -Destination res.asm
+
+
+
+build .\examples\raycaster_asm\math.c .\examples\raycaster_asm\math.asm
+.\linker\linker.ps1 .\examples\raycaster_asm\curvedY.asm, .\examples\raycaster_asm\phong.asm, .\examples\raycaster_asm\math.asm, .\examples\raycaster_asm\balls.asm -Destination res.asm
 .\asm.exe res.asm a.bc
+

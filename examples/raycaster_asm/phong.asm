@@ -20,8 +20,10 @@ phong:
 MUL sqrt - 12, _light + 8, _light + 8, _flt_size
 DIV sqrt - 12, sqrt - 12, _flt_base, _flt_size
 MUL _tmp1, _light + 4, _light + 4, _flt_size
+DIV _tmp1, _tmp1, _flt_base, _flt_size
 ADD sqrt - 12, sqrt - 12, _tmp1, _flt_size
 MUL _tmp1, _light + 0, _light + 0, _flt_size
+DIV _tmp1, _tmp1, _flt_base, _flt_size
 ADD sqrt - 12, sqrt - 12, _tmp1, _flt_size
 LEA sqrt - 4, _ret_1
 $LEA _zero, sqrt
@@ -42,12 +44,14 @@ DIV _light + 0, _light + 0, sqrt - 8, _flt_size
 MUL sqrt - 12, _normal + 8, _normal + 8, _flt_size
 DIV sqrt - 12, sqrt - 12, _flt_base, _flt_size
 MUL _tmp1, _normal + 4, _normal + 4, _flt_size
+DIV _tmp1, _tmp1, _flt_base, _flt_size
 ADD sqrt - 12, sqrt - 12, _tmp1, _flt_size
 MUL _tmp1, _normal + 0, _normal + 0, _flt_size
+DIV _tmp1, _tmp1, _flt_base, _flt_size
 ADD sqrt - 12, sqrt - 12, _tmp1, _flt_size
-LEA sqrt - 4, _ret_1
+LEA sqrt - 4, _ret_2
 $LEA _zero, sqrt
-_ret_1:
+_ret_2:
 MUL _normal + 8, _normal + 8, _flt_base, _flt_size
 MUL _normal + 4, _normal + 4, _flt_base, _flt_size
 MUL _normal + 0, _normal + 0, _flt_base, _flt_size
@@ -58,12 +62,20 @@ DIV _normal + 0, _normal + 0, sqrt - 8, _flt_size
 MUL sqrt - 12, _view + 8, _view + 8, _flt_size
 DIV sqrt - 12, sqrt - 12, _flt_base, _flt_size
 MUL _tmp1, _view + 4, _view + 4, _flt_size
+DIV _tmp1, _tmp1, _flt_base, _flt_size
 ADD sqrt - 12, sqrt - 12, _tmp1, _flt_size
 MUL _tmp1, _view + 0, _view + 0, _flt_size
+DIV _tmp1, _tmp1, _flt_base, _flt_size
 ADD sqrt - 12, sqrt - 12, _tmp1, _flt_size
-LEA sqrt - 4, _ret_1
+LEA sqrt - 4, _ret_3
 $LEA _zero, sqrt
-_ret_1:
+_ret_3:
+
+; if zero - return from function
+LEA _tmp_ptr1, _tmp1
+LT _tmp1, sqrt - 8, _one, _flt_size
+$CLEA _tmp_ptr1, _zero, _phong_ret
+
 MUL _view + 8, _view + 8, _flt_base, _flt_size
 MUL _view + 4, _view + 4, _flt_base, _flt_size
 MUL _view + 0, _view + 0, _flt_base, _flt_size
@@ -83,13 +95,14 @@ DIV _tmp2, _tmp2, _flt_base, _flt_size
 ADD _tmp1, _tmp1, _tmp2, _flt_size
 ; clamp it from bottom by zero
 LT _tmp2, _zero, _tmp1, _flt_size
-LEA _tmp2, _tmp2_ptr
-$CLEA _tmp2_ptr, _zero, _end_clamp
-MOV_CONST _tmp1, 0
+LEA _tmp_ptr2, _tmp2
+$CLEA _tmp_ptr2, _zero, _end_clamp
+MOV_CONST 0, _tmp1
 _end_clamp:
 ; scale
-MOV_CONST _tmp2, 800
+MOV_CONST 800, _tmp2
 MUL _tmp1, _tmp1, _tmp2, _flt_size
+DIV _tmp1, _tmp1, _flt_base, _flt_size
 ; add to resulting light
 ADD phong - 8, phong - 8, _tmp1, _flt_size
 ; - add blink light

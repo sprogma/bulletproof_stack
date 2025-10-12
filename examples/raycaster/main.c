@@ -64,6 +64,8 @@ int main()
 {
     int res1, res2, res3, t, x, y, gx, gy, gz, lx, ly, lz, ldx, ldy, ldz, tim, ggdx;
 
+    int spec;
+    int color;
     lx = 1000;
     ly = 0;
     lz = 0;
@@ -127,7 +129,7 @@ int main()
                 a = (x - 80) * 12;
                 b = (45 - y) * 12;
 
-                int dx, dy, dz, px, py, pz, nx, ny, nz, ldx, ldy, ldz;
+                int dx, dy, dz, px, py, pz, nx, ny, nz;
                 
                 dx = (a * 2) / 3;
                 dy = (b * 2) / 3;
@@ -147,10 +149,8 @@ int main()
                     ldx = lx - px;
                     ldy = ly - py;
                     ldz = lz - pz;
-                    int spec;
                     spec = phong(ldx, ldy, ldz, dx, dy, dz, nx, ny, nz);
 
-                    int color;
                     color = (255 * spec) / 1000;
                     
                     t = put4(end, color + 255 * color + 65536 * color);
@@ -170,10 +170,8 @@ int main()
                         ldx = lx - px;
                         ldy = ly - py;
                         ldz = lz - pz;
-                        int spec;
                         spec = phong(ldx, ldy, ldz, dx, dy, dz, nx, ny, nz);
 
-                        int color;
                         color = (255 * spec) / 1000;
                         
                         t = put4(end, color + 65536 * color);
