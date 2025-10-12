@@ -457,299 +457,509 @@ _2main__local25:
 MOV _2main__local24, fdiv - 8, _2main__size4
 MOV phong - 44, _2main__local24, _2main__size4
 MOV fmul - 12, phong - 12, _2main__size4
-MOV fmul - 16, phong - 36, _2main__size4
+MOV fmul - 16, phong - 12, _2main__size4
 LEA fmul - 4, _2main__local28
 $LEA _2main__zero, fmul
 _2main__local28:
-MOV _2main__local26, fmul - 8, _2main__size4
+MOV sqrt - 12, fmul - 8, _2main__size4
 MOV fmul - 12, phong - 16, _2main__size4
-MOV fmul - 16, phong - 40, _2main__size4
+MOV fmul - 16, phong - 16, _2main__size4
 LEA fmul - 4, _2main__local30
 $LEA _2main__zero, fmul
 _2main__local30:
 MOV _2main__local27, fmul - 8, _2main__size4
 MOV fmul - 12, phong - 20, _2main__size4
-MOV fmul - 16, phong - 44, _2main__size4
+MOV fmul - 16, phong - 20, _2main__size4
 LEA fmul - 4, _2main__local31
 $LEA _2main__zero, fmul
 _2main__local31:
 MOV _2main__local29, fmul - 8, _2main__size4
 ADD _2main__local27, _2main__local27, _2main__local29, _2main__size4
-ADD _2main__local26, _2main__local26, _2main__local27, _2main__size4
-MOV _2main__phong_diffuse, _2main__local26, _2main__size4
+ADD sqrt - 12, sqrt - 12, _2main__local27, _2main__size4
+LEA sqrt - 4, _2main__local32
+$LEA _2main__zero, sqrt
+_2main__local32:
+MOV _2main__local26, sqrt - 8, _2main__size4
+MOV _2main__phong_l, _2main__local26, _2main__size4
+MOV fdiv - 12, phong - 12, _2main__size4
+MOV fdiv - 16, _2main__phong_l, _2main__size4
+LEA fdiv - 4, _2main__local34
+$LEA _2main__zero, fdiv
+_2main__local34:
+MOV _2main__local33, fdiv - 8, _2main__size4
+MOV phong - 12, _2main__local33, _2main__size4
+MOV fdiv - 12, phong - 16, _2main__size4
+MOV fdiv - 16, _2main__phong_l, _2main__size4
+LEA fdiv - 4, _2main__local36
+$LEA _2main__zero, fdiv
+_2main__local36:
+MOV _2main__local35, fdiv - 8, _2main__size4
+MOV phong - 16, _2main__local35, _2main__size4
+MOV fdiv - 12, phong - 20, _2main__size4
+MOV fdiv - 16, _2main__phong_l, _2main__size4
+LEA fdiv - 4, _2main__local38
+$LEA _2main__zero, fdiv
+_2main__local38:
+MOV _2main__local37, fdiv - 8, _2main__size4
+MOV phong - 20, _2main__local37, _2main__size4
+MOV fmul - 12, phong - 12, _2main__size4
+MOV fmul - 16, phong - 36, _2main__size4
+LEA fmul - 4, _2main__local41
+$LEA _2main__zero, fmul
+_2main__local41:
+MOV _2main__local39, fmul - 8, _2main__size4
+MOV fmul - 12, phong - 16, _2main__size4
+MOV fmul - 16, phong - 40, _2main__size4
+LEA fmul - 4, _2main__local43
+$LEA _2main__zero, fmul
+_2main__local43:
+MOV _2main__local40, fmul - 8, _2main__size4
+MOV fmul - 12, phong - 20, _2main__size4
+MOV fmul - 16, phong - 44, _2main__size4
+LEA fmul - 4, _2main__local44
+$LEA _2main__zero, fmul
+_2main__local44:
+MOV _2main__local42, fmul - 8, _2main__size4
+ADD _2main__local40, _2main__local40, _2main__local42, _2main__size4
+ADD _2main__local39, _2main__local39, _2main__local40, _2main__size4
+MOV _2main__phong_diffuse, _2main__local39, _2main__size4
 MOV fmul - 12, _2main__phong_diffuse, _2main__size4
 MOV_CONST 400, fmul - 16
-LEA fmul - 4, _2main__local33
+LEA fmul - 4, _2main__local46
 $LEA _2main__zero, fmul
-_2main__local33:
-MOV _2main__local32, fmul - 8, _2main__size4
-MOV _2main__phong_diffuse, _2main__local32, _2main__size4
-MOV _2main__local36, _2main__phong_diffuse, _2main__size4
-MOV_CONST 0, _2main__local38
-LT _2main__local36, _2main__local36, _2main__local38, _2main__size4
-LEA _2main__local37, _2main__local36
-$CLEA _2main__local37, _2main__zero, _2main__local34 
-$LEA _2main__zero, _2main__local35 
-_2main__local34:
-MOV_CONST 0, _2main__local39
-MOV _2main__phong_diffuse, _2main__local39, _2main__size4
-_2main__local35:
-MOV _2main__local40, phong - 12, _2main__size4
-MOV _2main__local41, phong - 24, _2main__size4
-SUB _2main__local40, _2main__local40, _2main__local41, _2main__size4
-MOV _2main__phong_x, _2main__local40, _2main__size4
-MOV _2main__local42, phong - 16, _2main__size4
-MOV _2main__local43, phong - 28, _2main__size4
-SUB _2main__local42, _2main__local42, _2main__local43, _2main__size4
-MOV _2main__phong_y, _2main__local42, _2main__size4
-MOV _2main__local44, phong - 20, _2main__size4
-MOV _2main__local45, phong - 32, _2main__size4
-SUB _2main__local44, _2main__local44, _2main__local45, _2main__size4
-MOV _2main__phong_z, _2main__local44, _2main__size4
-MOV fmul - 12, _2main__phong_x, _2main__size4
-MOV fmul - 16, _2main__phong_x, _2main__size4
-LEA fmul - 4, _2main__local48
-$LEA _2main__zero, fmul
+_2main__local46:
+MOV _2main__local45, fmul - 8, _2main__size4
+MOV _2main__phong_diffuse, _2main__local45, _2main__size4
+MOV _2main__local49, _2main__phong_diffuse, _2main__size4
+MOV_CONST 0, _2main__local51
+LT _2main__local49, _2main__local49, _2main__local51, _2main__size4
+LEA _2main__local50, _2main__local49
+$CLEA _2main__local50, _2main__zero, _2main__local47 
+$LEA _2main__zero, _2main__local48 
+_2main__local47:
+MOV_CONST 0, _2main__local52
+MOV _2main__phong_diffuse, _2main__local52, _2main__size4
 _2main__local48:
-MOV sqrt - 12, fmul - 8, _2main__size4
-MOV fmul - 12, _2main__phong_y, _2main__size4
-MOV fmul - 16, _2main__phong_y, _2main__size4
-LEA fmul - 4, _2main__local50
-$LEA _2main__zero, fmul
-_2main__local50:
-MOV _2main__local47, fmul - 8, _2main__size4
-MOV fmul - 12, _2main__phong_z, _2main__size4
-MOV fmul - 16, _2main__phong_z, _2main__size4
-LEA fmul - 4, _2main__local51
-$LEA _2main__zero, fmul
-_2main__local51:
-MOV _2main__local49, fmul - 8, _2main__size4
-ADD _2main__local47, _2main__local47, _2main__local49, _2main__size4
-ADD sqrt - 12, sqrt - 12, _2main__local47, _2main__size4
-LEA sqrt - 4, _2main__local52
-$LEA _2main__zero, sqrt
-_2main__local52:
-MOV _2main__local46, sqrt - 8, _2main__size4
-MOV _2main__phong_l, _2main__local46, _2main__size4
-MOV fdiv - 12, _2main__phong_x, _2main__size4
-MOV fdiv - 16, _2main__phong_l, _2main__size4
-LEA fdiv - 4, _2main__local54
-$LEA _2main__zero, fdiv
-_2main__local54:
-MOV _2main__local53, fdiv - 8, _2main__size4
+MOV _2main__local53, phong - 12, _2main__size4
+MOV _2main__local54, phong - 24, _2main__size4
+SUB _2main__local53, _2main__local53, _2main__local54, _2main__size4
 MOV _2main__phong_x, _2main__local53, _2main__size4
-MOV fdiv - 12, _2main__phong_y, _2main__size4
-MOV fdiv - 16, _2main__phong_l, _2main__size4
-LEA fdiv - 4, _2main__local56
-$LEA _2main__zero, fdiv
-_2main__local56:
-MOV _2main__local55, fdiv - 8, _2main__size4
+MOV _2main__local55, phong - 16, _2main__size4
+MOV _2main__local56, phong - 28, _2main__size4
+SUB _2main__local55, _2main__local55, _2main__local56, _2main__size4
 MOV _2main__phong_y, _2main__local55, _2main__size4
-MOV fdiv - 12, _2main__phong_z, _2main__size4
-MOV fdiv - 16, _2main__phong_l, _2main__size4
-LEA fdiv - 4, _2main__local58
-$LEA _2main__zero, fdiv
-_2main__local58:
-MOV _2main__local57, fdiv - 8, _2main__size4
+MOV _2main__local57, phong - 20, _2main__size4
+MOV _2main__local58, phong - 32, _2main__size4
+SUB _2main__local57, _2main__local57, _2main__local58, _2main__size4
 MOV _2main__phong_z, _2main__local57, _2main__size4
 MOV fmul - 12, _2main__phong_x, _2main__size4
-MOV fmul - 16, phong - 36, _2main__size4
+MOV fmul - 16, _2main__phong_x, _2main__size4
 LEA fmul - 4, _2main__local61
 $LEA _2main__zero, fmul
 _2main__local61:
-MOV _2main__local59, fmul - 8, _2main__size4
+MOV sqrt - 12, fmul - 8, _2main__size4
 MOV fmul - 12, _2main__phong_y, _2main__size4
-MOV fmul - 16, phong - 40, _2main__size4
+MOV fmul - 16, _2main__phong_y, _2main__size4
 LEA fmul - 4, _2main__local63
 $LEA _2main__zero, fmul
 _2main__local63:
 MOV _2main__local60, fmul - 8, _2main__size4
 MOV fmul - 12, _2main__phong_z, _2main__size4
-MOV fmul - 16, phong - 44, _2main__size4
+MOV fmul - 16, _2main__phong_z, _2main__size4
 LEA fmul - 4, _2main__local64
 $LEA _2main__zero, fmul
 _2main__local64:
 MOV _2main__local62, fmul - 8, _2main__size4
 ADD _2main__local60, _2main__local60, _2main__local62, _2main__size4
-ADD _2main__local59, _2main__local59, _2main__local60, _2main__size4
-MOV _2main__phong_blink, _2main__local59, _2main__size4
-MOV _2main__local67, _2main__phong_blink, _2main__size4
-MOV_CONST 0, _2main__local69
-LT _2main__local67, _2main__local67, _2main__local69, _2main__size4
-LEA _2main__local68, _2main__local67
-$CLEA _2main__local68, _2main__zero, _2main__local65 
-$LEA _2main__zero, _2main__local66 
+ADD sqrt - 12, sqrt - 12, _2main__local60, _2main__size4
+LEA sqrt - 4, _2main__local65
+$LEA _2main__zero, sqrt
 _2main__local65:
+MOV _2main__local59, sqrt - 8, _2main__size4
+MOV _2main__phong_l, _2main__local59, _2main__size4
+MOV _2main__local68, _2main__phong_l, _2main__size4
 MOV_CONST 0, _2main__local70
-MOV _2main__phong_blink, _2main__local70, _2main__size4
+LT _2main__local68, _2main__local70, _2main__local68, _2main__size4
+LEA _2main__local69, _2main__local68
+$CLEA _2main__local69, _2main__zero, _2main__local66 
+$LEA _2main__zero, _2main__local67 
 _2main__local66:
-MOV fmul - 12, _2main__phong_blink, _2main__size4
-MOV fmul - 16, _2main__phong_blink, _2main__size4
-LEA fmul - 4, _2main__local72
-$LEA _2main__zero, fmul
+MOV fdiv - 12, _2main__phong_x, _2main__size4
+MOV fdiv - 16, _2main__phong_l, _2main__size4
+LEA fdiv - 4, _2main__local72
+$LEA _2main__zero, fdiv
 _2main__local72:
-MOV _2main__local71, fmul - 8, _2main__size4
-MOV _2main__phong_blink, _2main__local71, _2main__size4
-MOV fmul - 12, _2main__phong_blink, _2main__size4
-MOV fmul - 16, _2main__phong_blink, _2main__size4
-LEA fmul - 4, _2main__local74
-$LEA _2main__zero, fmul
+MOV _2main__local71, fdiv - 8, _2main__size4
+MOV _2main__phong_x, _2main__local71, _2main__size4
+MOV fdiv - 12, _2main__phong_y, _2main__size4
+MOV fdiv - 16, _2main__phong_l, _2main__size4
+LEA fdiv - 4, _2main__local74
+$LEA _2main__zero, fdiv
 _2main__local74:
-MOV _2main__local73, fmul - 8, _2main__size4
-MOV _2main__phong_blink, _2main__local73, _2main__size4
+MOV _2main__local73, fdiv - 8, _2main__size4
+MOV _2main__phong_y, _2main__local73, _2main__size4
+MOV fdiv - 12, _2main__phong_z, _2main__size4
+MOV fdiv - 16, _2main__phong_l, _2main__size4
+LEA fdiv - 4, _2main__local76
+$LEA _2main__zero, fdiv
+_2main__local76:
+MOV _2main__local75, fdiv - 8, _2main__size4
+MOV _2main__phong_z, _2main__local75, _2main__size4
+_2main__local67:
+MOV fmul - 12, _2main__phong_x, _2main__size4
+MOV fmul - 16, phong - 36, _2main__size4
+LEA fmul - 4, _2main__local79
+$LEA _2main__zero, fmul
+_2main__local79:
+MOV _2main__local77, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__phong_y, _2main__size4
+MOV fmul - 16, phong - 40, _2main__size4
+LEA fmul - 4, _2main__local81
+$LEA _2main__zero, fmul
+_2main__local81:
+MOV _2main__local78, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__phong_z, _2main__size4
+MOV fmul - 16, phong - 44, _2main__size4
+LEA fmul - 4, _2main__local82
+$LEA _2main__zero, fmul
+_2main__local82:
+MOV _2main__local80, fmul - 8, _2main__size4
+ADD _2main__local78, _2main__local78, _2main__local80, _2main__size4
+ADD _2main__local77, _2main__local77, _2main__local78, _2main__size4
+MOV _2main__phong_blink, _2main__local77, _2main__size4
+MOV _2main__local85, _2main__phong_blink, _2main__size4
+MOV_CONST 0, _2main__local87
+LT _2main__local85, _2main__local85, _2main__local87, _2main__size4
+LEA _2main__local86, _2main__local85
+$CLEA _2main__local86, _2main__zero, _2main__local83 
+$LEA _2main__zero, _2main__local84 
+_2main__local83:
+MOV_CONST 0, _2main__local88
+MOV _2main__phong_blink, _2main__local88, _2main__size4
+_2main__local84:
 MOV fmul - 12, _2main__phong_blink, _2main__size4
 MOV fmul - 16, _2main__phong_blink, _2main__size4
-LEA fmul - 4, _2main__local76
+LEA fmul - 4, _2main__local90
 $LEA _2main__zero, fmul
-_2main__local76:
-MOV _2main__local75, fmul - 8, _2main__size4
-MOV _2main__phong_l, _2main__local75, _2main__size4
+_2main__local90:
+MOV _2main__local89, fmul - 8, _2main__size4
+MOV _2main__phong_blink, _2main__local89, _2main__size4
+MOV fmul - 12, _2main__phong_blink, _2main__size4
+MOV fmul - 16, _2main__phong_blink, _2main__size4
+LEA fmul - 4, _2main__local92
+$LEA _2main__zero, fmul
+_2main__local92:
+MOV _2main__local91, fmul - 8, _2main__size4
+MOV _2main__phong_blink, _2main__local91, _2main__size4
+MOV fmul - 12, _2main__phong_blink, _2main__size4
+MOV fmul - 16, _2main__phong_blink, _2main__size4
+LEA fmul - 4, _2main__local94
+$LEA _2main__zero, fmul
+_2main__local94:
+MOV _2main__local93, fmul - 8, _2main__size4
+MOV _2main__phong_l, _2main__local93, _2main__size4
 MOV fmul - 12, _2main__phong_blink, _2main__size4
 MOV fmul - 16, _2main__phong_l, _2main__size4
-LEA fmul - 4, _2main__local78
+LEA fmul - 4, _2main__local96
 $LEA _2main__zero, fmul
-_2main__local78:
-MOV _2main__local77, fmul - 8, _2main__size4
-MOV _2main__phong_blink, _2main__local77, _2main__size4
+_2main__local96:
+MOV _2main__local95, fmul - 8, _2main__size4
+MOV _2main__phong_blink, _2main__local95, _2main__size4
 MOV fmul - 12, _2main__phong_blink, _2main__size4
 MOV_CONST 400, fmul - 16
-LEA fmul - 4, _2main__local80
+LEA fmul - 4, _2main__local98
 $LEA _2main__zero, fmul
-_2main__local80:
-MOV _2main__local79, fmul - 8, _2main__size4
-MOV _2main__phong_blink, _2main__local79, _2main__size4
-MOV_CONST 200, phong - 8
-MOV _2main__local81, _2main__phong_diffuse, _2main__size4
-MOV _2main__local82, _2main__phong_blink, _2main__size4
-ADD _2main__local81, _2main__local81, _2main__local82, _2main__size4
-ADD phong - 8, phong - 8, _2main__local81, _2main__size4
-LEA _2main__local83, _2main__size4
-LEA _2main__local84, phong - 4
-$MOV _2main__zero, _2main__local84, _2main__local83
+_2main__local98:
+MOV _2main__local97, fmul - 8, _2main__size4
+MOV _2main__phong_blink, _2main__local97, _2main__size4
+MOV_CONST 200, _2main__local99
+MOV _2main__local100, _2main__phong_diffuse, _2main__size4
+MOV _2main__local101, _2main__phong_blink, _2main__size4
+ADD _2main__local100, _2main__local100, _2main__local101, _2main__size4
+ADD _2main__local99, _2main__local99, _2main__local100, _2main__size4
+MOV _2main__phong_ans, _2main__local99, _2main__size4
+MOV _2main__local104, _2main__phong_ans, _2main__size4
+MOV_CONST 1000, _2main__local106
+LT _2main__local104, _2main__local106, _2main__local104, _2main__size4
+LEA _2main__local105, _2main__local104
+$CLEA _2main__local105, _2main__zero, _2main__local102 
+$LEA _2main__zero, _2main__local103 
+_2main__local102:
+MOV_CONST 1000, _2main__local107
+MOV _2main__phong_ans, _2main__local107, _2main__size4
+_2main__local103:
+MOV phong - 8, _2main__phong_ans, _2main__size4
+LEA _2main__local108, _2main__size4
+LEA _2main__local109, phong - 4
+$MOV _2main__zero, _2main__local109, _2main__local108
 ; arguments
 ; return value
 .dd 0xBEBEBEBE
 ; return address
 .dd 0xBEBEBEBE
 main:
-MOV_CONST 500, _2main__local85
-MOV _2main__main_lx, _2main__local85, _2main__size4
-MOV_CONST 1000, _2main__local86
-MOV _2main__main_ly, _2main__local86, _2main__size4
-MOV_CONST -800, _2main__local87
-MOV _2main__main_lz, _2main__local87, _2main__size4
+MOV_CONST 1000, _2main__local110
+MOV _2main__main_lx, _2main__local110, _2main__size4
+MOV_CONST 0, _2main__local111
+MOV _2main__main_ly, _2main__local111, _2main__size4
+MOV_CONST 0, _2main__local112
+MOV _2main__main_lz, _2main__local112, _2main__size4
+MOV_CONST 0, _2main__local113
+MOV _2main__main_gx, _2main__local113, _2main__size4
+MOV_CONST 0, _2main__local114
+MOV _2main__main_gy, _2main__local114, _2main__size4
+MOV_CONST -4000, _2main__local115
+MOV _2main__main_gz, _2main__local115, _2main__size4
+MOV_CONST 0, _2main__local116
+MOV _2main__main_tim, _2main__local116, _2main__size4
+LEA _2main__local121, _2main__local120
+_2main__local119:
+MOV_CONST 1, _2main__local120
+$CLEA _2main__local121, _2main__zero, _2main__local118 
+$LEA _2main__zero, _2main__local117
+_2main__local118:
+MOV_CONST 65536, _2main__local122
+MOV _2main__main_start, _2main__local122, _2main__size4
+MOV_CONST 65536, _2main__local123
+MOV _2main__main_end, _2main__local123, _2main__size4
+MOV _2main__local124, _2main__main_tim, _2main__size4
+MOV_CONST 1, _2main__local125
+ADD _2main__local124, _2main__local124, _2main__local125, _2main__size4
+MOV _2main__main_tim, _2main__local124, _2main__size4
+MOV _2main__local126, _2main__main_lx, _2main__size4
+MOV _2main__main_k1, _2main__local126, _2main__size4
+MOV _2main__local127, _2main__main_ly, _2main__size4
+MOV _2main__main_k2, _2main__local127, _2main__size4
+MOV _2main__local128, _2main__main_lz, _2main__size4
+MOV _2main__main_k3, _2main__local128, _2main__size4
+MOV _2main__local131, _2main__main_tim, _2main__size4
+MOV _2main__local134, _2main__main_tim, _2main__size4
+MOV_CONST 100, _2main__local136
+DIV _2main__local134, _2main__local134, _2main__local136, _2main__size4
+MOV_CONST 100, _2main__local135
+MUL _2main__local134, _2main__local134, _2main__local135, _2main__size4
+SUB _2main__local131, _2main__local131, _2main__local134, _2main__size4
+MOV_CONST 50, _2main__local133
+LT _2main__local131, _2main__local131, _2main__local133, _2main__size4
+LEA _2main__local132, _2main__local131
+$CLEA _2main__local132, _2main__zero, _2main__local129 
+MOV fmul - 12, _2main__main_k1, _2main__size4
+MOV_CONST 995, fmul - 16
+LEA fmul - 4, _2main__local139
+$LEA _2main__zero, fmul
+_2main__local139:
+MOV _2main__local137, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k2, _2main__size4
+MOV_CONST -89, fmul - 16
+LEA fmul - 4, _2main__local141
+$LEA _2main__zero, fmul
+_2main__local141:
+MOV _2main__local138, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k3, _2main__size4
+MOV_CONST 19, fmul - 16
+LEA fmul - 4, _2main__local142
+$LEA _2main__zero, fmul
+_2main__local142:
+MOV _2main__local140, fmul - 8, _2main__size4
+ADD _2main__local138, _2main__local138, _2main__local140, _2main__size4
+ADD _2main__local137, _2main__local137, _2main__local138, _2main__size4
+MOV _2main__main_lx, _2main__local137, _2main__size4
+MOV fmul - 12, _2main__main_k1, _2main__size4
+MOV_CONST 89, fmul - 16
+LEA fmul - 4, _2main__local145
+$LEA _2main__zero, fmul
+_2main__local145:
+MOV _2main__local143, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k2, _2main__size4
+MOV_CONST 995, fmul - 16
+LEA fmul - 4, _2main__local147
+$LEA _2main__zero, fmul
+_2main__local147:
+MOV _2main__local144, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k3, _2main__size4
+MOV_CONST -19, fmul - 16
+LEA fmul - 4, _2main__local148
+$LEA _2main__zero, fmul
+_2main__local148:
+MOV _2main__local146, fmul - 8, _2main__size4
+ADD _2main__local144, _2main__local144, _2main__local146, _2main__size4
+ADD _2main__local143, _2main__local143, _2main__local144, _2main__size4
+MOV _2main__main_ly, _2main__local143, _2main__size4
+MOV fmul - 12, _2main__main_k1, _2main__size4
+MOV_CONST -21, fmul - 16
+LEA fmul - 4, _2main__local151
+$LEA _2main__zero, fmul
+_2main__local151:
+MOV _2main__local149, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k2, _2main__size4
+MOV_CONST -18, fmul - 16
+LEA fmul - 4, _2main__local153
+$LEA _2main__zero, fmul
+_2main__local153:
+MOV _2main__local150, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k3, _2main__size4
+MOV_CONST 999, fmul - 16
+LEA fmul - 4, _2main__local154
+$LEA _2main__zero, fmul
+_2main__local154:
+MOV _2main__local152, fmul - 8, _2main__size4
+ADD _2main__local150, _2main__local150, _2main__local152, _2main__size4
+ADD _2main__local149, _2main__local149, _2main__local150, _2main__size4
+MOV _2main__main_lz, _2main__local149, _2main__size4
+$LEA _2main__zero, _2main__local130 
+_2main__local129:
+MOV fmul - 12, _2main__main_k1, _2main__size4
+MOV_CONST 993, fmul - 16
+LEA fmul - 4, _2main__local157
+$LEA _2main__zero, fmul
+_2main__local157:
+MOV _2main__local155, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k2, _2main__size4
+MOV_CONST -59, fmul - 16
+LEA fmul - 4, _2main__local159
+$LEA _2main__zero, fmul
+_2main__local159:
+MOV _2main__local156, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k3, _2main__size4
+MOV_CONST 99, fmul - 16
+LEA fmul - 4, _2main__local160
+$LEA _2main__zero, fmul
+_2main__local160:
+MOV _2main__local158, fmul - 8, _2main__size4
+ADD _2main__local156, _2main__local156, _2main__local158, _2main__size4
+ADD _2main__local155, _2main__local155, _2main__local156, _2main__size4
+MOV _2main__main_lx, _2main__local155, _2main__size4
+MOV fmul - 12, _2main__main_k1, _2main__size4
+MOV_CONST 65, fmul - 16
+LEA fmul - 4, _2main__local163
+$LEA _2main__zero, fmul
+_2main__local163:
+MOV _2main__local161, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k2, _2main__size4
+MOV_CONST 996, fmul - 16
+LEA fmul - 4, _2main__local165
+$LEA _2main__zero, fmul
+_2main__local165:
+MOV _2main__local162, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k3, _2main__size4
+MOV_CONST -59, fmul - 16
+LEA fmul - 4, _2main__local166
+$LEA _2main__zero, fmul
+_2main__local166:
+MOV _2main__local164, fmul - 8, _2main__size4
+ADD _2main__local162, _2main__local162, _2main__local164, _2main__size4
+ADD _2main__local161, _2main__local161, _2main__local162, _2main__size4
+MOV _2main__main_ly, _2main__local161, _2main__size4
+MOV fmul - 12, _2main__main_k1, _2main__size4
+MOV_CONST -95, fmul - 16
+LEA fmul - 4, _2main__local169
+$LEA _2main__zero, fmul
+_2main__local169:
+MOV _2main__local167, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k2, _2main__size4
+MOV_CONST 65, fmul - 16
+LEA fmul - 4, _2main__local171
+$LEA _2main__zero, fmul
+_2main__local171:
+MOV _2main__local168, fmul - 8, _2main__size4
+MOV fmul - 12, _2main__main_k3, _2main__size4
+MOV_CONST 993, fmul - 16
+LEA fmul - 4, _2main__local172
+$LEA _2main__zero, fmul
+_2main__local172:
+MOV _2main__local170, fmul - 8, _2main__size4
+ADD _2main__local168, _2main__local168, _2main__local170, _2main__size4
+ADD _2main__local167, _2main__local167, _2main__local168, _2main__size4
+MOV _2main__main_lz, _2main__local167, _2main__size4
+_2main__local130:
 MOV fmul - 12, _2main__main_lx, _2main__size4
 MOV fmul - 16, _2main__main_lx, _2main__size4
-LEA fmul - 4, _2main__local90
+LEA fmul - 4, _2main__local175
 $LEA _2main__zero, fmul
-_2main__local90:
+_2main__local175:
 MOV sqrt - 12, fmul - 8, _2main__size4
 MOV fmul - 12, _2main__main_ly, _2main__size4
 MOV fmul - 16, _2main__main_ly, _2main__size4
-LEA fmul - 4, _2main__local92
+LEA fmul - 4, _2main__local177
 $LEA _2main__zero, fmul
-_2main__local92:
-MOV _2main__local89, fmul - 8, _2main__size4
+_2main__local177:
+MOV _2main__local174, fmul - 8, _2main__size4
 MOV fmul - 12, _2main__main_lz, _2main__size4
 MOV fmul - 16, _2main__main_lz, _2main__size4
-LEA fmul - 4, _2main__local93
+LEA fmul - 4, _2main__local178
 $LEA _2main__zero, fmul
-_2main__local93:
-MOV _2main__local91, fmul - 8, _2main__size4
-ADD _2main__local89, _2main__local89, _2main__local91, _2main__size4
-ADD sqrt - 12, sqrt - 12, _2main__local89, _2main__size4
-LEA sqrt - 4, _2main__local94
+_2main__local178:
+MOV _2main__local176, fmul - 8, _2main__size4
+ADD _2main__local174, _2main__local174, _2main__local176, _2main__size4
+ADD sqrt - 12, sqrt - 12, _2main__local174, _2main__size4
+LEA sqrt - 4, _2main__local179
 $LEA _2main__zero, sqrt
-_2main__local94:
-MOV _2main__local88, sqrt - 8, _2main__size4
-MOV _2main__main_t, _2main__local88, _2main__size4
+_2main__local179:
+MOV _2main__local173, sqrt - 8, _2main__size4
+MOV _2main__main_t, _2main__local173, _2main__size4
 MOV fdiv - 12, _2main__main_lx, _2main__size4
 MOV fdiv - 16, _2main__main_t, _2main__size4
-LEA fdiv - 4, _2main__local96
+LEA fdiv - 4, _2main__local181
 $LEA _2main__zero, fdiv
-_2main__local96:
-MOV _2main__local95, fdiv - 8, _2main__size4
-MOV _2main__main_lx, _2main__local95, _2main__size4
+_2main__local181:
+MOV _2main__local180, fdiv - 8, _2main__size4
+MOV _2main__main_lx, _2main__local180, _2main__size4
 MOV fdiv - 12, _2main__main_ly, _2main__size4
 MOV fdiv - 16, _2main__main_t, _2main__size4
-LEA fdiv - 4, _2main__local98
+LEA fdiv - 4, _2main__local183
 $LEA _2main__zero, fdiv
-_2main__local98:
-MOV _2main__local97, fdiv - 8, _2main__size4
-MOV _2main__main_ly, _2main__local97, _2main__size4
+_2main__local183:
+MOV _2main__local182, fdiv - 8, _2main__size4
+MOV _2main__main_ly, _2main__local182, _2main__size4
 MOV fdiv - 12, _2main__main_lz, _2main__size4
 MOV fdiv - 16, _2main__main_t, _2main__size4
-LEA fdiv - 4, _2main__local100
+LEA fdiv - 4, _2main__local185
 $LEA _2main__zero, fdiv
-_2main__local100:
-MOV _2main__local99, fdiv - 8, _2main__size4
-MOV _2main__main_lz, _2main__local99, _2main__size4
-MOV_CONST 0, _2main__local101
-MOV _2main__main_gx, _2main__local101, _2main__size4
-MOV_CONST 0, _2main__local102
-MOV _2main__main_gy, _2main__local102, _2main__size4
-MOV_CONST -4000, _2main__local103
-MOV _2main__main_gz, _2main__local103, _2main__size4
-LEA _2main__local108, _2main__local107
-_2main__local106:
-MOV_CONST 1, _2main__local107
-$CLEA _2main__local108, _2main__zero, _2main__local105 
-$LEA _2main__zero, _2main__local104
-_2main__local105:
-MOV_CONST 65536, _2main__local109
-MOV _2main__main_start, _2main__local109, _2main__size4
-MOV_CONST 65536, _2main__local110
-MOV _2main__main_end, _2main__local110, _2main__size4
-MOV _2main__local111, _2main__main_gz, _2main__size4
-MOV_CONST 10, _2main__local112
-ADD _2main__local111, _2main__local111, _2main__local112, _2main__size4
-MOV _2main__main_gz, _2main__local111, _2main__size4
-MOV _2main__local113, _2main__main_gx, _2main__size4
-MOV_CONST 10, _2main__local114
-SUB _2main__local113, _2main__local113, _2main__local114, _2main__size4
-MOV _2main__main_gx, _2main__local113, _2main__size4
-MOV_CONST 0, _2main__local115
-MOV _2main__main_y, _2main__local115, _2main__size4
-LEA _2main__local120, _2main__local119
-_2main__local118:
-MOV _2main__local119, _2main__main_y, _2main__size4
-MOV_CONST 90, _2main__local121
-LT _2main__local119, _2main__local119, _2main__local121, _2main__size4
-$CLEA _2main__local120, _2main__zero, _2main__local117 
-$LEA _2main__zero, _2main__local116
-_2main__local117:
-MOV_CONST 0, _2main__local122
-MOV _2main__main_x, _2main__local122, _2main__size4
-LEA _2main__local127, _2main__local126
-_2main__local125:
-MOV _2main__local126, _2main__main_x, _2main__size4
-MOV_CONST 160, _2main__local128
-LT _2main__local126, _2main__local126, _2main__local128, _2main__size4
-$CLEA _2main__local127, _2main__zero, _2main__local124 
-$LEA _2main__zero, _2main__local123
-_2main__local124:
-MOV _2main__local129, _2main__main_x, _2main__size4
-MOV_CONST 80, _2main__local131
-SUB _2main__local129, _2main__local129, _2main__local131, _2main__size4
-MOV_CONST 12, _2main__local130
-MUL _2main__local129, _2main__local129, _2main__local130, _2main__size4
-MOV _2main__main_a, _2main__local129, _2main__size4
-MOV_CONST 45, _2main__local132
-MOV _2main__local134, _2main__main_y, _2main__size4
-SUB _2main__local132, _2main__local132, _2main__local134, _2main__size4
-MOV_CONST 12, _2main__local133
-MUL _2main__local132, _2main__local132, _2main__local133, _2main__size4
-MOV _2main__main_b, _2main__local132, _2main__size4
-MOV _2main__local135, _2main__main_a, _2main__size4
-MOV_CONST 2, _2main__local136
-DIV _2main__local135, _2main__local135, _2main__local136, _2main__size4
-MOV _2main__main_dx, _2main__local135, _2main__size4
-MOV _2main__local137, _2main__main_b, _2main__size4
-MOV_CONST 2, _2main__local138
-DIV _2main__local137, _2main__local137, _2main__local138, _2main__size4
-MOV _2main__main_dy, _2main__local137, _2main__size4
-MOV_CONST 1000, _2main__local139
-MOV _2main__main_dz, _2main__local139, _2main__size4
+_2main__local185:
+MOV _2main__local184, fdiv - 8, _2main__size4
+MOV _2main__main_lz, _2main__local184, _2main__size4
+MOV_CONST 0, _2main__local186
+MOV _2main__main_y, _2main__local186, _2main__size4
+LEA _2main__local191, _2main__local190
+_2main__local189:
+MOV _2main__local190, _2main__main_y, _2main__size4
+MOV_CONST 90, _2main__local192
+LT _2main__local190, _2main__local190, _2main__local192, _2main__size4
+$CLEA _2main__local191, _2main__zero, _2main__local188 
+$LEA _2main__zero, _2main__local187
+_2main__local188:
+MOV_CONST 0, _2main__local193
+MOV _2main__main_x, _2main__local193, _2main__size4
+LEA _2main__local198, _2main__local197
+_2main__local196:
+MOV _2main__local197, _2main__main_x, _2main__size4
+MOV_CONST 160, _2main__local199
+LT _2main__local197, _2main__local197, _2main__local199, _2main__size4
+$CLEA _2main__local198, _2main__zero, _2main__local195 
+$LEA _2main__zero, _2main__local194
+_2main__local195:
+MOV _2main__local200, _2main__main_x, _2main__size4
+MOV_CONST 80, _2main__local202
+SUB _2main__local200, _2main__local200, _2main__local202, _2main__size4
+MOV_CONST 12, _2main__local201
+MUL _2main__local200, _2main__local200, _2main__local201, _2main__size4
+MOV _2main__main_a, _2main__local200, _2main__size4
+MOV_CONST 45, _2main__local203
+MOV _2main__local205, _2main__main_y, _2main__size4
+SUB _2main__local203, _2main__local203, _2main__local205, _2main__size4
+MOV_CONST 12, _2main__local204
+MUL _2main__local203, _2main__local203, _2main__local204, _2main__size4
+MOV _2main__main_b, _2main__local203, _2main__size4
+MOV _2main__local206, _2main__main_a, _2main__size4
+MOV_CONST 2, _2main__local207
+DIV _2main__local206, _2main__local206, _2main__local207, _2main__size4
+MOV _2main__main_dx, _2main__local206, _2main__size4
+MOV _2main__local208, _2main__main_b, _2main__size4
+MOV_CONST 2, _2main__local209
+DIV _2main__local208, _2main__local208, _2main__local209, _2main__size4
+MOV _2main__main_dy, _2main__local208, _2main__size4
+MOV_CONST 1000, _2main__local210
+MOV _2main__main_dz, _2main__local210, _2main__size4
 MOV intersect_ball - 12, _2main__main_gx, _2main__size4
 MOV intersect_ball - 16, _2main__main_gy, _2main__size4
 MOV intersect_ball - 20, _2main__main_gz, _2main__size4
@@ -760,66 +970,78 @@ MOV_CONST 0, intersect_ball - 36
 MOV_CONST 0, intersect_ball - 40
 MOV_CONST 5000, intersect_ball - 44
 MOV_CONST 1000, intersect_ball - 48
-LEA intersect_ball - 4, _2main__local141
+LEA intersect_ball - 4, _2main__local212
 $LEA _2main__zero, intersect_ball
-_2main__local141:
-MOV _2main__local140, intersect_ball - 8, _2main__size4
-MOV _2main__main_res, _2main__local140, _2main__size4
-MOV _2main__local142, _2main__main_gx, _2main__size4
+_2main__local212:
+MOV _2main__local211, intersect_ball - 8, _2main__size4
+MOV _2main__main_res1, _2main__local211, _2main__size4
+MOV _2main__local213, _2main__main_gx, _2main__size4
 MOV fmul - 12, _2main__main_dx, _2main__size4
-MOV fmul - 16, _2main__main_res, _2main__size4
-LEA fmul - 4, _2main__local144
+MOV fmul - 16, _2main__main_res1, _2main__size4
+LEA fmul - 4, _2main__local215
 $LEA _2main__zero, fmul
-_2main__local144:
-MOV _2main__local143, fmul - 8, _2main__size4
-ADD _2main__local142, _2main__local142, _2main__local143, _2main__size4
-MOV _2main__main_px, _2main__local142, _2main__size4
-MOV _2main__local145, _2main__main_gy, _2main__size4
+_2main__local215:
+MOV _2main__local214, fmul - 8, _2main__size4
+ADD _2main__local213, _2main__local213, _2main__local214, _2main__size4
+MOV _2main__main_px, _2main__local213, _2main__size4
+MOV _2main__local216, _2main__main_gy, _2main__size4
 MOV fmul - 12, _2main__main_dy, _2main__size4
-MOV fmul - 16, _2main__main_res, _2main__size4
-LEA fmul - 4, _2main__local147
+MOV fmul - 16, _2main__main_res1, _2main__size4
+LEA fmul - 4, _2main__local218
 $LEA _2main__zero, fmul
-_2main__local147:
-MOV _2main__local146, fmul - 8, _2main__size4
-ADD _2main__local145, _2main__local145, _2main__local146, _2main__size4
-MOV _2main__main_py, _2main__local145, _2main__size4
-MOV _2main__local148, _2main__main_gz, _2main__size4
+_2main__local218:
+MOV _2main__local217, fmul - 8, _2main__size4
+ADD _2main__local216, _2main__local216, _2main__local217, _2main__size4
+MOV _2main__main_py, _2main__local216, _2main__size4
+MOV _2main__local219, _2main__main_gz, _2main__size4
 MOV fmul - 12, _2main__main_dz, _2main__size4
-MOV fmul - 16, _2main__main_res, _2main__size4
-LEA fmul - 4, _2main__local150
+MOV fmul - 16, _2main__main_res1, _2main__size4
+LEA fmul - 4, _2main__local221
 $LEA _2main__zero, fmul
-_2main__local150:
-MOV _2main__local149, fmul - 8, _2main__size4
-ADD _2main__local148, _2main__local148, _2main__local149, _2main__size4
-MOV _2main__main_pz, _2main__local148, _2main__size4
-MOV _2main__local151, _2main__main_px, _2main__size4
-MOV_CONST 0, _2main__local152
-SUB _2main__local151, _2main__local151, _2main__local152, _2main__size4
-MOV _2main__main_nx, _2main__local151, _2main__size4
-MOV _2main__local153, _2main__main_py, _2main__size4
-MOV_CONST 0, _2main__local154
-SUB _2main__local153, _2main__local153, _2main__local154, _2main__size4
-MOV _2main__main_ny, _2main__local153, _2main__size4
-MOV _2main__local155, _2main__main_pz, _2main__size4
-MOV_CONST 5000, _2main__local156
-SUB _2main__local155, _2main__local155, _2main__local156, _2main__size4
-MOV _2main__main_nz, _2main__local155, _2main__size4
+_2main__local221:
+MOV _2main__local220, fmul - 8, _2main__size4
+ADD _2main__local219, _2main__local219, _2main__local220, _2main__size4
+MOV _2main__main_pz, _2main__local219, _2main__size4
+MOV _2main__local222, _2main__main_px, _2main__size4
+MOV_CONST 0, _2main__local223
+SUB _2main__local222, _2main__local222, _2main__local223, _2main__size4
+MOV _2main__main_nx, _2main__local222, _2main__size4
+MOV _2main__local224, _2main__main_py, _2main__size4
+MOV_CONST 0, _2main__local225
+SUB _2main__local224, _2main__local224, _2main__local225, _2main__size4
+MOV _2main__main_ny, _2main__local224, _2main__size4
+MOV _2main__local226, _2main__main_pz, _2main__size4
+MOV_CONST 5000, _2main__local227
+SUB _2main__local226, _2main__local226, _2main__local227, _2main__size4
+MOV _2main__main_nz, _2main__local226, _2main__size4
+MOV _2main__local228, _2main__main_lx, _2main__size4
+MOV _2main__local229, _2main__main_px, _2main__size4
+SUB _2main__local228, _2main__local228, _2main__local229, _2main__size4
+MOV _2main__main_ldx, _2main__local228, _2main__size4
+MOV _2main__local230, _2main__main_ly, _2main__size4
+MOV _2main__local231, _2main__main_py, _2main__size4
+SUB _2main__local230, _2main__local230, _2main__local231, _2main__size4
+MOV _2main__main_ldy, _2main__local230, _2main__size4
+MOV _2main__local232, _2main__main_lz, _2main__size4
+MOV _2main__local233, _2main__main_pz, _2main__size4
+SUB _2main__local232, _2main__local232, _2main__local233, _2main__size4
+MOV _2main__main_ldz, _2main__local232, _2main__size4
 MOV put4 - 12, _2main__main_end, _2main__size4
 MOV_CONST 255, put4 - 16
-MOV_CONST 255, _2main__local158
-MUL put4 - 16, put4 - 16, _2main__local158, _2main__size4
-LEA put4 - 4, _2main__local159
+MOV_CONST 255, _2main__local235
+MUL put4 - 16, put4 - 16, _2main__local235, _2main__size4
+LEA put4 - 4, _2main__local236
 $LEA _2main__zero, put4
-_2main__local159:
-MOV _2main__local157, put4 - 8, _2main__size4
-MOV _2main__main_t, _2main__local157, _2main__size4
-MOV _2main__local162, _2main__main_res, _2main__size4
-MOV_CONST 0, _2main__local164
-LT _2main__local162, _2main__local164, _2main__local162, _2main__size4
-LEA _2main__local163, _2main__local162
-$CLEA _2main__local163, _2main__zero, _2main__local160 
-$LEA _2main__zero, _2main__local161 
-_2main__local160:
+_2main__local236:
+MOV _2main__local234, put4 - 8, _2main__size4
+MOV _2main__main_t, _2main__local234, _2main__size4
+MOV _2main__local239, _2main__main_res1, _2main__size4
+MOV_CONST 0, _2main__local241
+LT _2main__local239, _2main__local241, _2main__local239, _2main__size4
+LEA _2main__local240, _2main__local239
+$CLEA _2main__local240, _2main__zero, _2main__local237 
+$LEA _2main__zero, _2main__local238 
+_2main__local237:
 MOV phong - 12, _2main__main_lx, _2main__size4
 MOV phong - 16, _2main__main_ly, _2main__size4
 MOV phong - 20, _2main__main_lz, _2main__size4
@@ -829,64 +1051,116 @@ MOV phong - 32, _2main__main_dz, _2main__size4
 MOV phong - 36, _2main__main_nx, _2main__size4
 MOV phong - 40, _2main__main_ny, _2main__size4
 MOV phong - 44, _2main__main_nz, _2main__size4
-LEA phong - 4, _2main__local166
+LEA phong - 4, _2main__local243
 $LEA _2main__zero, phong
-_2main__local166:
-MOV _2main__local165, phong - 8, _2main__size4
-MOV _2main__main_spec, _2main__local165, _2main__size4
-MOV_CONST 255, _2main__local167
-MOV _2main__local169, _2main__main_spec, _2main__size4
-MUL _2main__local167, _2main__local167, _2main__local169, _2main__size4
-MOV_CONST 1000, _2main__local168
-DIV _2main__local167, _2main__local167, _2main__local168, _2main__size4
-MOV _2main__main_color, _2main__local167, _2main__size4
+_2main__local243:
+MOV _2main__local242, phong - 8, _2main__size4
+MOV _2main__main_spec, _2main__local242, _2main__size4
+MOV_CONST 255, _2main__local244
+MOV _2main__local246, _2main__main_spec, _2main__size4
+MUL _2main__local244, _2main__local244, _2main__local246, _2main__size4
+MOV_CONST 1000, _2main__local245
+DIV _2main__local244, _2main__local244, _2main__local245, _2main__size4
+MOV _2main__main_color, _2main__local244, _2main__size4
 MOV put4 - 12, _2main__main_end, _2main__size4
 MOV put4 - 16, _2main__main_color, _2main__size4
-MOV_CONST 255, _2main__local171
-MOV _2main__local173, _2main__main_color, _2main__size4
-MUL _2main__local171, _2main__local171, _2main__local173, _2main__size4
-MOV_CONST 65536, _2main__local172
-MOV _2main__local174, _2main__main_color, _2main__size4
-MUL _2main__local172, _2main__local172, _2main__local174, _2main__size4
-ADD _2main__local171, _2main__local171, _2main__local172, _2main__size4
-ADD put4 - 16, put4 - 16, _2main__local171, _2main__size4
-LEA put4 - 4, _2main__local175
+MOV_CONST 255, _2main__local248
+MOV _2main__local250, _2main__main_color, _2main__size4
+MUL _2main__local248, _2main__local248, _2main__local250, _2main__size4
+MOV_CONST 65536, _2main__local249
+MOV _2main__local251, _2main__main_color, _2main__size4
+MUL _2main__local249, _2main__local249, _2main__local251, _2main__size4
+ADD _2main__local248, _2main__local248, _2main__local249, _2main__size4
+ADD put4 - 16, put4 - 16, _2main__local248, _2main__size4
+LEA put4 - 4, _2main__local252
 $LEA _2main__zero, put4
-_2main__local175:
-MOV _2main__local170, put4 - 8, _2main__size4
-MOV _2main__main_t, _2main__local170, _2main__size4
-_2main__local161:
-MOV _2main__local176, _2main__main_end, _2main__size4
-MOV_CONST 4, _2main__local177
-ADD _2main__local176, _2main__local176, _2main__local177, _2main__size4
-MOV _2main__main_end, _2main__local176, _2main__size4
-MOV _2main__local178, _2main__main_x, _2main__size4
-MOV_CONST 1, _2main__local179
-ADD _2main__local178, _2main__local178, _2main__local179, _2main__size4
-MOV _2main__main_x, _2main__local178, _2main__size4
-$LEA _2main__zero, _2main__local125 
-_2main__local123:
-MOV _2main__local180, _2main__main_y, _2main__size4
-MOV_CONST 1, _2main__local181
-ADD _2main__local180, _2main__local180, _2main__local181, _2main__size4
-MOV _2main__main_y, _2main__local180, _2main__size4
-$LEA _2main__zero, _2main__local118 
-_2main__local116:
+_2main__local252:
+MOV _2main__local247, put4 - 8, _2main__size4
+MOV _2main__main_t, _2main__local247, _2main__size4
+_2main__local238:
+MOV intersect_ball - 12, _2main__main_gx, _2main__size4
+MOV intersect_ball - 16, _2main__main_gy, _2main__size4
+MOV intersect_ball - 20, _2main__main_gz, _2main__size4
+MOV intersect_ball - 24, _2main__main_dx, _2main__size4
+MOV intersect_ball - 28, _2main__main_dy, _2main__size4
+MOV intersect_ball - 32, _2main__main_dz, _2main__size4
+MOV_CONST 2, intersect_ball - 36
+MOV _2main__local254, _2main__main_lx, _2main__size4
+MUL intersect_ball - 36, intersect_ball - 36, _2main__local254, _2main__size4
+MOV_CONST 2, intersect_ball - 40
+MOV _2main__local255, _2main__main_ly, _2main__size4
+MUL intersect_ball - 40, intersect_ball - 40, _2main__local255, _2main__size4
+MOV_CONST 5000, intersect_ball - 44
+MOV_CONST 2, _2main__local256
+MOV _2main__local257, _2main__main_lz, _2main__size4
+MUL _2main__local256, _2main__local256, _2main__local257, _2main__size4
+ADD intersect_ball - 44, intersect_ball - 44, _2main__local256, _2main__size4
+MOV_CONST 100, intersect_ball - 48
+LEA intersect_ball - 4, _2main__local258
+$LEA _2main__zero, intersect_ball
+_2main__local258:
+MOV _2main__local253, intersect_ball - 8, _2main__size4
+MOV _2main__main_res2, _2main__local253, _2main__size4
+MOV _2main__local261, _2main__main_res2, _2main__size4
+MOV _2main__local264, _2main__main_res1, _2main__size4
+LT _2main__local261, _2main__local261, _2main__local264, _2main__size4
+MOV _2main__local263, _2main__main_res1, _2main__size4
+MOV_CONST 0, _2main__local265
+LT _2main__local263, _2main__local263, _2main__local265, _2main__size4
+ADD _2main__local261, _2main__local261, _2main__local263, _2main__size4
+LEA _2main__local262, _2main__local261
+$CLEA _2main__local262, _2main__zero, _2main__local259 
+$LEA _2main__zero, _2main__local260 
+_2main__local259:
+MOV _2main__local268, _2main__main_res2, _2main__size4
+MOV_CONST 0, _2main__local270
+LT _2main__local268, _2main__local270, _2main__local268, _2main__size4
+LEA _2main__local269, _2main__local268
+$CLEA _2main__local269, _2main__zero, _2main__local266 
+$LEA _2main__zero, _2main__local267 
+_2main__local266:
+MOV put4 - 12, _2main__main_end, _2main__size4
+MOV_CONST 255, put4 - 16
+MOV_CONST 65536, _2main__local272
+MUL put4 - 16, put4 - 16, _2main__local272, _2main__size4
+LEA put4 - 4, _2main__local273
+$LEA _2main__zero, put4
+_2main__local273:
+MOV _2main__local271, put4 - 8, _2main__size4
+MOV _2main__main_t, _2main__local271, _2main__size4
+_2main__local267:
+_2main__local260:
+MOV _2main__local274, _2main__main_end, _2main__size4
+MOV_CONST 4, _2main__local275
+ADD _2main__local274, _2main__local274, _2main__local275, _2main__size4
+MOV _2main__main_end, _2main__local274, _2main__size4
+MOV _2main__local276, _2main__main_x, _2main__size4
+MOV_CONST 1, _2main__local277
+ADD _2main__local276, _2main__local276, _2main__local277, _2main__size4
+MOV _2main__main_x, _2main__local276, _2main__size4
+$LEA _2main__zero, _2main__local196 
+_2main__local194:
+MOV _2main__local278, _2main__main_y, _2main__size4
+MOV_CONST 1, _2main__local279
+ADD _2main__local278, _2main__local278, _2main__local279, _2main__size4
+MOV _2main__main_y, _2main__local278, _2main__size4
+$LEA _2main__zero, _2main__local189 
+_2main__local187:
 MOV out - 12, _2main__main_start, _2main__size4
 MOV out - 16, _2main__main_end, _2main__size4
-MOV _2main__local183, _2main__main_start, _2main__size4
-SUB out - 16, out - 16, _2main__local183, _2main__size4
-LEA out - 4, _2main__local184
+MOV _2main__local281, _2main__main_start, _2main__size4
+SUB out - 16, out - 16, _2main__local281, _2main__size4
+LEA out - 4, _2main__local282
 $LEA _2main__zero, out
-_2main__local184:
-MOV _2main__local182, out - 8, _2main__size4
-MOV _2main__main_t, _2main__local182, _2main__size4
-$LEA _2main__zero, _2main__local106 
-_2main__local104:
+_2main__local282:
+MOV _2main__local280, out - 8, _2main__size4
+MOV _2main__main_t, _2main__local280, _2main__size4
+$LEA _2main__zero, _2main__local119 
+_2main__local117:
 MOV_CONST 0, main - 8
-LEA _2main__local185, _2main__size4
-LEA _2main__local186, main - 4
-$MOV _2main__zero, _2main__local186, _2main__local185
+LEA _2main__local283, _2main__size4
+LEA _2main__local284, main - 4
+$MOV _2main__zero, _2main__local284, _2main__local283
 _2main__phong_l:
 .dd 0
 _2main__local0:
@@ -913,23 +1187,35 @@ _2main__local22:
 .dd 0
 _2main__local24:
 .dd 0
-_2main__phong_diffuse:
-.dd 0
 _2main__local26:
 .dd 0
 _2main__local27:
 .dd 0
 _2main__local29:
 .dd 0
-_2main__local32:
+_2main__local33:
 .dd 0
-_2main__local36:
+_2main__local35:
 .dd 0
 _2main__local37:
 .dd 0
-_2main__local38:
+_2main__phong_diffuse:
 .dd 0
 _2main__local39:
+.dd 0
+_2main__local40:
+.dd 0
+_2main__local42:
+.dd 0
+_2main__local45:
+.dd 0
+_2main__local49:
+.dd 0
+_2main__local50:
+.dd 0
+_2main__local51:
+.dd 0
+_2main__local52:
 .dd 0
 _2main__phong_x:
 .dd 0
@@ -937,39 +1223,23 @@ _2main__phong_y:
 .dd 0
 _2main__phong_z:
 .dd 0
-_2main__local40:
-.dd 0
-_2main__local41:
-.dd 0
-_2main__local42:
-.dd 0
-_2main__local43:
-.dd 0
-_2main__local44:
-.dd 0
-_2main__local45:
-.dd 0
-_2main__local46:
-.dd 0
-_2main__local47:
-.dd 0
-_2main__local49:
-.dd 0
 _2main__local53:
+.dd 0
+_2main__local54:
 .dd 0
 _2main__local55:
 .dd 0
+_2main__local56:
+.dd 0
 _2main__local57:
 .dd 0
-_2main__phong_blink:
+_2main__local58:
 .dd 0
 _2main__local59:
 .dd 0
 _2main__local60:
 .dd 0
 _2main__local62:
-.dd 0
-_2main__local67:
 .dd 0
 _2main__local68:
 .dd 0
@@ -983,19 +1253,55 @@ _2main__local73:
 .dd 0
 _2main__local75:
 .dd 0
+_2main__phong_blink:
+.dd 0
 _2main__local77:
 .dd 0
-_2main__local79:
+_2main__local78:
 .dd 0
-_2main__local81:
+_2main__local80:
 .dd 0
-_2main__local82:
+_2main__local85:
 .dd 0
-_2main__local83:
+_2main__local86:
 .dd 0
-_2main__local84:
+_2main__local87:
 .dd 0
-_2main__main_res:
+_2main__local88:
+.dd 0
+_2main__local89:
+.dd 0
+_2main__local91:
+.dd 0
+_2main__local93:
+.dd 0
+_2main__local95:
+.dd 0
+_2main__local97:
+.dd 0
+_2main__phong_ans:
+.dd 0
+_2main__local99:
+.dd 0
+_2main__local100:
+.dd 0
+_2main__local101:
+.dd 0
+_2main__local104:
+.dd 0
+_2main__local105:
+.dd 0
+_2main__local106:
+.dd 0
+_2main__local107:
+.dd 0
+_2main__local108:
+.dd 0
+_2main__local109:
+.dd 0
+_2main__main_res1:
+.dd 0
+_2main__main_res2:
 .dd 0
 _2main__main_t:
 .dd 0
@@ -1015,39 +1321,13 @@ _2main__main_ly:
 .dd 0
 _2main__main_lz:
 .dd 0
-_2main__local85:
+_2main__main_ldx:
 .dd 0
-_2main__local86:
+_2main__main_ldy:
 .dd 0
-_2main__local87:
+_2main__main_ldz:
 .dd 0
-_2main__local88:
-.dd 0
-_2main__local89:
-.dd 0
-_2main__local91:
-.dd 0
-_2main__local95:
-.dd 0
-_2main__local97:
-.dd 0
-_2main__local99:
-.dd 0
-_2main__local101:
-.dd 0
-_2main__local102:
-.dd 0
-_2main__local103:
-.dd 0
-_2main__local107:
-.dd 0
-_2main__local108:
-.dd 0
-_2main__main_start:
-.dd 0
-_2main__main_end:
-.dd 0
-_2main__local109:
+_2main__main_tim:
 .dd 0
 _2main__local110:
 .dd 0
@@ -1061,27 +1341,35 @@ _2main__local114:
 .dd 0
 _2main__local115:
 .dd 0
-_2main__local119:
+_2main__local116:
 .dd 0
 _2main__local120:
 .dd 0
 _2main__local121:
 .dd 0
+_2main__main_start:
+.dd 0
+_2main__main_end:
+.dd 0
 _2main__local122:
+.dd 0
+_2main__local123:
+.dd 0
+_2main__local124:
+.dd 0
+_2main__local125:
+.dd 0
+_2main__main_k1:
+.dd 0
+_2main__main_k2:
+.dd 0
+_2main__main_k3:
 .dd 0
 _2main__local126:
 .dd 0
 _2main__local127:
 .dd 0
 _2main__local128:
-.dd 0
-_2main__main_a:
-.dd 0
-_2main__main_b:
-.dd 0
-_2main__local129:
-.dd 0
-_2main__local130:
 .dd 0
 _2main__local131:
 .dd 0
@@ -1090,6 +1378,90 @@ _2main__local132:
 _2main__local133:
 .dd 0
 _2main__local134:
+.dd 0
+_2main__local135:
+.dd 0
+_2main__local136:
+.dd 0
+_2main__local137:
+.dd 0
+_2main__local138:
+.dd 0
+_2main__local140:
+.dd 0
+_2main__local143:
+.dd 0
+_2main__local144:
+.dd 0
+_2main__local146:
+.dd 0
+_2main__local149:
+.dd 0
+_2main__local150:
+.dd 0
+_2main__local152:
+.dd 0
+_2main__local155:
+.dd 0
+_2main__local156:
+.dd 0
+_2main__local158:
+.dd 0
+_2main__local161:
+.dd 0
+_2main__local162:
+.dd 0
+_2main__local164:
+.dd 0
+_2main__local167:
+.dd 0
+_2main__local168:
+.dd 0
+_2main__local170:
+.dd 0
+_2main__local173:
+.dd 0
+_2main__local174:
+.dd 0
+_2main__local176:
+.dd 0
+_2main__local180:
+.dd 0
+_2main__local182:
+.dd 0
+_2main__local184:
+.dd 0
+_2main__local186:
+.dd 0
+_2main__local190:
+.dd 0
+_2main__local191:
+.dd 0
+_2main__local192:
+.dd 0
+_2main__local193:
+.dd 0
+_2main__local197:
+.dd 0
+_2main__local198:
+.dd 0
+_2main__local199:
+.dd 0
+_2main__main_a:
+.dd 0
+_2main__main_b:
+.dd 0
+_2main__local200:
+.dd 0
+_2main__local201:
+.dd 0
+_2main__local202:
+.dd 0
+_2main__local203:
+.dd 0
+_2main__local204:
+.dd 0
+_2main__local205:
 .dd 0
 _2main__main_dx:
 .dd 0
@@ -1109,93 +1481,141 @@ _2main__main_ny:
 .dd 0
 _2main__main_nz:
 .dd 0
-_2main__local135:
+_2main__main_ldx:
 .dd 0
-_2main__local136:
+_2main__main_ldy:
 .dd 0
-_2main__local137:
+_2main__main_ldz:
 .dd 0
-_2main__local138:
+_2main__local206:
 .dd 0
-_2main__local139:
+_2main__local207:
 .dd 0
-_2main__local140:
+_2main__local208:
 .dd 0
-_2main__local142:
+_2main__local209:
 .dd 0
-_2main__local143:
+_2main__local210:
 .dd 0
-_2main__local145:
+_2main__local211:
 .dd 0
-_2main__local146:
+_2main__local213:
 .dd 0
-_2main__local148:
+_2main__local214:
 .dd 0
-_2main__local149:
+_2main__local216:
 .dd 0
-_2main__local151:
+_2main__local217:
 .dd 0
-_2main__local152:
+_2main__local219:
 .dd 0
-_2main__local153:
+_2main__local220:
 .dd 0
-_2main__local154:
+_2main__local222:
 .dd 0
-_2main__local155:
+_2main__local223:
 .dd 0
-_2main__local156:
+_2main__local224:
 .dd 0
-_2main__local157:
+_2main__local225:
 .dd 0
-_2main__local158:
+_2main__local226:
 .dd 0
-_2main__local162:
+_2main__local227:
 .dd 0
-_2main__local163:
+_2main__local228:
 .dd 0
-_2main__local164:
+_2main__local229:
+.dd 0
+_2main__local230:
+.dd 0
+_2main__local231:
+.dd 0
+_2main__local232:
+.dd 0
+_2main__local233:
+.dd 0
+_2main__local234:
+.dd 0
+_2main__local235:
+.dd 0
+_2main__local239:
+.dd 0
+_2main__local240:
+.dd 0
+_2main__local241:
 .dd 0
 _2main__main_spec:
 .dd 0
-_2main__local165:
+_2main__local242:
 .dd 0
 _2main__main_color:
 .dd 0
-_2main__local167:
+_2main__local244:
 .dd 0
-_2main__local168:
+_2main__local245:
 .dd 0
-_2main__local169:
+_2main__local246:
 .dd 0
-_2main__local170:
+_2main__local247:
 .dd 0
-_2main__local171:
+_2main__local248:
 .dd 0
-_2main__local172:
+_2main__local249:
 .dd 0
-_2main__local173:
+_2main__local250:
 .dd 0
-_2main__local174:
+_2main__local251:
 .dd 0
-_2main__local176:
+_2main__local253:
 .dd 0
-_2main__local177:
+_2main__local254:
 .dd 0
-_2main__local178:
+_2main__local255:
 .dd 0
-_2main__local179:
+_2main__local256:
 .dd 0
-_2main__local180:
+_2main__local257:
 .dd 0
-_2main__local181:
+_2main__local261:
 .dd 0
-_2main__local182:
+_2main__local262:
 .dd 0
-_2main__local183:
+_2main__local263:
 .dd 0
-_2main__local185:
+_2main__local264:
 .dd 0
-_2main__local186:
+_2main__local265:
+.dd 0
+_2main__local268:
+.dd 0
+_2main__local269:
+.dd 0
+_2main__local270:
+.dd 0
+_2main__local271:
+.dd 0
+_2main__local272:
+.dd 0
+_2main__local274:
+.dd 0
+_2main__local275:
+.dd 0
+_2main__local276:
+.dd 0
+_2main__local277:
+.dd 0
+_2main__local278:
+.dd 0
+_2main__local279:
+.dd 0
+_2main__local280:
+.dd 0
+_2main__local281:
+.dd 0
+_2main__local283:
+.dd 0
+_2main__local284:
 .dd 0
 _2main__size4:
 .dd 4
