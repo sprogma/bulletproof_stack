@@ -5,3 +5,5 @@
 *.lib
 *.so
 a
+*.bitmask
+*.rgb
