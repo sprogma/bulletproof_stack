@@ -23,8 +23,10 @@
 
 struct video_data
 {
+    int scale;
     int w, h;
     SDL_Window *win;
+    SDL_Renderer *ren;
     SDL_Surface *src;
 };
 
@@ -39,6 +41,7 @@ static void send_port(struct port_mapping_t *mapping, BYTE *data, size_t count)
         return;
     }
     printf("video: writed %zd bytes\n", count);
+    SDL_LockSurface(videodata->src);
     Uint32 *int_data = (Uint32 *)data;
     for (int y = 0; y < videodata->h; ++y)
     {
@@ -49,7 +52,15 @@ static void send_port(struct port_mapping_t *mapping, BYTE *data, size_t count)
                               x * videodata->src->format->BytesPerPixel) = int_data[y * videodata->w + x];
         }
     }
-    SDL_UpdateWindowSurface(videodata->win);
+    SDL_UnlockSurface(videodata->src);
+    SDL_Texture *txt = SDL_CreateTextureFromSurface(videodata->ren, videodata->src);
+    SDL_SetTextureScaleMode(txt, SDL_ScaleModeLinear);
+    SDL_RenderCopy(videodata->ren, txt, NULL, NULL);
+    SDL_RenderPresent(videodata->ren);
+    SDL_DestroyTexture(txt);
+
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {}
 }
 
 
@@ -62,19 +73,28 @@ int create_port_mapping_video(struct spu *s, struct port_mapping_t *mapping, int
     {
         SDL_Init(SDL_INIT_VIDEO);
     }
-
+    
     struct video_data *videodata = calloc(1, sizeof(*videodata));
+    
+        
+    videodata->scale = 1;
+    int num;
+    if (sscanf(command, "video%d", &num) == 1)
+    {
+        videodata->scale = num;
+    }
 
     videodata->w = 160;
     videodata->h = 90;
     char *title = calloc(1, 32);
     sprintf(title, "port %d", port);
-    videodata->win = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, videodata->w, videodata->h, 0);
+    videodata->win = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, videodata->w * videodata->scale, videodata->h * videodata->scale, 0);
+    videodata->ren = SDL_CreateRenderer(videodata->win, 0, 0);
     free(title);
 
-    videodata->src = SDL_GetWindowSurface(videodata->win);
+    videodata->src = SDL_CreateRGBSurface(SDL_SWSURFACE, videodata->w, videodata->h, 32, 0, 0, 0, 0);
 
-    printf("Connect port %d to video output\n", port);
+    printf("Connect port %d to video output with scale %d\n", port, videodata->scale);
 
     mapping->port = port;
     mapping->name = "video";
