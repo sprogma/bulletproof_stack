@@ -10,9 +10,13 @@ int phong(int lx, int ly, int lz, int dx, int dy, int dz, int nx, int ny, int nz
     ny = fdiv(ny, l);
     nz = fdiv(nz, l); 
     l = sqrt(fmul(lx, lx) + fmul(ly, ly) + fmul(lz, lz));
+    if (l < 1)
+    {
+        return 0;
+    }
     lx = fdiv(lx, l);
     ly = fdiv(ly, l);
-    lz = fdiv(lz, l); 
+    lz = fdiv(lz, l);
     int diffuse;
     diffuse = fmul(lx, nx) + fmul(ly, ny) + fmul(lz, nz);
     diffuse = fmul(diffuse, 400);
@@ -20,28 +24,31 @@ int phong(int lx, int ly, int lz, int dx, int dy, int dz, int nx, int ny, int nz
     {
         diffuse = 0;
     }
-    int x, y, z;
-    x = lx - dx;
-    y = ly - dy;
-    z = lz - dz;
-    l = sqrt(fmul(x, x) + fmul(y, y) + fmul(z, z));
-    if (l > 0)
-    {
-        x = fdiv(x, l);
-        y = fdiv(y, l);
-        z = fdiv(z, l); 
-    }
     int blink;
-    blink = fmul(x, nx) + fmul(y, ny) + fmul(z, nz);
-    if (blink < 0)
+    blink = 0;
+    if (lx * nx + ly * ny + lz * nz > 0)
     {
-        blink = 0;
+        int x, y, z;
+        x = lx - dx;
+        y = ly - dy;
+        z = lz - dz;
+        l = sqrt(fmul(x, x) + fmul(y, y) + fmul(z, z));
+        if (l > 0)
+        {
+            x = fdiv(x, l);
+            y = fdiv(y, l);
+            z = fdiv(z, l); 
+        }
+        blink = fmul(x, nx) + fmul(y, ny) + fmul(z, nz);
+        if (blink < 0)
+        {
+            blink = 0;
+        }
+        blink = fmul(blink, blink);
+        blink = fmul(blink, blink);
+        blink = fmul(blink, blink);
+        blink = fmul(blink, 400);
     }
-    blink = fmul(blink, blink);
-    blink = fmul(blink, blink);
-    l = fmul(blink, blink);
-    blink = fmul(blink, l);
-    blink = fmul(blink, 400);
     int ans;
     ans = 200 + diffuse + blink;
     if (ans > 1000)
@@ -54,15 +61,16 @@ int phong(int lx, int ly, int lz, int dx, int dy, int dz, int nx, int ny, int nz
 
 int main()
 {
-    int res1, res2, t, x, y, gx, gy, gz, lx, ly, lz, ldx, ldy, ldz, tim;
+    int res1, res2, res3, t, x, y, gx, gy, gz, lx, ly, lz, ldx, ldy, ldz, tim, ggdx;
 
     lx = 1000;
     ly = 0;
     lz = 0;
 
-    gx = 0;
+    gx = 50 * 100;
+    ggdx = 0;
     gy = 0;
-    gz = -4000;
+    gz = -8000;
 
     tim = 0;
     
@@ -91,7 +99,15 @@ int main()
             ly = fmul(k1, 89) + fmul(k2, 995) + fmul(k3, -19);
             lz = fmul(k1, -21) + fmul(k2, -18) + fmul(k3, 999);
         }
-        t = sqrt(fmul(lx, lx) + fmul(ly, ly) + fmul(lz, lz));
+        if (tim - (tim / 400) * 400 < 200)
+        {
+            gx = gx - 50; 
+        }
+        else
+        {
+            gx = gx + 50;
+        }
+        t = sqrt(fmul(lx, lx) + fmul(ly, ly) + fmul(lz, lz)) / 2;
         lx = fdiv(lx, t);
         ly = fdiv(ly, t);
         lz = fdiv(lz, t);
@@ -107,38 +123,68 @@ int main()
                 b = (45 - y) * 12;
 
                 int dx, dy, dz, px, py, pz, nx, ny, nz, ldx, ldy, ldz;
-                dx = a / 2;
-                dy = b / 2;
+                
+                dx = (a * 2) / 3;
+                dy = (b * 2) / 3;
                 dz = 1000;
-                res1 = intersect_ball(gx, gy, gz, dx, dy, dz, 0, 0, 5000, 1000);
-                px = gx + fmul(dx, res1);
-                py = gy + fmul(dy, res1);
-                pz = gz + fmul(dz, res1);
-                nx = px - 0;
-                ny = py - 0;
-                nz = pz - 5000;
-                ldx = lx - px;
-                ldy = ly - py;
-                ldz = lz - pz;
+                
+                res1 = intersect_ball(gx, gy, gz, dx, dy, dz, -1200, -600, 0, 1500);
 
                 t = put4(end, 255 * 255);
                 if (res1 > 0)
                 {
+                    px = gx + fmul(dx, res1);
+                    py = gy + fmul(dy, res1);
+                    pz = gz + fmul(dz, res1);
+                    nx = px + 1200;
+                    ny = py + 600;
+                    nz = pz - 0;
+                    ldx = lx - px;
+                    ldy = ly - py;
+                    ldz = lz - pz;
                     int spec;
-                    spec = phong(lx, ly, lz, dx, dy, dz, nx, ny, nz);
+                    spec = phong(ldx, ldy, ldz, dx, dy, dz, nx, ny, nz);
 
                     int color;
                     color = (255 * spec) / 1000;
                     
                     t = put4(end, color + 255 * color + 65536 * color);
                 }
+
+                res3 = intersect_ball(gx, gy, gz, dx, dy, dz, 1500, 700, 800, 1000);
+                if ((res3 < res1) + (res1 < 0))
+                {
+                    if (res3 > 0)
+                    {
+                        px = gx + fmul(dx, res3);
+                        py = gy + fmul(dy, res3);
+                        pz = gz + fmul(dz, res3);
+                        nx = px - 1500;
+                        ny = py - 700;
+                        nz = pz - 800;
+                        ldx = lx - px;
+                        ldy = ly - py;
+                        ldz = lz - pz;
+                        int spec;
+                        spec = phong(ldx, ldy, ldz, dx, dy, dz, nx, ny, nz);
+
+                        int color;
+                        color = (255 * spec) / 1000;
+                        
+                        t = put4(end, 255 * color);
+                    }
+                }
                 
                 res2 = intersect_ball(gx, gy, gz, dx, dy, dz, 2 * lx, 2 * ly, 5000 + 2 * lz, 100);
                 if ((res2 < res1) + (res1 < 0))
                 {
-                    if (res2 > 0)
+                    if ((res2 < res3) + (res3 < 0))
                     {
-                        t = put4(end, 255 * 65536);
+                        
+                        if (res2 > 0)
+                        {
+                            t = put4(end, 255 * 65536);
+                        }
                     }
                 }
                 
