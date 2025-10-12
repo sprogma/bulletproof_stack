@@ -136,9 +136,9 @@ LEA _tmp_ptr1, _tmp1
 $OUT 1, _membase, _tmp_ptr1
 
 ; read one event
-LEA read_key - 4, _key_input_ret_1
-$LEA _zero, read_key
-_key_input_ret_1:
+LEA physics - 4, _physics_ret_1
+$LEA _zero, physics
+_physics_ret_1:
 
 ; infite loop
 $LEA _zero, _inf_loop
