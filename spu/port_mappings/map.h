@@ -29,6 +29,9 @@ int create_port_mapping_video(struct spu *s, struct port_mapping_t *mapping, int
 /* read actions in format: 2dwords: SDL_Scancode + 1 if pess, 0 if release */
 int create_port_mapping_keyboard(struct spu *s, struct port_mapping_t *mapping, int port, char *command);
 
+/* read timer in 1 dword: time in miliseconds */
+int create_port_mapping_timer(struct spu *s, struct port_mapping_t *mapping, int port, char *command);
+
 #endif
 
 #endif

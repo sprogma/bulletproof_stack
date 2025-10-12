@@ -69,7 +69,7 @@ int create_port_mapping_keyboard(struct spu *s, struct port_mapping_t *mapping, 
         SDL_Init(SDL_INIT_EVENTS);
     }
 
-    printf("Connect port %d to audio output\n", port);
+    printf("Connect port %d to keyboard output\n", port);
 
 
     mapping->port = port;

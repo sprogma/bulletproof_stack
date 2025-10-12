@@ -189,6 +189,12 @@ DIV _1main__frame_size, _1main__frame_size, _1main__tmp1, _1main__size4
 MOV_CONST 8, _1main__tmp1
 DIV _1main__frame_line_size, _1main__xsize, _1main__tmp1, _1main__size4
 
+MOV_CONST 1000, _1main__ms_per_frame
+DIV _1main__ms_per_frame, _1main__ms_per_frame, fps, _1main__size4
+
+IN 2, _1main__start_time, _1main__size4
+MOV _1main__current_time, _1main__start_time, _1main__size4
+
 _1main__inf_loop:
 MOV _1main__memend, _1main__membase, _1main__size4
 MOV_CONST 0, _1main__y
@@ -198,7 +204,7 @@ MOV_CONST 0, _1main__x
 _1main__loop_2:
 
 ; background
-$MOV_CONST 255, _1main__memend
+$MOV_CONST 0, _1main__memend
 
 ; unpack frame
 MOV_CONST 8, _1main__tmp2 ; 8 - bit per byte
@@ -208,6 +214,7 @@ SUB _1main__tmp2, _1main__x, _1main__tmp3, _1main__size4 ; _1main__tmp2 = x - (x
 ; generate mask from _1main__tmp2: 1 << _1main__tmp2
 ; use LUT
 LEA _1main__tmp3, _1main__mask_LUT
+MUL _1main__tmp2, _1main__tmp2, _1main__size4, _1main__size4
 ADD _1main__tmp2, _1main__tmp2, _1main__tmp3, _1main__size4
 LEA _1main__tmp_ptr2, _1main__tmp2
 LEA _1main__tmp_ptr3, _1main__size4
@@ -224,7 +231,7 @@ ANY _1main__tmp1, _1main__tmp1, _1main__size4
 INV _1main__tmp1, _1main__tmp1, _1main__size4
 LEA _1main__tmp_ptr1, _1main__tmp1
 $CLEA _1main__tmp_ptr1, _1main__zero, _1main__black_pixel
-$MOV_CONST 65280, _1main__memend
+$MOV_CONST 16776960, _1main__memend
 _1main__black_pixel:
 
 ; move memory pointer
@@ -239,17 +246,29 @@ $CLEA _1main__tmp_ptr1, _1main__zero, _1main__loop_2
 ; go to next frame's line
 ADD _1main__frame_base, _1main__frame_base, _1main__frame_line_size, _1main__size4
 
+; check if video is end?
+
+
 ; _1main__loop_2
 INC _1main__y, _1main__y, _1main__size4
 LEA _1main__tmp_ptr1, _1main__tmp1
 LT _1main__tmp1, _1main__y, _1main__ysize, _1main__size4
 $CLEA _1main__tmp_ptr1, _1main__zero, _1main__loop_1
 
+; wait to make right fps, image is already ready to draw, so only wait
+; move time to next frame
+ADD _1main__current_time, _1main__current_time, _1main__ms_per_frame, _1main__size4
+; wait to make right fps
+_1main__wait:
+IN 2, _1main__tmp1, _1main__size4
+LT _1main__tmp1, _1main__tmp1, _1main__current_time, _1main__size4
+LEA _1main__tmp_ptr1, _1main__tmp1
+$CLEA _1main__tmp_ptr1, _1main__zero, _1main__wait
+
 ; draw image
 SUB _1main__tmp1, _1main__memend, _1main__membase, _1main__size4
 LEA _1main__tmp_ptr1, _1main__tmp1
 $OUT 1, _1main__membase, _1main__tmp_ptr1
-
 
 ; infite loop
 $LEA _1main__zero, _1main__inf_loop
@@ -263,11 +282,19 @@ $MOV _1main__zero, _1main__tmp_ptr2, _1main__tmp_ptr1
 ; need video to be loaded at this pointer
 video_start:
 .dd 0x40000
+fps:
+.dd 25
+_1main__ms_per_frame:
+.dd 0
 _1main__frame_base:
 .dd 0
 _1main__frame_size:
 .dd 0
 _1main__frame_line_size:
+.dd 0
+_1main__start_time:
+.dd 0
+_1main__current_time:
 .dd 0
 
 _1main__xsize:
@@ -276,14 +303,14 @@ _1main__ysize:
 .dd 90
 
 _1main__mask_LUT:
-.db 0x01
-.db 0x02
-.db 0x04
-.db 0x08
-.db 0x10
-.db 0x20
-.db 0x40
-.db 0x80
+.dd 0x01
+.dd 0x02
+.dd 0x04
+.dd 0x08
+.dd 0x10
+.dd 0x20
+.dd 0x40
+.dd 0x80
 
 _1main__x:
 .dd 0

@@ -12,6 +12,12 @@ DIV _frame_size, _frame_size, _tmp1, _size4
 MOV_CONST 8, _tmp1
 DIV _frame_line_size, _xsize, _tmp1, _size4
 
+MOV_CONST 1000, _ms_per_frame
+DIV _ms_per_frame, _ms_per_frame, fps, _size4
+
+IN 2, _start_time, _size4
+MOV _current_time, _start_time, _size4
+
 _inf_loop:
 MOV _memend, _membase, _size4
 MOV_CONST 0, _y
@@ -21,7 +27,7 @@ MOV_CONST 0, _x
 _loop_2:
 
 ; background
-$MOV_CONST 255, _memend
+$MOV_CONST 0, _memend
 
 ; unpack frame
 MOV_CONST 8, _tmp2 ; 8 - bit per byte
@@ -31,6 +37,7 @@ SUB _tmp2, _x, _tmp3, _size4 ; _tmp2 = x - (x / 8) * 8
 ; generate mask from _tmp2: 1 << _tmp2
 ; use LUT
 LEA _tmp3, _mask_LUT
+MUL _tmp2, _tmp2, _size4, _size4
 ADD _tmp2, _tmp2, _tmp3, _size4
 LEA _tmp_ptr2, _tmp2
 LEA _tmp_ptr3, _size4
@@ -47,7 +54,7 @@ ANY _tmp1, _tmp1, _size4
 INV _tmp1, _tmp1, _size4
 LEA _tmp_ptr1, _tmp1
 $CLEA _tmp_ptr1, _zero, _black_pixel
-$MOV_CONST 65280, _memend
+$MOV_CONST 16776960, _memend
 _black_pixel:
 
 ; move memory pointer
@@ -62,17 +69,29 @@ $CLEA _tmp_ptr1, _zero, _loop_2
 ; go to next frame's line
 ADD _frame_base, _frame_base, _frame_line_size, _size4
 
+; check if video is end?
+
+
 ; _loop_2
 INC _y, _y, _size4
 LEA _tmp_ptr1, _tmp1
 LT _tmp1, _y, _ysize, _size4
 $CLEA _tmp_ptr1, _zero, _loop_1
 
+; wait to make right fps, image is already ready to draw, so only wait
+; move time to next frame
+ADD _current_time, _current_time, _ms_per_frame, _size4
+; wait to make right fps
+_wait:
+IN 2, _tmp1, _size4
+LT _tmp1, _tmp1, _current_time, _size4
+LEA _tmp_ptr1, _tmp1
+$CLEA _tmp_ptr1, _zero, _wait
+
 ; draw image
 SUB _tmp1, _memend, _membase, _size4
 LEA _tmp_ptr1, _tmp1
 $OUT 1, _membase, _tmp_ptr1
-
 
 ; infite loop
 $LEA _zero, _inf_loop
@@ -86,11 +105,19 @@ $MOV _zero, _tmp_ptr2, _tmp_ptr1
 ; need video to be loaded at this pointer
 video_start:
 .dd 0x40000
+fps:
+.dd 25
+_ms_per_frame:
+.dd 0
 _frame_base:
 .dd 0
 _frame_size:
 .dd 0
 _frame_line_size:
+.dd 0
+_start_time:
+.dd 0
+_current_time:
 .dd 0
 
 _xsize:
@@ -99,14 +126,14 @@ _ysize:
 .dd 90
 
 _mask_LUT:
-.db 0x01
-.db 0x02
-.db 0x04
-.db 0x08
-.db 0x10
-.db 0x20
-.db 0x40
-.db 0x80
+.dd 0x01
+.dd 0x02
+.dd 0x04
+.dd 0x08
+.dd 0x10
+.dd 0x20
+.dd 0x40
+.dd 0x80
 
 _x:
 .dd 0

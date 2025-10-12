@@ -47,6 +47,10 @@ result_t create_port_mapping(struct spu *s, struct port_mapping_t *mapping, int 
     {
         return create_port_mapping_keyboard(s, mapping, port, command);
     }
+    else if (strncmp(command, "timer", 5) == 0)
+    {
+        return create_port_mapping_timer(s, mapping, port, command);
+    }
     #endif
     PRINT_ERROR("Unknown port mapping command: %s", command);
     return 1;

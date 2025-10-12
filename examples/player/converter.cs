@@ -4,12 +4,21 @@ using System.Text;
 
 public static class RgbToBitmask
 {
-    public const int Width = 160;
-    public const int Height = 90;
-    public const int InputBytesPerPixel = 3;
-    public const int FrameSize = Width * Height * InputBytesPerPixel;
-    public const int BytesPerLineUnpacked = Width * InputBytesPerPixel;
-    public const int BytesPerLinePacked = Width / 8;
+    public static int Width = 160;
+    public static int Height = 90;
+    public static int InputBytesPerPixel = 3;
+    public static int Treshold = 255;
+    public static int FrameSize => Width * Height * InputBytesPerPixel;
+    public static int BytesPerLineUnpacked => Width * InputBytesPerPixel;
+    public static int BytesPerLinePacked => Width / 8;
+
+    public static bool IsSet(int r, int g, int b)
+    {
+        double ir = 0.299 * r;
+        double ig = 0.587 * g;
+        double ib = 0.114 * b;
+        return r + g + b > Treshold;
+    }
 
     public static void Convert(string inputPath, string outputPath)
     {
@@ -55,7 +64,7 @@ public static class RgbToBitmask
                     int r = unpackedBuffer[x * InputBytesPerPixel + 0];
                     int g = unpackedBuffer[x * InputBytesPerPixel + 1];
                     int b = unpackedBuffer[x * InputBytesPerPixel + 2];
-                    if (r + g + b > 255)
+                    if (IsSet(r, g, b))
                     {
                         packedBuffer[x / 8] |= (byte)(1 << (x % 8));
                     }
