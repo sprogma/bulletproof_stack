@@ -29,3 +29,11 @@ rm output.pcm
 # .\spu.exe -mem (256MB) -image 0x4000 a.bc -image 0x40000 .\examples\player\output.bitmask -entry 0x4000 -map "1:video10 2:timer"
 # new version [with audio]
 # .\spu.exe -mem (256MB) -image 0x4000 a.bc -image 0x1040000 .\examples\player\output.audio -image 0x40000 .\examples\player\output.bitmask -entry 0x4000 -map "1:video5 2:timer 3:audio"
+
+
+# parameters for files:
+# rick.avi: 100
+# text.mov: 80
+# input.mp4: 30
+# input2.mp4: 30
+# input3.mp4: 80-85
