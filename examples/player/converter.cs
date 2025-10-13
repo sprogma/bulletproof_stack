@@ -2,6 +2,58 @@ using System;
 using System.IO;
 using System.Text;
 
+public static class PcmToCompressed
+{
+    public static int StoreOnePer = 10;
+    public static int BytesPerSample = 2;
+    public static int InputBufferSize => StoreOnePer * BytesPerSample;
+
+    public static void ConvertAudio(string inputPath, string outputPath)
+    {
+        if (!File.Exists(inputPath))
+        {
+            throw new ArgumentException($"Input file not found: {inputPath}");
+        }
+        long inSize = new FileInfo(inputPath).Length;
+        if (inSize > 4294967296) // 4GB
+        {
+            throw new ArgumentException($"Input file size is greater than 4GB");
+        }
+
+        long nSamples = 0;
+
+        using (var inStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+        using (var outStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            byte[] buffer = new byte[InputBufferSize];
+
+            while (true)
+            {
+                /* read group of samples */
+                int readSize = 0;
+                while (readSize < InputBufferSize)
+                {
+                    int r = inStream.Read(buffer, readSize, InputBufferSize - readSize);
+                    readSize += r;
+                    if (r == 0)
+                    {
+                        break;
+                    }
+                }
+                if (readSize != InputBufferSize)
+                {
+                    break;
+                }
+                nSamples++;
+                outStream.Write(buffer, 0, BytesPerSample);
+            }
+        }
+
+        Console.WriteLine($"Conversion complete. Samples generated: {nSamples}, File written: {outputPath}");
+    }
+}
+
+
 public static class RgbToBitmask
 {
     public static int Width = 160;
@@ -20,7 +72,7 @@ public static class RgbToBitmask
         return r + g + b > Treshold;
     }
 
-    public static void Convert(string inputPath, string outputPath)
+    public static void ConvertVideo(string inputPath, string outputPath)
     {
         if (!File.Exists(inputPath))
         {

@@ -6,5 +6,7 @@
 *.so
 a
 *.bitmask
+*.audio
 *.rgb
 *.mp4
+*.wav
