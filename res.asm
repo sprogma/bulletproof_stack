@@ -212,12 +212,31 @@ _1main__loop_audio:
 
 ; get address of current sample
 DIV _1main__tmp1, _1main__sample_id, audio_compression_rate, _1main__size4
+MUL _1main__tmp5, _1main__tmp1, audio_compression_rate, _1main__size4
+SUB _1main__tmp5, _1main__tmp5, _1main__sample_id, _1main__size4
 MUL _1main__tmp1, _1main__tmp1, _1main__four, _1main__size4
 ADD _1main__tmp1, _1main__tmp1, audio_start, _1main__size4
 
+; load sample to variable
+LEA _1main__tmp_ptr1, _1main__size4
+LEA _1main__tmp_ptr2, _1main__tmp2
+$MOV _1main__tmp_ptr2, _1main__tmp1, _1main__tmp_ptr1
+; load next sample to variable
+ADD _1main__tmp1, _1main__tmp1, _1main__four, _1main__size4
+LEA _1main__tmp_ptr1, _1main__size4
+LEA _1main__tmp_ptr2, _1main__tmp3
+$MOV _1main__tmp_ptr2, _1main__tmp1, _1main__tmp_ptr1
+
+; interpolate between this two samples
+MOV _1main__tmp1, _1main__tmp2, _1main__size4
+SUB _1main__tmp4, _1main__tmp3, _1main__tmp2, _1main__size4
+DIV _1main__tmp4, _1main__tmp4, audio_compression_rate, _1main__size4
+MUL _1main__tmp4, _1main__tmp4, _1main__tmp5, _1main__size4
+; ADD _1main__tmp1, _1main__tmp1, _1main__tmp4, _1main__size4
 ; copy this sample, padding with zeros
 LEA _1main__tmp_ptr1, _1main__size4
-$MOV _1main__audiomemend, _1main__tmp1, _1main__tmp_ptr1
+LEA _1main__tmp_ptr2, _1main__tmp1
+$MOV _1main__audiomemend, _1main__tmp_ptr2, _1main__tmp_ptr1
 
 ; move memory pointer
 ADD _1main__audiomemend, _1main__audiomemend, _1main__four, _1main__size4
@@ -399,6 +418,8 @@ _1main__tmp2:
 _1main__tmp3:
 .dd 0
 _1main__tmp4:
+.dd 0
+_1main__tmp5:
 .dd 0
 _1main__tmp_ptr1:
 .dd 0
