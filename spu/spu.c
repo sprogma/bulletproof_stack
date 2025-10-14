@@ -262,19 +262,19 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
 {
     if (size == 8)
     {
-        return (*(int64_t *)a) < (*(int64_t *)b);
+        return -((*(int64_t *)a) < (*(int64_t *)b));
     }
     if (size == 4)
     {
-        return (*(int32_t *)a) < (*(int32_t *)b);
+        return -((*(int32_t *)a) < (*(int32_t *)b));
     }
     if (size == 2)
     {
-        return (*(int16_t *)a) < (*(int16_t *)b);
+        return -((*(int16_t *)a) < (*(int16_t *)b));
     }
     if (size == 1)
     {
-        return (*(int8_t *)a) < (*(int8_t *)b);
+        return -((*(int8_t *)a) < (*(int8_t *)b));
     }
     int a_neg = a[size - 1] & 0x80;
     int b_neg = b[size - 1] & 0x80;
@@ -285,7 +285,7 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
     }
     if (a_neg != b_neg)
     {
-        return a_neg > b_neg;
+        return -(a_neg > b_neg);
     }
     return large_unsigned_integer_less(b, a, size);
 }

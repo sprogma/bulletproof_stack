@@ -35,7 +35,15 @@ static void read_port(struct port_mapping_t *mapping, BYTE *data, size_t count)
     
     for (size_t i = 0; i < count; ++i)
     {
-        data[i] = getchar();
+        int x = getchar();
+        if (x == EOF)
+        {
+            data[i] = 0;
+        }
+        else
+        {
+            data[i] = x;
+        }
     }
 }
 

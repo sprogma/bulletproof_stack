@@ -28,7 +28,7 @@ rm output.pcm
 # old version [no audio]
 # .\spu.exe -mem (256MB) -image 0x4000 a.bc -image 0x40000 .\examples\player\output.bitmask -entry 0x4000 -map "1:video10 2:timer"
 # new version [with audio]
-# .\spu.exe -mem (256MB) -image 0x4000 a.bc -image 0x1040000 .\examples\player\output.audio -image 0x40000 .\examples\player\output.bitmask -entry 0x4000 -map "1:video5 2:timer 3:audio"
+# .\spu.exe -mem (256MB) -image 0x4000 a.bc -image 0x1080000 .\examples\player\output.audio -image 0x80000 .\examples\player\output.bitmask -entry 0x4000 -map "1:video5 2:timer 3:audio"
 
 
 # parameters for files:
