@@ -294,32 +294,44 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
 #define GET_ARG(s, ip, id) (*((int32_t *)((s)->mem + ip + 1 + 4 * (id))))
 #define INT_FROM(s, pos) (*((int32_t *)((s)->mem + (pos))))
 
+/* logical conversions */
+#define PTR_FROM_PTR(s, ptr) INT_FROM(s, ptr)
+#define REL_TO_PTR(s, ptr) ((ptr) + ip)
+#define PTR_TO_REAL(s, ptr) ((s)->mem + (ptr))
+
 #define READ_DST_SRC_COUNT \
-    int32_t dst = GET_ARG(s, ip, 0) + ip; \
-    int32_t src = GET_ARG(s, ip, 1) + ip; \
-    int32_t cnt = GET_ARG(s, ip, 2) + ip; \
+    int32_t dst = REL_TO_PTR(s, GET_ARG(s, ip, 0)); \
+    int32_t src = REL_TO_PTR(s, GET_ARG(s, ip, 1)); \
+    int32_t cnt = REL_TO_PTR(s, GET_ARG(s, ip, 2)); \
     \
     if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR) \
     { \
-        VERBOSE_INFO("dest = *%08x=%08x src = *%08x=%08x cnt = *%08x=%08x\n", dst, INT_FROM(s, dst), src, INT_FROM(s, src), cnt, INT_FROM(s, cnt)); \
-        dst = INT_FROM(s, dst); \
-        src = INT_FROM(s, src); \
-        cnt = INT_FROM(s, cnt); \
+        VERBOSE_INFO("dest = *%08x=%08x src = *%08x=%08x cnt = *%08x=%08x\n", \
+                      dst, PTR_FROM_PTR(s, dst), \
+                      src, PTR_FROM_PTR(s, src), \
+                      cnt, PTR_FROM_PTR(s, cnt)); \
+        dst = PTR_FROM_PTR(s, dst); \
+        src = PTR_FROM_PTR(s, src); \
+        cnt = PTR_FROM_PTR(s, cnt); \
     }
 
 #define READ_DST_A_B_COUNT \
-    int32_t dst = GET_ARG(s, ip, 0) + ip; \
-    int32_t a   = GET_ARG(s, ip, 1) + ip; \
-    int32_t b   = GET_ARG(s, ip, 2) + ip; \
-    int32_t cnt = GET_ARG(s, ip, 3) + ip; \
+    int32_t dst = REL_TO_PTR(s, GET_ARG(s, ip, 0)); \
+    int32_t a   = REL_TO_PTR(s, GET_ARG(s, ip, 1)); \
+    int32_t b   = REL_TO_PTR(s, GET_ARG(s, ip, 2)); \
+    int32_t cnt = REL_TO_PTR(s, GET_ARG(s, ip, 3)); \
     \
     if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR) \
     { \
-        VERBOSE_INFO("dest = *%08x=%08x a = *%08x=%08x b = *%08x=%08x cnt = *%08x=%08x\n", dst, INT_FROM(s, dst), a, INT_FROM(s, a), b, INT_FROM(s, b), cnt, INT_FROM(s, cnt)); \
-        dst = INT_FROM(s, dst); \
-        a   = INT_FROM(s, a); \
-        b   = INT_FROM(s, b); \
-        cnt = INT_FROM(s, cnt); \
+        VERBOSE_INFO("dest = *%08x=%08x a = *%08x=%08x b = *%08x=%08x cnt = *%08x=%08x\n", \
+                      dst, PTR_FROM_PTR(s, dst), \
+                      a, PTR_FROM_PTR(s, a), \
+                      b, PTR_FROM_PTR(s, b), \
+                      cnt, PTR_FROM_PTR(s, cnt)); \
+        dst = PTR_FROM_PTR(s, dst); \
+        a   = PTR_FROM_PTR(s, a); \
+        b   = PTR_FROM_PTR(s, b); \
+        cnt = PTR_FROM_PTR(s, cnt); \
     }
 
 
@@ -331,16 +343,22 @@ void run(struct spu *s)
             dump(s->mem, 0x3FF0, 0x4200);
         #endif
         /* load instruction */
-        uint32_t ip = ((uint32_t *)s->mem)[0];
+        uint32_t ip = INT_FROM(s, 0);
         VERBOSE_INFO("IP = %08x\n", ip);
 
-        if (ip > s->mem_size)
+        if (ip >= s->mem_size)
         {
             PRINT_ERROR("ip is outside of memory bounds.");
             break;
         }
         
-        ssize_t cmd_size = decode_instruction_length(s->mem + ip);
+        int64_t cmd_size = decode_instruction_length(PTR_TO_REAL(s, ip));
+        
+        if (ip + cmd_size > (int64_t)s->mem_size)
+        {
+            PRINT_ERROR("ip + cmd_size is outside of memory bounds.");
+            break;
+        }
         
         INT_FROM(s, 0) = ip + cmd_size;
         
@@ -400,7 +418,7 @@ static result_t load_image(struct spu *s, char *filename, size_t load_address)
         PRINT_ERROR("cannot open/find image %s", filename);
         return 1;
     }
-    ssize_t len = fread(s->mem + load_address, 1, file_stat.st_size, f);
+    int64_t len = fread(s->mem + load_address, 1, file_stat.st_size, f);
     PRINT_INFO("image loaded by offset %zu, read %zu bytes", load_address, len);
     fclose(f);
 }
