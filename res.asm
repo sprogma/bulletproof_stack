@@ -39,7 +39,7 @@ _0main__end_encoding:
 ; print encoded code
 SUB _0main__tmp1, result_end, result_base, size4
 LEA _0main__tmp1_ptr, _0main__tmp1
-$OUT 2, result_base, _0main__tmp1_ptr
+$OUT 3, result_base, _0main__tmp1_ptr
 
 
 LEA _0main__tmp2_ptr, main - 4
@@ -645,6 +645,65 @@ $LEA zero, _6directive__skipping_spaces
 _6directive__end_loop:
 
 
+; select directive:
+; .align: UNSUPPORTED
+; .db .dw .dd -> ok
+
+; so, check third letter:
+MOV_CONST 2, _6directive__tmp1
+MOV_CONST 0, _6directive__tmp2
+LEA _6directive__tmp2_ptr, _6directive__tmp2
+LEA _6directive__tmp3_ptr, size1
+ADD _6directive__tmp1_ptr, _6directive__start, _6directive__tmp1, size4
+$MOV _6directive__tmp2_ptr, _6directive__tmp1_ptr, _6directive__tmp3_ptr
+; check it on 'b'
+MOV_CONST 98, _6directive__tmp1
+EQ _6directive__tmp1, _6directive__tmp1, _6directive__tmp2, size4
+ALL _6directive__tmp1, _6directive__tmp1, size4
+LEA _6directive__tmp1_ptr, _6directive__tmp1
+$CLEA _6directive__tmp1_ptr, zero, _6directive__byte
+; check it on 'w'
+MOV_CONST 119, _6directive__tmp1
+EQ _6directive__tmp1, _6directive__tmp1, _6directive__tmp2, size4
+ALL _6directive__tmp1, _6directive__tmp1, size4
+LEA _6directive__tmp1_ptr, _6directive__tmp1
+$CLEA _6directive__tmp1_ptr, zero, _6directive__word
+; check it on 'd'
+MOV_CONST 100, _6directive__tmp1
+EQ _6directive__tmp1, _6directive__tmp1, _6directive__tmp2, size4
+ALL _6directive__tmp1, _6directive__tmp1, size4
+LEA _6directive__tmp1_ptr, _6directive__tmp1
+$CLEA _6directive__tmp1_ptr, zero, _6directive__dword
+; else: error
+MOV_CONST 69, _6directive__tmp1
+OUT 2, _6directive__tmp1, size1
+MOV_CONST 82, _6directive__tmp1
+OUT 2, _6directive__tmp1, size1
+OUT 2, _6directive__tmp1, size1
+MOV_CONST 10, _6directive__tmp1
+OUT 2, _6directive__tmp1, size1
+.dd 0xFF
+
+
+
+; after identifying size of element, parse all numbers, 
+; and paste their values to resulting code
+
+_6directive__byte:
+MOV_CONST 66, _6directive__tmp1
+OUT 1, _6directive__tmp1, size1
+$LEA zero, _6directive__return
+_6directive__word:
+MOV_CONST 87, _6directive__tmp1
+OUT 1, _6directive__tmp1, size1
+$LEA zero, _6directive__return
+_6directive__dword:
+MOV_CONST 68, _6directive__tmp1
+OUT 1, _6directive__tmp1, size1
+$LEA zero, _6directive__return
+
+_6directive__return:
+
 MOV_CONST 68, _6directive__tmp1
 OUT 1, _6directive__tmp1, size1
 
@@ -667,6 +726,11 @@ $MOV result_end, _6directive__tmp1_ptr, _6directive__tmp2_ptr
 ADD result_end, result_end, size1, size4
 
 
+LEA parseint - 4, _6directive__parseint_ret
+$LEA zero, parseint
+_6directive__parseint_ret:
+
+
 LEA _6directive__tmp2_ptr, compile_directive - 4
 LEA _6directive__tmp1_ptr, size4
 $MOV zero, _6directive__tmp2_ptr, _6directive__tmp1_ptr
@@ -686,5 +750,123 @@ _6directive__tmp2:
 _6directive__tmp3:
 .dd 0
 _6directive__tmp4:
+.dd 0
+
+_7parseint__start:
+.dd 0xBEBEBEBE
+; return
+.dd 0xBEBEBEBE
+.dd 0xBEBEBEBE
+parseint:
+
+; 1. skip spaces
+; skip all left spaces
+_7parseint__skipping_first_spaces:
+MOV_CONST 32, _7parseint__tmp1
+MOV_CONST 0, _7parseint__tmp2
+LEA _7parseint__tmp1_ptr, _7parseint__tmp2
+LEA _7parseint__tmp2_ptr, size1
+$MOV _7parseint__tmp1_ptr, _7parseint__start, _7parseint__tmp2_ptr
+EQ _7parseint__tmp3, _7parseint__tmp1, _7parseint__tmp2, size4
+INV _7parseint__tmp3, _7parseint__tmp3, size4
+ANY _7parseint__tmp3, _7parseint__tmp3, size4
+LEA _7parseint__tmp1_ptr, _7parseint__tmp3
+$CLEA _7parseint__tmp1_ptr, zero, _7parseint__end_first_loop
+INC _7parseint__start, _7parseint__start, size4
+$LEA zero, _7parseint__skipping_first_spaces
+_7parseint__end_first_loop:
+
+; check for sign: +, - or no sign
+
+; so, check first letter:
+MOV_CONST 0, _7parseint__tmp2
+LEA _7parseint__tmp2_ptr, _7parseint__tmp2
+LEA _7parseint__tmp3_ptr, size1
+$MOV _7parseint__tmp2_ptr, _7parseint__start, _7parseint__tmp3_ptr
+; check it on '-'
+MOV_CONST 45, _7parseint__tmp1
+EQ _7parseint__tmp1, _7parseint__tmp1, _7parseint__tmp2, size4
+ALL _7parseint__tmp1, _7parseint__tmp1, size4
+LEA _7parseint__tmp1_ptr, _7parseint__tmp1
+$CLEA _7parseint__tmp1_ptr, zero, _7parseint__minus
+; check it on '+'
+MOV_CONST 43, _7parseint__tmp1
+EQ _7parseint__tmp1, _7parseint__tmp1, _7parseint__tmp2, size4
+ALL _7parseint__tmp1, _7parseint__tmp1, size4
+LEA _7parseint__tmp1_ptr, _7parseint__tmp1
+$CLEA _7parseint__tmp1_ptr, zero, _7parseint__plus
+; so, there is no sign
+$LEA zero, _7parseint__no_sign
+
+_7parseint__no_sign:
+MOV_CONST 0, _7parseint__is_negative
+$LEA zero, _7parseint__second_part
+_7parseint__plus:
+MOV_CONST 0, _7parseint__is_negative
+ADD _7parseint__start, _7parseint__start, size1, size4 ; skip this sign
+$LEA zero, _7parseint__second_part
+_7parseint__minus:
+MOV_CONST -1, _7parseint__is_negative
+ADD _7parseint__start, _7parseint__start, size1, size4 ; skip this sign
+$LEA zero, _7parseint__second_part
+
+_7parseint__second_part:
+; skip all left spaces
+_7parseint__skipping_second_spaces:
+MOV_CONST 32, _7parseint__tmp1
+MOV_CONST 0, _7parseint__tmp2
+LEA _7parseint__tmp1_ptr, _7parseint__tmp2
+LEA _7parseint__tmp2_ptr, size1
+$MOV _7parseint__tmp1_ptr, _7parseint__start, _7parseint__tmp2_ptr
+EQ _7parseint__tmp3, _7parseint__tmp1, _7parseint__tmp2, size4
+INV _7parseint__tmp3, _7parseint__tmp3, size4
+ANY _7parseint__tmp3, _7parseint__tmp3, size4
+LEA _7parseint__tmp1_ptr, _7parseint__tmp3
+$CLEA _7parseint__tmp1_ptr, zero, _7parseint__end_second_loop
+INC _7parseint__start, _7parseint__start, size4
+$LEA zero, _7parseint__skipping_second_spaces
+_7parseint__end_second_loop:
+
+; after identifying size of element, parse all numbers, 
+; and paste their values to resulting code
+; print next number
+
+MOV_CONST 60, _7parseint__tmp1
+OUT 1, _7parseint__tmp1, size1
+OUT 1, _7parseint__tmp1, size1
+OUT 1, _7parseint__tmp1, size1
+; print all line except it:
+MOV_CONST 3, _7parseint__tmp1
+LEA _7parseint__tmp1_ptr, _7parseint__tmp1
+$OUT 1, _7parseint__start, _7parseint__tmp1_ptr
+MOV_CONST 62, _7parseint__tmp1
+OUT 1, _7parseint__tmp1, size1
+MOV_CONST 10, _7parseint__tmp1
+OUT 1, _7parseint__tmp1, size1
+
+
+LEA _7parseint__tmp2_ptr, parseint - 4
+LEA _7parseint__tmp1_ptr, size4
+$MOV zero, _7parseint__tmp2_ptr, _7parseint__tmp1_ptr
+
+
+
+_7parseint__is_negative:
+.dd 0
+_7parseint__tmp1_ptr:
+.dd 0
+_7parseint__tmp2_ptr:
+.dd 0
+_7parseint__tmp3_ptr:
+.dd 0
+_7parseint__tmp4_ptr:
+.dd 0
+_7parseint__tmp1:
+.dd 0
+_7parseint__tmp2:
+.dd 0
+_7parseint__tmp3:
+.dd 0
+_7parseint__tmp4:
 .dd 0
 

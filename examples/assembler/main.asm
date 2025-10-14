@@ -31,7 +31,7 @@ _end_encoding:
 ; print encoded code
 SUB _tmp1, result_end, result_base, size4
 LEA _tmp1_ptr, _tmp1
-$OUT 2, result_base, _tmp1_ptr
+$OUT 3, result_base, _tmp1_ptr
 
 
 LEA _tmp2_ptr, main - 4
