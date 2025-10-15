@@ -25,32 +25,55 @@
 #include "spu.h"
 
 
-void send_port(struct spu *s, int32_t port, BYTE *data, size_t count)
+#define MAP_BASE_SIZE_OPTIMIZATION(MACRO) \
+    switch (size) \
+    { \
+        case sizeof(int8_t): \
+            MACRO((*(int8_t *)s), (*(int8_t *)s), (*(int8_t *)a)); \
+            return; \
+        case sizeof(int16_t): \
+            MACRO((*(int16_t *)s), (*(int16_t *)s), (*(int16_t *)a)); \
+            return; \
+        case sizeof(int32_t): \
+            MACRO((*(int32_t *)s), (*(int32_t *)s), (*(int32_t *)a)); \
+            return; \
+        case sizeof(int64_t): \
+            MACRO((*(int64_t *)s), (*(int64_t *)s), (*(int64_t *)a)); \
+            return; \
+        default: \
+            break; \
+    }
+
+
+struct port_mapping_t *find_port_mapping(struct spu *s, int32_t port)
 {
     for (size_t i = 0; i < s->port_mappings_len; ++i)
     {
         if (s->port_mappings[i].port == port)
         {
-            if (s->port_mappings[i].send != NULL)
-            {
-                s->port_mappings[i].send(s->port_mappings + i, data, count);
-            }
+            return s->port_mappings + i;
         }
+    }
+    return NULL;
+}
+
+
+void send_port(struct spu *s, int32_t port, BYTE *data, size_t count)
+{
+    struct port_mapping_t *t = find_port_mapping(s, port);
+    if (t != NULL && t->send != NULL)
+    {
+        t->send(t, data, count);
     }
 }
 
 
 void read_port(struct spu *s, int32_t port, BYTE *data, size_t count)
 {
-    for (size_t i = 0; i < s->port_mappings_len; ++i)
+    struct port_mapping_t *t = find_port_mapping(s, port);
+    if (t != NULL && t->send != NULL)
     {
-        if (s->port_mappings[i].port == port)
-        {
-            if (s->port_mappings[i].read != NULL)
-            {
-                s->port_mappings[i].read(s->port_mappings + i, data, count);
-            }
-        }
+        t->read(t, data, count);
     } 
 }
 
@@ -104,26 +127,9 @@ void large_integer_dec(BYTE *s, size_t size)
 
 void large_integer_add(BYTE *s, BYTE *a, size_t size)
 {
-    if (size == 8)
-    {
-        *(int64_t *)s = (*(int64_t *)s) + (*(int64_t *)a);
-        return;
-    }
-    if (size == 4)
-    {
-        *(int32_t *)s = (*(int32_t *)s) + (*(int32_t *)a);
-        return;
-    }
-    if (size == 2)
-    {
-        *(int16_t *)s = (*(int16_t *)s) + (*(int16_t *)a);
-        return;
-    }
-    if (size == 1)
-    {
-        *(int8_t *)s = (*(int8_t *)s) + (*(int8_t *)a);
-        return;
-    }
+    #define ADD(to, a, b) to = a + b;
+    MAP_BASE_SIZE_OPTIMIZATION(ADD)
+    #undef ADD
     
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
@@ -137,26 +143,9 @@ void large_integer_add(BYTE *s, BYTE *a, size_t size)
 
 void large_integer_sub(BYTE *s, BYTE *a, size_t size)
 {
-    if (size == 8)
-    {
-        *(int64_t *)s = (*(int64_t *)s) - (*(int64_t *)a);
-        return;
-    }
-    if (size == 4)
-    {
-        *(int32_t *)s = (*(int32_t *)s) - (*(int32_t *)a);
-        return;
-    }
-    if (size == 2)
-    {
-        *(int16_t *)s = (*(int16_t *)s) - (*(int16_t *)a);
-        return;
-    }
-    if (size == 1)
-    {
-        *(int8_t *)s = (*(int8_t *)s) - (*(int8_t *)a);
-        return;
-    }
+    #define SUB(to, a, b) to = a - b;
+    MAP_BASE_SIZE_OPTIMIZATION(SUB)
+    #undef SUB
     
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
@@ -178,26 +167,9 @@ void large_integer_sub(BYTE *s, BYTE *a, size_t size)
 
 void large_integer_mul(BYTE *s, BYTE *a, size_t size)
 {
-    if (size == 8)
-    {
-        *(int64_t *)s = (*(int64_t *)s) * (*(int64_t *)a);
-        return;
-    }
-    if (size == 4)
-    {
-        *(int32_t *)s = (*(int32_t *)s) * (*(int32_t *)a);
-        return;
-    }
-    if (size == 2)
-    {
-        *(int16_t *)s = (*(int16_t *)s) * (*(int16_t *)a);
-        return;
-    }
-    if (size == 1)
-    {
-        *(int8_t *)s = (*(int8_t *)s) * (*(int8_t *)a);
-        return;
-    }
+    #define MUL(to, a, b) to = a * b;
+    MAP_BASE_SIZE_OPTIMIZATION(MUL)
+    #undef MUL
     
     BYTE *tmp = calloc(1, size);
     memcpy(tmp, s, size);
@@ -221,30 +193,14 @@ void large_integer_mul(BYTE *s, BYTE *a, size_t size)
 
 void large_integer_div(BYTE *s, BYTE *a, size_t size)
 {
-    if (size == 8)
-    {
-        *(int64_t *)s = (*(int64_t *)s) / (*(int64_t *)a);
-        return;
-    }
-    if (size == 4)
-    {
-        *(int32_t *)s = (*(int32_t *)s) / (*(int32_t *)a);
-        return;
-    }
-    if (size == 2)
-    {
-        *(int16_t *)s = (*(int16_t *)s) / (*(int16_t *)a);
-        return;
-    }
-    if (size == 1)
-    {
-        *(int8_t *)s = (*(int8_t *)s) / (*(int8_t *)a);
-        return;
-    }
+    #define DIV(to, a, b) to = a / b;
+    MAP_BASE_SIZE_OPTIMIZATION(DIV)
+    #undef DIV
     
     PRINT_ERROR("-----: not implemented: integer division");
     abort();
 }
+
 
 int32_t large_unsigned_integer_less(BYTE *a, BYTE *b, size_t size)
 {    
@@ -258,8 +214,10 @@ int32_t large_unsigned_integer_less(BYTE *a, BYTE *b, size_t size)
     return 0;
 }
 
+
 int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
 {
+    
     if (size == 8)
     {
         return (*(int64_t *)a) < (*(int64_t *)b);
