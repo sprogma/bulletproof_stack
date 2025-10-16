@@ -110,18 +110,32 @@ result_t write_file(const char *filename, char *buffer, int64_t size)
  
 
 result_t read_binary_file(const char *filename, BYTE **buffer, ssize_t *buffer_len)
-{
-    struct stat file_stat;
-    int f = open(filename, O_RDONLY);
-    if (fstat(f, &file_stat) != 0)
+{    
+    /* get file size */
+    int fh = open(filename, O_RDONLY);
+    if (fh == -1)
     {
-        PRINT_ERROR("cannot open file %s\n", filename);
+        PRINT_ERROR("Cannot open file");
+        return 1;
+    }
+
+    int64_t size = 0;
+    get_file_size(fh, &size);
+
+    close(fh);
+
+    /* read file, open it one more time */
+    
+    FILE *f = fopen(filename, "rb");
+    if (f == NULL)
+    {
         return 1;
     }
     
-    *buffer = calloc(1, file_stat.st_size);
-    *buffer_len = read(f, *buffer, file_stat.st_size);
-    
+    *buffer = calloc(1, size);
+    *buffer_len = fread(*buffer, 1, size, f);
+
+    fclose(f);
     return 0;
 }
 

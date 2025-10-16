@@ -11,11 +11,11 @@
 
 
 
-result_t encode_command(struct compilation_table *table, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length)
+result_t encode_command(struct compilation_table *table, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length, FILE *data_file)
 {
 
     /* end of line - start of comment or new line */
-    char *line_end = OR(strchr(line, ';'), line + strlen(line));
+    char *line_end = OR(strchr(line, ';'), line + strlen(line)); // TODO: make a function
 
     str_trim(&line, &line_end);
     
@@ -71,17 +71,16 @@ result_t encode_command(struct compilation_table *table, char *line, int64_t pos
         }
 
         cnt_e = OR(cnt_e, line_end);
-        
         HANDLE_ERROR(parse_integer(line + name_len, cnt_e, offsets + 0));
-        if (cmd->nargs != 1)
-        { 
-            HANDLE_ERROR(calculate_offsets(table, position, cnt_e + 1, line_end, cmd->nargs - 1, offsets + 1));
-        }
+        
+        HANDLE_ERROR(calculate_offsets(table, position, cnt_e + 1, line_end, cmd->nargs - 1, offsets + 1));
     }
     else
     {
         HANDLE_ERROR(calculate_offsets(table, position, line + name_len, line_end, cmd->nargs, offsets));
     }
+
+    fprintf(data_file, "I %zd %zd\n", position, position + 1 + sizeof(*offsets) * cmd->nargs);
     
     copy_to_end(dst, &header, sizeof(header));
     copy_to_end(dst, offsets, sizeof(*offsets) * cmd->nargs);

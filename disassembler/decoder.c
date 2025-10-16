@@ -10,7 +10,7 @@
 #include "../utils/assembler.h"
 
 
-static result_t decode_instruction(struct output_buffer *s, BYTE *data, BYTE *end, size_t *decoded_length)
+static result_t decode_instruction(struct output_buffer *s, BYTE *data, BYTE *end, int64_t *decoded_length)
 {
     assert(data < end);
     
@@ -27,10 +27,6 @@ static result_t decode_instruction(struct output_buffer *s, BYTE *data, BYTE *en
     }
     
     BYTE header = *data;
-    if ((header & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
-    {    
-        print_buffer(s, "$");
-    }
 
     const struct command *cmd = NULL;
     for (size_t i = 0; i < ARRAYLEN(native_commands); ++i)
@@ -50,6 +46,10 @@ static result_t decode_instruction(struct output_buffer *s, BYTE *data, BYTE *en
         return 0;
     }
     
+    if ((header & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR)
+    {    
+        print_buffer(s, "$");
+    }
     print_buffer(s, "%s", cmd->name);
     
     /* decode arguments */
@@ -79,9 +79,12 @@ result_t decode_program(BYTE *code, int64_t code_len, struct output_buffer *out)
 
     while (code < code_end)
     {
-        size_t decoded_length;
+        int64_t decoded_length;
+        PRINT_INFO("Decoding from: %p/%p", code, code_end);
         HANDLE_ERROR(decode_instruction(out, code, code_end, &decoded_length));
         code += decoded_length;
     }
+
+    return 0;
 }
 

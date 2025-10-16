@@ -71,7 +71,6 @@ int create_port_mapping_keyboard(struct spu *s, struct port_mapping_t *mapping, 
 
     printf("Connect port %d to keyboard output\n", port);
 
-
     mapping->port = port;
     mapping->name = "keyboard";
     mapping->send = NULL;

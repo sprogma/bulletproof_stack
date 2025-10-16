@@ -28,20 +28,11 @@
 #define MAP_BASE_SIZE_OPTIMIZATION(MACRO) \
     switch (size) \
     { \
-        case sizeof(int8_t): \
-            MACRO((*(int8_t *)s), (*(int8_t *)s), (*(int8_t *)a)); \
-            return; \
-        case sizeof(int16_t): \
-            MACRO((*(int16_t *)s), (*(int16_t *)s), (*(int16_t *)a)); \
-            return; \
-        case sizeof(int32_t): \
-            MACRO((*(int32_t *)s), (*(int32_t *)s), (*(int32_t *)a)); \
-            return; \
-        case sizeof(int64_t): \
-            MACRO((*(int64_t *)s), (*(int64_t *)s), (*(int64_t *)a)); \
-            return; \
-        default: \
-            break; \
+        case sizeof(int8_t):  MACRO((*(int8_t *)s), (*(int8_t *)s), (*(int8_t *)a)); return; \
+        case sizeof(int16_t): MACRO((*(int16_t *)s), (*(int16_t *)s), (*(int16_t *)a)); return; \
+        case sizeof(int32_t): MACRO((*(int32_t *)s), (*(int32_t *)s), (*(int32_t *)a)); return; \
+        case sizeof(int64_t): MACRO((*(int64_t *)s), (*(int64_t *)s), (*(int64_t *)a)); return; \
+        default: break; \
     }
 
 
@@ -58,23 +49,33 @@ struct port_mapping_t *find_port_mapping(struct spu *s, int32_t port)
 }
 
 
+void empty_port_fn(struct port_mapping_t *mapping, BYTE *data, size_t count)
+{
+    (void)mapping;
+    (void)data;
+    (void)count;
+    return;
+}
+
 void send_port(struct spu *s, int32_t port, BYTE *data, size_t count)
 {
     struct port_mapping_t *t = find_port_mapping(s, port);
+    /* 
     if (t != NULL && t->send != NULL)
     {
         t->send(t, data, count);
     }
+    */
+    // TODO: (a ? b : NULL) ?? c == a ? b : c
+    // TODO: remove cast
+    ((void(*)())OR((t ? t->send : NULL), &empty_port_fn))(t, data, count);
 }
 
 
 void read_port(struct spu *s, int32_t port, BYTE *data, size_t count)
 {
     struct port_mapping_t *t = find_port_mapping(s, port);
-    if (t != NULL && t->send != NULL)
-    {
-        t->read(t, data, count);
-    } 
+    ((void(*)())OR((t ? t->read : NULL), &empty_port_fn))(t, data, count);
 }
 
 
@@ -85,7 +86,7 @@ void dump(BYTE *s, size_t from, size_t to)
     printf("         _ ");
     for (int i = 0; i < STEP; ++i)
     {
-        printf("%02X ", i); // TODO: WHY?
+        printf("%02X ", i);
     }
     printf(" _\n");
     while (i <= to)
@@ -151,22 +152,14 @@ void large_integer_sub(BYTE *s, BYTE *a, size_t size)
     for (size_t i = 0; i < size; ++i)
     {
         int res = (int)s[i] - (int)a[i] + carry;
-        if (res < 0)
-        {
-            res += 256;
-            carry = -1;
-        }
-        else
-        {
-            carry = 0;
-        }
-        s[i] = res;
+        carry = (res < 0 ? -1 : 0);
+        s[i] = res - carry * (1 << (sizeof(BYTE) * CHAR_BIT));
     }
 }
 
 
 void large_integer_mul(BYTE *s, BYTE *a, size_t size)
-{
+{ // TODO: better names everywhere
     #define MUL(to, a, b) to = a * b;
     MAP_BASE_SIZE_OPTIMIZATION(MUL)
     #undef MUL
@@ -201,7 +194,6 @@ void large_integer_div(BYTE *s, BYTE *a, size_t size)
     abort();
 }
 
-
 int32_t large_unsigned_integer_less(BYTE *a, BYTE *b, size_t size)
 {    
     for (size_t x = size - 1; x < size; --x)
@@ -217,7 +209,7 @@ int32_t large_unsigned_integer_less(BYTE *a, BYTE *b, size_t size)
 
 int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
 {
-    
+    // can't use optimizate_size... becouse this construction needs non null return  
     if (size == 8)
     {
         return -((*(int64_t *)a) < (*(int64_t *)b));
@@ -234,7 +226,7 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
     {
         return -((*(int8_t *)a) < (*(int8_t *)b));
     }
-    int a_neg = a[size - 1] & 0x80;
+    int a_neg = a[size - 1] & 0x80; // TODO: char(a) >> 7
     int b_neg = b[size - 1] & 0x80;
 
     if (!a_neg && !b_neg)
@@ -248,7 +240,8 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
     return large_unsigned_integer_less(b, a, size);
 }
 
-
+// TODO: why are those not functions?
+// TODO: + 1 + 4 * id?
 #define GET_ARG(s, ip, id) (*((int32_t *)((s)->mem + ip + 1 + 4 * (id))))
 #define INT_FROM(s, pos) (*((int32_t *)((s)->mem + (pos))))
 
@@ -256,6 +249,8 @@ int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
 #define PTR_FROM_PTR(s, ptr) INT_FROM(s, ptr)
 #define REL_TO_PTR(s, ptr) ((ptr) + ip)
 #define PTR_TO_REAL(s, ptr) ((s)->mem + (ptr))
+
+// TODO: a lot less love for macros, please
 
 #define READ_DST_SRC_COUNT \
     int32_t dst = REL_TO_PTR(s, GET_ARG(s, ip, 0)); \

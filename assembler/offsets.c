@@ -21,12 +21,13 @@ static result_t calculate_offset(struct compilation_table *table, int64_t positi
         return 1;
     }
 
-    if (is_all_digits(arg, arg_end))
+    if (is_all_digits(arg, arg_end) || 
+       (arg[0] == '-' && is_all_digits(arg + 1, arg_end)))
     {
-        PRINT_WARNING("Absolute address aren'table supported, this pointer will be relative to start of program [in arg <%*.*s>]",
+        PRINT_WARNING("Absolute address aren'table supported, this pointer will be relative to current instruction [in arg <%*.*s>]",
                                                                               (int)(arg_end - arg), (int)(arg_end - arg), arg);
+        // parse integer offset, and store it to result.
         HANDLE_ERROR(parse_integer(arg, arg_end, offset));
-        *offset += position;
         return 0;
     }
 
@@ -79,13 +80,16 @@ static result_t calculate_offset(struct compilation_table *table, int64_t positi
     }
 
     PRINT_INFO("FOUND LABEL: offset=%x; add_offset=%x", label->position, add_offset);
-    *offset = label->position + add_offset;
+    *offset = label->position + add_offset - position;
     return 0;
 }
 
 
 result_t calculate_offsets(struct compilation_table *table, int64_t position, char *args, char *args_end, int64_t nargs, int32_t *offsets_length)
 {
+    /* skip leading and trailing spaces */
+    str_trim(&args, &args_end);
+        
     char *arg = args;
     for (int64_t i = 0; i < nargs; ++i)
     {
@@ -102,7 +106,6 @@ result_t calculate_offsets(struct compilation_table *table, int64_t position, ch
         /* calculate offset of this argument */
         {
             HANDLE_ERROR(calculate_offset(table, position, arg, arg_end, offsets_length + i));
-            offsets_length[i] -= position;
         }
         arg = arg_end + 1;
     }

@@ -24,6 +24,9 @@ int main(int argc, char **argv)
     HANDLE_ERROR(read_binary_file(in_file, &buffer, &buffer_size));
 
 
+    PRINT_INFO("read input file of size %zd", buffer_size);
+
+
     struct output_buffer b = {{NULL}, 0, 0};
     HANDLE_ERROR(decode_program(buffer, buffer_size, &b));
 

@@ -10,6 +10,7 @@
 #include "./assembler_internal.h"
 
 
+// TODO: nooooooooooooooooooooooooooooo
 #define STARTSWITH(s, str) (strncmp((s), str, sizeof(str) - 1) == 0 && !iskey((s)[sizeof(str) - 1]))
 
 
@@ -38,7 +39,7 @@ static result_t encode_directive_data(struct compilation_table *table,
 
     *result_length = 0;
 
-    char *num_start = line + strlen(".db");
+    char *num_start = line + strlen(".db"); // TODO: ??
     while (num_start < line_end)
     {
         char *end = OR(strchr(num_start, ','), line_end);

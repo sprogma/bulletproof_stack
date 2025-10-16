@@ -19,13 +19,16 @@ int main(int argc, char **argv)
     char *out_file = argv[2];
 
 
+    FILE *f = fopen("result.dat", "w");
+
+
     char **lines;
     int64_t lines_len;
     HANDLE_ERROR(read_file(in_file, &lines, &lines_len));
 
     
     struct output_buffer b = {{NULL}, 0, 0};
-    HANDLE_ERROR(build_program(lines, lines_len, &b));
+    HANDLE_ERROR(build_program(lines, lines_len, &b, f));
     
     /* free input text */
     free(lines[0]);

@@ -49,6 +49,7 @@ int is_all_digits(char *s, char *e)
             return 0;
         }
     }
+    return 1;
 }
 
 

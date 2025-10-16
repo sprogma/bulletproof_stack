@@ -81,7 +81,7 @@ INSTRUCTION(O_INC, "INC", 3, 0, (0b00011 | ARG_NUM_3),
 
     if (dst != src)
     {
-        memcpy(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, src), cnt);
+        memmove(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, src), cnt);
     }
     large_integer_inc(PTR_TO_REAL(s, dst), cnt);
 )
@@ -94,7 +94,7 @@ INSTRUCTION(O_DEC, "DEC", 3, 0, (0b00100 | ARG_NUM_3),
 
     if (dst != src)
     {
-        memcpy(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, src), cnt);
+        memmove(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, src), cnt);
     }
     large_integer_dec(PTR_TO_REAL(s, dst), cnt);
 )
@@ -233,7 +233,7 @@ INSTRUCTION(O_ADD, "ADD", 4, 0, (0b00100 | ARG_NUM_4),
 
     if (dst != a)
     {
-        memcpy(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
+        memmove(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
     }
     large_integer_add(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, b), cnt);
 )
@@ -246,7 +246,7 @@ INSTRUCTION(O_SUB, "SUB", 4, 0, (0b00101 | ARG_NUM_4),
 
     if (dst != a)
     {
-        memcpy(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
+        memmove(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
     }
     large_integer_sub(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, b), cnt);
 )
@@ -259,7 +259,7 @@ INSTRUCTION(O_MUL, "MUL", 4, 0, (0b00110 | ARG_NUM_4),
 
     if (dst != a)
     {
-        memcpy(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
+        memmove(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
     }
     large_integer_mul(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, b), cnt);
 )
@@ -272,7 +272,7 @@ INSTRUCTION(O_DIV, "DIV", 4, 0, (0b00111 | ARG_NUM_4),
 
     if (dst != a)
     {
-        memcpy(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
+        memmove(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, a), cnt);
     }
     large_integer_div(PTR_TO_REAL(s, dst), PTR_TO_REAL(s, b), cnt);
 )
