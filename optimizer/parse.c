@@ -99,6 +99,25 @@ int free_ll_node(struct ll_node *x)
     return 0;
 }
 
+int check_is_equal_ll_nodes(struct ll_node *la, struct ll_node *lb)
+{
+    /* n^2 check: for each a from la check all b from lb */
+    while (la != NULL)
+    {
+        struct ll_node *b = lb;
+        while (b != NULL && la->node != b->node)
+        {
+            b = b->next;
+        }
+        if (b == NULL)
+        {
+            return 0;
+        }
+        la = la->next;
+    }
+    return 1;
+}
+
 int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
 {
     /* 1. find regions */
@@ -116,7 +135,7 @@ int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
             struct ll_node *x = t->regions[to + 1].deps;
             while (x != NULL)
             {
-                
+                add_ll_node(t->regions + to, x->node);
                 x = x->next;
             }
         }
@@ -139,7 +158,7 @@ int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
             struct ll_node *x = t->regions[from + 1].deps;
             while (x != NULL)
             {
-                
+                add_ll_node(t->regions + to, x->node);
                 x = x->next;
             }
         }
@@ -239,7 +258,6 @@ int set_region_value(struct tree *t, int start, int end, int is_zero, void *valu
             t->regions[i].is_zero = 0;
             t->regions[i].value = NULL;
         }
-        
     }
     else
     {
@@ -247,7 +265,7 @@ int set_region_value(struct tree *t, int start, int end, int is_zero, void *valu
         memcpy(ptr, value, end - start);
         for (int i = from; i <= to; ++i)
         {
-            printf("SET MEM reg[%d] PTR = %p\n", i, ptr);
+            printf("SET MEM reg[%d] PTR = %p VALUE = %d\n", i, ptr, *(int *)ptr);
             t->regions[i].is_zero = 0;
             t->regions[i].value = ptr;
             ptr += t->regions[i].end - t->regions[i].start;
@@ -353,16 +371,17 @@ int load_code_image(struct tree *t, int load_address, const char *byte_file, con
 struct node *get_node(struct tree *t, int ip)
 {
     /* find node in parsed nodes? */
-    for (int i = 0; i < t->nodes_len; ++i)
+    for (int i = 0; i < t->optimizer->nodes_len; ++i)
     {
-        if (t->nodes[i].op_address == ip)
+        if (t->optimizer->nodes[i].op_address == ip)
         {
-            return t->nodes + i;
+            printf("This is node %p\n", t->optimizer->nodes + i);
+            return t->optimizer->nodes + i;
         }
     }
     /* else - create new node without any deps and childs */
     /* try to load instruction from IP */
-    uint8_t opcode;
+    BYTE opcode;
     {
         BYTE mem[1];
         BYTE bad[1];
@@ -388,24 +407,35 @@ struct node *get_node(struct tree *t, int ip)
             break;
         }
     }
+
+    if (cmd == NULL)
+    {
+        if (opcode == 0xFF)
+        {
+            /* this is HLT */
+            return NULL;
+        }
+        printf("ERROR: UNKNOWN COMMAND WAS EXECUTED: %02X\n", opcode);
+        abort();
+    }
     printf("This is %s command with %d args\n", cmd->name, cmd->nargs);
 
-    int this = t->nodes_len++;
+    int this = t->optimizer->nodes_len++;
 
-    t->nodes[this].op_address = ip;
-    t->nodes[this].deps = NULL;
-    t->nodes[this].childs = NULL;
-    t->nodes[this].op.code = cmd->code;
-    t->nodes[this].op.nargs = cmd->nargs;
-    t->nodes[this].op.size = len;
-    t->nodes[this].op.ptr_on_ptr = -!!(opcode & ARG_PTR_ON_PTR);
-    t->nodes[this].op.constant = cmd->const_first_argument;
+    t->optimizer->nodes[this].op_address = ip;
+    t->optimizer->nodes[this].deps = NULL;
+    t->optimizer->nodes[this].childs = NULL;
+    t->optimizer->nodes[this].op.code = cmd->code;
+    t->optimizer->nodes[this].op.nargs = cmd->nargs;
+    t->optimizer->nodes[this].op.size = len;
+    t->optimizer->nodes[this].op.ptr_on_ptr = -!!(opcode & ARG_PTR_ON_PTR);
+    t->optimizer->nodes[this].op.constant = cmd->const_first_argument;
     {
         BYTE mem[32];
         BYTE bad[32];
-        get_memory(t, ip + 1, sizeof(*t->nodes[this].op.args) * cmd->nargs, mem, bad);
+        get_memory(t, ip + 1, sizeof(*t->optimizer->nodes[this].op.args) * cmd->nargs, mem, bad);
         
-        for (int i = 0; i < (int)sizeof(*t->nodes[this].op.args) * cmd->nargs; ++i)
+        for (int i = 0; i < (int)sizeof(*t->optimizer->nodes[this].op.args) * cmd->nargs; ++i)
         {
             if (bad[i] != 0)
             {
@@ -413,10 +443,10 @@ struct node *get_node(struct tree *t, int ip)
                 abort();
             }
         }
-        memcpy(t->nodes[this].op.args, mem, sizeof(*t->nodes[this].op.args) * cmd->nargs);
+        memcpy(t->optimizer->nodes[this].op.args, mem, sizeof(*t->optimizer->nodes[this].op.args) * cmd->nargs);
     }
 
-    return t->nodes + this;
+    return t->optimizer->nodes + this;
 }
 
 
@@ -435,6 +465,9 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
 
     switch (n->op.code)
     {
+        case O_NOP:
+            *deps_len = 0;
+            return 0;
         case O_LEA:
         {
             *deps_len = 0; 
@@ -465,14 +498,7 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
 
                 
                 get_memory(t, n->op.args[0] + ip, sizeof(mem), mem, bad);
-                if (!is_corrupted(bad, 4))
-                {
-                    int ptr = *(int *)mem + ip;
-                    get_memory(t, ptr, sizeof(mem), mem, bad);
-                    src = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
-                }
-
-                printf("args: %d %d %d\n", n->op.args[0], n->op.args[1], n->op.args[2]);
+                src = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                 
                 deps[2].start = src;
                 deps[2].end = (src == -1 ? -1 : src + 4);
@@ -506,17 +532,19 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
                 *deps_len = 1;
             }
             return 0;
-        case O_MOV:
-        case O_INC:
-        case O_DEC:
-        case O_NEG:
-        case O_INV:
+        case O_OUT:
         {
             if (n->op.ptr_on_ptr)
             {
                 /* 1. deps from all three pointers */
-                STANDART_PTR_DEPS(4)
-                /* 2. add [dest, size] dep */
+                deps[0].start = n->op.args[1] + ip;
+                deps[0].end = n->op.args[1] + ip + 4;
+                deps[0].deps = NULL;
+                deps[1].start = n->op.args[2] + ip;
+                deps[1].end = n->op.args[2] + ip + 4;
+                deps[1].deps = NULL;
+                
+                /* 2. add [src, size] dep */
                 int size = -1, source = -1;
                 
                 BYTE mem[4];
@@ -526,7 +554,7 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
                 get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
                 if (!is_corrupted(bad, 4))
                 {
-                    int ptr = *(int *)mem + ip;
+                    int ptr = *(int *)mem;
                     get_memory(t, ptr, sizeof(mem), mem, bad);
                     size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                 }
@@ -535,12 +563,66 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
                 if (size != -1)
                 {
                     get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
-                    if (!is_corrupted(bad, 4))
-                    {
-                        int ptr = *(int *)mem + ip;
-                        get_memory(t, ptr, sizeof(mem), mem, bad);
-                        source = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
-                    }
+                    source = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                }
+
+                deps[2].start = source;
+                deps[2].end = (source == -1 || size == -1 ? -1 : source + size);
+                deps[2].deps = NULL;
+                
+                *deps_len = 3;
+            }
+            else
+            {
+                int size = -1;
+                /* 1. deps from count */
+                deps[0].start = n->op.args[2] + ip;
+                deps[0].end = n->op.args[2] + ip + 4;
+                deps[0].deps = NULL;
+                
+                /* try to read count */
+                BYTE mem[4];
+                BYTE bad[4];
+                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
+                size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                
+                deps[1].start = n->op.args[1] + ip;
+                deps[1].end = (size == -1 ? -1 : n->op.args[1] + ip + size);
+                deps[1].deps = NULL;
+                *deps_len = 2;
+            }
+            return 0;
+        }
+        case O_MOV:
+        case O_INC:
+        case O_DEC:
+        case O_NEG:
+        case O_INV:
+        {
+            if (n->op.ptr_on_ptr)
+            {
+                /* 1. deps from all three pointers */
+                STANDART_PTR_DEPS(3)
+                /* 2. add [src, size] dep */
+                int size = -1, source = -1;
+                
+                BYTE mem[4];
+                BYTE bad[4];
+                
+                /* 1. try to get size */
+                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
+                if (!is_corrupted(bad, 4))
+                {
+                    int ptr = *(int *)mem;
+                    get_memory(t, ptr, sizeof(mem), mem, bad);
+                    size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                }
+
+                /* 2. try to get source */
+                if (size != -1)
+                {
+                    get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
+                    source = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                 }
 
                 deps[3].start = source;
@@ -582,7 +664,7 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
             if (n->op.ptr_on_ptr)
             {
                 /* 1. deps from all three pointers */
-                STANDART_PTR_DEPS(3)
+                STANDART_PTR_DEPS(4)
                 /* 2. add [dest, size] dep */
                 int size = -1, source1 = -1, source2 = -1;
                 
@@ -593,7 +675,7 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
                 get_memory(t, n->op.args[3] + ip, sizeof(mem), mem, bad);
                 if (!is_corrupted(bad, 4))
                 {
-                    int ptr = *(int *)mem + ip;
+                    int ptr = *(int *)mem;
                     get_memory(t, ptr, sizeof(mem), mem, bad);
                     size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                 }
@@ -602,30 +684,20 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
                 if (size != -1)
                 {
                     get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
-                    if (!is_corrupted(bad, 4))
-                    {
-                        int ptr = *(int *)mem + ip;
-                        get_memory(t, ptr, sizeof(mem), mem, bad);
-                        source1 = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
-                    }
+                    source1 = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                     get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
-                    if (!is_corrupted(bad, 4))
-                    {
-                        int ptr = *(int *)mem + ip;
-                        get_memory(t, ptr, sizeof(mem), mem, bad);
-                        source2 = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
-                    }
+                    source2 = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                 }
 
-                deps[3].start = source1;
-                deps[3].end = (source1 == -1 || size == -1 ? -1 : source1 + size);
-                deps[3].deps = NULL;
-                
-                deps[4].start = source2;
-                deps[4].end = (source2 == -1 || size == -1 ? -1 : source2 + size);
+                deps[4].start = source1;
+                deps[4].end = (source1 == -1 || size == -1 ? -1 : source1 + size);
                 deps[4].deps = NULL;
                 
-                *deps_len = 5;
+                deps[5].start = source2;
+                deps[5].end = (source2 == -1 || size == -1 ? -1 : source2 + size);
+                deps[5].deps = NULL;
+                
+                *deps_len = 6;
             }
             else
             {
@@ -648,7 +720,7 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
                 deps[2].start = n->op.args[2] + ip;
                 deps[2].end = (size == -1 ? -1 : n->op.args[2] + ip + size);
                 deps[2].deps = NULL;
-                *deps_len = 2;
+                *deps_len = 3;
             }
             return 0;
         }
@@ -674,6 +746,11 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
     return 0;
 }
 
+int set_ip(struct tree *t, int entry)
+{
+    return set_region_value(t, 0, 4, 0, &entry);
+}
+
 int get_ip(struct tree *t)
 {
     BYTE mem[4];
@@ -681,6 +758,42 @@ int get_ip(struct tree *t)
     get_memory(t, 0, 4, mem, bad);
     assert_not_corrupted(bad, 4, "Error: IP is corrupted with unknown data");
     return *(int *)mem;
+}
+
+int copy_tree(struct tree *t1, struct tree *t2)
+{
+    *t2 = *t1;
+    /* duplicate regions */
+    t2->regions = calloc(1, sizeof(*t2->regions) * 128 * 1024);
+    t2->regions_len = t1->regions_len;
+    for (int i = 0; i < t1->regions_len; ++i)
+    {
+        t2->regions[i] = t1->regions[i];
+        /* copy ll_nodes */
+        t2->regions[i].deps = NULL;
+        {
+            struct ll_node *x = t1->regions[i].deps;
+            while (x != NULL)
+            {
+                add_ll_node(t2->regions + i, x->node);
+                x = x->next;
+            }
+        }
+    }
+    return 0;
+}
+
+int duplicate_machine(struct tree *t)
+{
+    BYTE mem[4];
+    BYTE bad[4];
+    get_memory(t, 0, 4, mem, bad);
+    assert_not_corrupted(bad, 4, "ip is corrupted");
+    int ip = *(int *)mem;
+    
+    printf("FORK machine to queue in index %d ------- [ip = %d]\n", t->optimizer->queue_len, ip);
+    copy_tree(t, t->optimizer->queue + (t->optimizer->queue_len++));
+    return 0;
 }
 
 int process_machine(struct tree *t, struct node *n, int ip)
@@ -696,13 +809,17 @@ int process_machine(struct tree *t, struct node *n, int ip)
 
     switch (n->op.code)
     {
+        case O_NOP:
+        case O_OUT:
+            /* act like NOP */
+            break;
         case O_LEA:
         {
             int dest, value;
             value = n->op.args[1] + ip;
             
             if (n->op.ptr_on_ptr)
-            {    
+            {
                 BYTE mem[4] = {};
                 BYTE bad[4] = {};
                 get_memory(t, n->op.args[0] + ip, sizeof(mem), mem, bad);
@@ -718,10 +835,91 @@ int process_machine(struct tree *t, struct node *n, int ip)
             set_region_value(t, dest, (dest == -1 ? -1 : dest + 4), 0, &value);
             clear_region_masters(t, dest, (dest == -1 ? -1 : dest + 4));
             add_region_master(t, dest, (dest == -1 ? -1 : dest + 4), n);
+            BYTE mem[4] = {};
+            BYTE bad[4] = {};
+            get_memory(t, dest, sizeof(mem), mem, bad);
+            printf("READ FROM %d value %d\n", dest, *(int *)mem);
             break;
         }
         case O_CLEA:
-            abort();
+        {
+            int key_unknown = 0;
+            int key = 0;
+            {
+                int key_addr = -1;
+                if (n->op.ptr_on_ptr)
+                {
+                    BYTE mem[4] = {};
+                    BYTE bad[4] = {};
+                    get_memory(t, n->op.args[0] + ip, sizeof(mem), mem, bad);
+                    key_addr = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                }
+                else
+                {
+                    key_addr = n->op.args[0] + ip;
+                }
+
+                if (key_addr == -1)
+                {
+                    key_unknown = 1;
+                }
+                else
+                {
+                    BYTE mem[4] = {};
+                    BYTE bad[4] = {};
+                    get_memory(t, key_addr, sizeof(mem), mem, bad);
+                    if (is_corrupted(bad, 4))
+                    {
+                        key_unknown = 1;
+                    }
+                    else
+                    {
+                        key = *(int *)mem;
+                    }
+                }
+            }
+            /* if corrupted: copy machine state, and think that branch is taken */
+            if (key_unknown)
+            {
+                /* copy machine, in state there branch isn't taken */
+                /* so, as IP is already set on next position, simply */
+                /* call duplicate_machine */
+                duplicate_machine(t);
+                /* as that machine don't taken this branch, now we think */
+                /* that this branch is taken */
+                key = 1;
+                printf("ASSUME BRANCH TAKEN\n");
+            }
+            /* if key isn't <false> then complete LEA command */
+            if (key)
+            {
+                int dest, value;
+                value = n->op.args[2] + ip;
+                
+                if (n->op.ptr_on_ptr)
+                {
+                    BYTE mem[4] = {};
+                    BYTE bad[4] = {};
+                    get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
+                    dest = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                    
+                    printf("$CLEA SET to %d value %d\n", dest, value);
+                }
+                else
+                {
+                    dest = n->op.args[1] + ip;
+                    printf("CLEA SET to %d value %d\n", dest, value);
+                }
+                set_region_value(t, dest, (dest == -1 ? -1 : dest + 4), 0, &value);
+                clear_region_masters(t, dest, (dest == -1 ? -1 : dest + 4));
+                add_region_master(t, dest, (dest == -1 ? -1 : dest + 4), n);
+                BYTE mem[4] = {};
+                BYTE bad[4] = {};
+                get_memory(t, dest, sizeof(mem), mem, bad);
+                printf("READ FROM %d value %d\n", dest, *(int *)mem);
+            }
+            break;
+        }
         case O_MOV_CONST:
         {
             int dest, value;
@@ -961,6 +1159,9 @@ int process_machine(struct tree *t, struct node *n, int ip)
         case O_INT:
             printf("Optimization of INT nodes are unsupported. Error\n");
             abort();
+        case 0x7F:
+            /* STOP_EXECUTION */
+            return -1;
         default:
             abort();
     }
@@ -969,14 +1170,141 @@ int process_machine(struct tree *t, struct node *n, int ip)
 }
 
 
-int parse(struct tree *t, int entry)
+int push_state(struct tree *t)
+{
+    BYTE mem[4];
+    BYTE bad[4];
+    get_memory(t, 0, 4, mem, bad);
+    assert_not_corrupted(bad, 4, "ip is corrupted");
+    int ip = *(int *)mem;
+    printf("--------------------------------------------------------------- this is state %d [ip=%d]\n", t->optimizer->states_len, ip);
+    copy_tree(t, t->optimizer->states + (t->optimizer->states_len++));
+    return 0;
+}
+
+
+/* returns index of same node */
+int is_full_looped(struct tree *t)
+{
+    assert(LOOP_MODEL == FULL_MATCH);    
+    for (int j = 0; j < t->optimizer->states_len; ++j)
+    {
+        struct tree *t2 = t->optimizer->states + j;
+        int i;
+        int reg1 = 0;
+        int reg2 = 0;
+        for (i = 0; i < TOTAL_MEM; ++i)
+        {
+            BYTE mem1, bad1, mem2, bad2;
+            get_memory(t,  i, 1, &mem1, &bad1);
+            get_memory(t2, i, 1, &mem2, &bad2);
+            if (bad1 != bad2)
+            {
+                break;
+            }
+            if (mem1 != mem2)
+            {
+                break;
+            }
+            while (t->regions[reg1].end <= i)
+            {
+                reg1++;
+            }
+            while (t2->regions[reg2].end <= i)
+            {
+                reg2++;
+            }
+            if (!check_is_equal_ll_nodes(t->regions[reg1].deps, t2->regions[reg2].deps))
+            {
+                break;
+            }
+        }
+        /* here, we found loop! */
+        if (i == TOTAL_MEM)
+        {
+            return j;
+        }
+    }
+    return -1;
+}
+
+int is_looped(struct tree *t)
+{
+    if (LOOP_MODEL == IP_MATCH)
+    {
+        for (int j = 0; j < t->optimizer->states_len; ++j)
+        {
+            struct tree *t2 = t->optimizer->states + j;
+            int i;
+            for (i = 0; i < 4; ++i)
+            {
+                BYTE mem1, bad1, mem2, bad2;
+                get_memory(t,  i, 1, &mem1, &bad1);
+                get_memory(t2, i, 1, &mem2, &bad2);
+                if (bad1 != bad2)
+                {
+                    break;
+                }
+                if (mem1 != mem2)
+                {
+                    break;
+                }
+            }
+            /* here, we found loop! */
+            if (i == 4)
+            {
+                return j;
+            }
+        }
+        return -1;
+    }
+    else
+    {
+        printf("Unknown loop model\n");
+        abort();
+    }
+}
+
+
+int parse_tree(struct tree *t)
 {
     /* start main loop: parse current instruction */
-    int ip = entry;
+    int ip = get_ip(t);
     while (1)
     {
+        
         printf("Getting node at ip=%d\n", ip);
         struct node *n = get_node(t, ip);
+        if (n == NULL)
+        {
+            printf("End execution...\n");
+            return 0;
+        }
+
+        /* check - if we was visited this node before, check, */
+        /* is there looping */
+        if (LOOP_MODEL == FULL_MATCH)
+        {
+            int loop = -1;
+            if ((loop = is_full_looped(t)) != -1)
+            {
+                printf("FULL LOOP FOUND with state %d\n", loop);
+                /* as this is full match, we can end current parsing */
+                return 0;
+            }
+        }
+        else
+        {
+            /* here we must to do some had work, */
+            /* joining two states, and continuing looping */
+            /* until we get full match, but this will be */
+            /* faster due to mergings */
+            printf("LOOP_MODEL == IP_MATCH is unsupported for now\n");
+            abort();
+        }
+        
+        /* push state ... before processing to next one */
+        push_state(t);
 
         /* set deps of node: see on which address it depends */
         struct dependence deps[16];
@@ -999,7 +1327,29 @@ int parse(struct tree *t, int entry)
 
         /* process machine */
         ip = process_machine(t, n, ip);
+        if (ip == -1)
+        {
+            printf("End execution\n");
+            return 0;
+        }
     }
     return 0;
 }
 
+int parse(struct optimizer *o)
+{
+    /* parse until there is no tree */
+    while (o->queue_len > 0)
+    {
+        printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<< PARSING TREE >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+        if (parse_tree(o->queue + 0) != 0)
+        {
+            printf("error in analization of tree. exiting...\n");
+            return 1;
+        }
+        /* remove first element */
+        o->queue[0] = o->queue[--o->queue_len];
+    }
+    printf("All states analizated.\n");
+    return 0;
+}

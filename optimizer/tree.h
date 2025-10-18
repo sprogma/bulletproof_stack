@@ -2,6 +2,16 @@
 #define TREE
 
 
+#define IP_MATCH 0
+#define FULL_MATCH 1
+#define LOOP_MODEL FULL_MATCH
+
+
+#define MAX_STATES (1024 * 1024)
+#define MAX_QUEUE 1024
+#define TOTAL_MEM (1024 * 1024)
+
+
 #include "inttypes.h"
 
 
@@ -44,17 +54,26 @@ struct region
     int end;
     int is_restrict;
     int is_zero; /* if this == 1, then this region is zeroed out */
-    void *value; /* NULL if polluted */
+    const void *value; /* NULL if polluted */
     struct ll_node *deps;
 };
 
 struct tree
 {
+    struct optimizer *optimizer;
     struct region *regions;
     int            regions_len;
+    int restrict_id;
+};
+
+struct optimizer
+{
+    struct tree states[MAX_STATES];
+    int         states_len;
+    struct tree queue[MAX_QUEUE];
+    int         queue_len;
     struct node *nodes;
     int          nodes_len;
-    int restrict_id;
 };
 
 
@@ -66,7 +85,9 @@ int set_region_value(struct tree *t, int start, int end, int is_zero, void *valu
 
 int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file);
 
-int parse(struct tree *t, int entry);
+int set_ip(struct tree *t, int entry);
+
+int parse(struct optimizer *o);
 
 
 #endif
