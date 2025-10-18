@@ -6,7 +6,7 @@ MUL res, res, counter, base
 DEC counter, counter, base
 $CLEA counter_ptr, zero, start
 
-OUT 1, counter_ptr, base 
+OUT 1, res, base 
 .db 0xFF
 
 counter:

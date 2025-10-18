@@ -8,56 +8,65 @@
 struct operation
 {
     int8_t code;
-    size_t ptr_on_ptr;
+    int ptr_on_ptr;
     /* if this instruction uses constant first argument */
-    size_t constant;
-    size_t nargs;
+    int constant;
+    int nargs;
+    int size;
     /* args are absolute pointers on labels */
-    size_t args[4];
+    int32_t args[4];
 };
 
 struct dependence
 {
-    int64_t start; /* if start = -1, then this dependence is absolute (from all memory) */
-    int64_t end; /* if end == -1, then this dependence is of unknown length, so it can be of any length, but from "start" */
+    int start; /* if start = -1, then this dependence is absolute (from all memory) */
+    int end; /* if end == -1, then this dependence is of unknown length, so it can be of any length, but from "start" */
+    struct ll_node *deps;
 };
 
 struct node
 {
-    size_t op_address;
+    int op_address;
     struct node *deps;
     struct operation op;
     struct node *childs;
 };
 
+struct ll_node
+{
+    struct node *node;
+    struct ll_node *next;
+};
+
 struct region
 {
-    size_t start;
-    size_t end;
-    size_t is_restrict;
-    size_t is_zero; /* if this == 1, then this region is zeroed out */
+    int start;
+    int end;
+    int is_restrict;
+    int is_zero; /* if this == 1, then this region is zeroed out */
     void *value; /* NULL if polluted */
+    struct ll_node *deps;
 };
 
 struct tree
 {
     struct region *regions;
-    size_t         regions_len;
+    int            regions_len;
     struct node *nodes;
-    size_t       nodes_len;
-    size_t restrict_id;
+    int          nodes_len;
+    int restrict_id;
 };
 
 
-size_t find_region(struct tree *t, size_t ptr);
+int find_region(struct tree *t, int ptr);
 
-int insert_region(struct tree *t, size_t pos);
+int insert_region(struct tree *t, int pos);
 
-int set_region_value(struct tree *t, size_t start, size_t end, size_t is_zero, void *value);
+int set_region_value(struct tree *t, int start, int end, int is_zero, void *value);
 
-int load_code_image(struct tree *t, size_t load_address, char *byte_file, char *data_file);
+int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file);
 
-int parse(struct tree *t, size_t entry);
+int parse(struct tree *t, int entry);
 
 
 #endif
