@@ -448,9 +448,54 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
             return 0;
         }
         case O_CLEA:
+        {
+            int src = -1;
+            if (n->op.ptr_on_ptr)
+            {
+                deps[0].start = n->op.args[0] + ip;
+                deps[0].end = n->op.args[0] + ip + 4;
+                deps[0].deps = NULL;
+
+                deps[1].start = n->op.args[1] + ip;
+                deps[1].end = n->op.args[1] + ip + 4;
+                deps[1].deps = NULL;
+                
+                BYTE mem[4];
+                BYTE bad[4];
+
+                
+                get_memory(t, n->op.args[0] + ip, sizeof(mem), mem, bad);
+                if (!is_corrupted(bad, 4))
+                {
+                    int ptr = *(int *)mem + ip;
+                    get_memory(t, ptr, sizeof(mem), mem, bad);
+                    src = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                }
+
+                printf("args: %d %d %d\n", n->op.args[0], n->op.args[1], n->op.args[2]);
+                
+                deps[2].start = src;
+                deps[2].end = (src == -1 ? -1 : src + 4);
+                deps[2].deps = NULL;
+                
+                *deps_len = 3;
+            }
+            else
+            {
+                deps[0].start = n->op.args[0] + ip;
+                deps[0].end = n->op.args[0] + ip + 4;
+                deps[0].deps = NULL;
+                
+                deps[1].start = n->op.args[1] + ip;
+                deps[1].end = n->op.args[1] + ip + 4;
+                deps[1].deps = NULL;
+                *deps_len = 2;
+            }
+            return 0;
             printf("Optimization of CLEA nodes are unsupported. Error\n");
             *deps_len = 1;
             return 1;
+        }
         case O_MOV_CONST:
             *deps_len = 0; 
             if (n->op.ptr_on_ptr)
