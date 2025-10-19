@@ -18,6 +18,7 @@
 struct operation
 {
     int8_t code;
+    const char *name;
     int ptr_on_ptr;
     /* if this instruction uses constant first argument */
     int constant;
@@ -37,9 +38,11 @@ struct dependence
 struct node
 {
     int op_address;
-    struct node *deps;
+    struct dependence *deps;
+    int                deps_len;
     struct operation op;
     struct node *childs;
+    int          childs_len;
 };
 
 struct ll_node
@@ -89,5 +92,6 @@ int set_ip(struct tree *t, int entry);
 
 int parse(struct optimizer *o);
 
+int gen_profile(struct optimizer *o, const char *out_file);
 
 #endif

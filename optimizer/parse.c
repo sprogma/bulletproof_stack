@@ -26,11 +26,12 @@ int find_region(struct tree *t, int ptr)
             l = m;
         }
     }
-    // printf("%d   %d %d\n", l, t->regions[l].start, ptr);
-    // printf("[0]=%d\n", t->regions[0].start);
-    // printf("[0]=%d\n", t->regions[0].end);
-    // printf("len=%d\n", t->regions_len);
-    assert(t->regions[l].start <= ptr && t->regions[l].end > ptr);
+    if (!(t->regions[l].start <= ptr && t->regions[l].end > ptr))
+    {
+        printf("search for %d, found at %d : [%d %d]\n", ptr, l, t->regions[l].start, ptr);
+        // *(int *)NULL = 5;
+        assert(t->regions[l].start <= ptr && t->regions[l].end > ptr);
+    }
     return l;
 }
 
@@ -76,8 +77,7 @@ int add_ll_node(struct region *r, struct node *new_dep)
     {
         if (x->node == new_dep)
         {
-            printf("Error: add_ll_node used to add existing node\n");
-            return 1;
+            return 0;
         }
         x = x->next;
     }
@@ -85,6 +85,24 @@ int add_ll_node(struct region *r, struct node *new_dep)
     new_ll_node->node = new_dep;
     new_ll_node->next = r->deps;
     r->deps = new_ll_node;
+    return 0;
+}
+
+int add_ll_node_to_dep(struct dependence *d, struct node *new_dep)
+{
+    struct ll_node *x = d->deps;
+    while (x != NULL)
+    {
+        if (x->node == new_dep)
+        {
+            return 0;
+        }
+        x = x->next;
+    }
+    struct ll_node *new_ll_node = malloc(sizeof(*new_ll_node));
+    new_ll_node->node = new_dep;
+    new_ll_node->next = d->deps;
+    d->deps = new_ll_node;
     return 0;
 }
 
@@ -121,8 +139,25 @@ int check_is_equal_ll_nodes(struct ll_node *la, struct ll_node *lb)
 int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
 {
     /* 1. find regions */
+    if (start == -1)
+    {
+        printf("ERROR get mem slice with start == -1\n");
+        abort();
+    }
     int from = find_region(t, start);
-    int to = find_region(t, end - 1);
+    int to = from;
+    if (end == -1)
+    {
+        while (to < t->regions_len && t->regions[to].is_restrict == t->regions[from].is_restrict)
+        {
+            to++;
+        }
+        to--;
+    }
+    else
+    {
+        to = find_region(t, end - 1);
+    }
     // printf("was [%d %d] ... [%d %d]\n", t->regions[to].start, t->regions[to].end, t->regions[from].start, t->regions[from].end);
     /* 2. split <to> on two parts */
     if (end != t->regions[to].end)
@@ -184,18 +219,21 @@ int add_region_master(struct tree *t, int start, int end, struct node *master)
     if (end == -1)
     {
         printf("NOT IMPLEMENTED: add_region_master with end == -1\n");
-        abort();
+        // abort();
+        return 0;
     }
     if (start == -1)
     {
         printf("NOT IMPLEMENTED: add_region_master with start == -1\n");
-        abort();
+        // abort();
+        return 0;
     }
+
     
     int from, to;
     get_mem_slice(t, start, end, &from, &to);
     
-    for (int i = from; i < to; ++i)
+    for (int i = from; i <= to; ++i)
     {
         add_ll_node(t->regions + i, master);
     }
@@ -213,13 +251,15 @@ int clear_region_masters(struct tree *t, int start, int end)
     if (start == -1)
     {
         printf("NOT IMPLEMENTED: clear_region_masters with start == -1\n");
-        abort();
+        // abort();
+        return 0;
     }
+    
     
     int from, to;
     get_mem_slice(t, start, end, &from, &to);
     
-    for (int i = from; i < to; ++i)
+    for (int i = from; i <= to; ++i)
     {
         free_ll_node(t->regions[i].deps);
         t->regions[i].deps = NULL;
@@ -233,12 +273,15 @@ int set_region_value(struct tree *t, int start, int end, int is_zero, void *valu
     if (end == -1)
     {
         printf("NOT IMPLEMENTED: set_region_value with end == -1\n");
-        abort();
+        // abort();
+        return 0;
     }
+    
     if (start == -1)
     {
         printf("NOT IMPLEMENTED: set_region_value with start == -1\n");
-        abort();
+        // abort();
+        return 0;
     }
     
     int from, to;
@@ -281,7 +324,7 @@ int set_restrict(struct tree *t, int start, int end, int is_restrict)
     int from, to;
     get_mem_slice(t, start, end, &from, &to);
     /* set data */
-    for (int i = from; i < to; ++i)
+    for (int i = from; i <= to; ++i)
     {
         t->regions[i].is_restrict = is_restrict;
     }
@@ -289,6 +332,25 @@ int set_restrict(struct tree *t, int start, int end, int is_restrict)
     return 0;
 }
 
+int load_deps_ll_nodes(struct tree *t, struct dependence *deps, int deps_len)
+{
+    for (int i = 0; i < deps_len; ++i)
+    {
+        int from, to;
+        get_mem_slice(t, deps[i].start, deps[i].end, &from, &to);
+        /* copy all nodes */
+        for (int j = from; j <= to; ++j)
+        {
+            struct ll_node *x = t->regions[j].deps;
+            while (x != NULL)
+            {
+                add_ll_node_to_dep(deps + i, x->node);
+                x = x->next;
+            }
+        }
+    }
+    return 0;
+}
 
 int assert_not_corrupted(BYTE *bad, int size, const char *message)
 {
@@ -421,12 +483,16 @@ struct node *get_node(struct tree *t, int ip)
     printf("This is %s command with %d args\n", cmd->name, cmd->nargs);
 
     int this = t->optimizer->nodes_len++;
+    printf("[And] This is node %p\n", t->optimizer->nodes + this);
 
     t->optimizer->nodes[this].op_address = ip;
     t->optimizer->nodes[this].deps = NULL;
+    t->optimizer->nodes[this].deps_len = 0;
     t->optimizer->nodes[this].childs = NULL;
+    t->optimizer->nodes[this].childs_len = 0;
     t->optimizer->nodes[this].op.code = cmd->code;
     t->optimizer->nodes[this].op.nargs = cmd->nargs;
+    t->optimizer->nodes[this].op.name = cmd->name;
     t->optimizer->nodes[this].op.size = len;
     t->optimizer->nodes[this].op.ptr_on_ptr = -!!(opcode & ARG_PTR_ON_PTR);
     t->optimizer->nodes[this].op.constant = cmd->const_first_argument;
@@ -457,8 +523,7 @@ struct node *get_node(struct tree *t, int ip)
                                    deps[i].deps = NULL; \
                                }
 
-
-int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip)
+int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip)
 {
     int offset = !!(n->op.constant);
     int count = n->op.nargs - offset;
@@ -593,6 +658,8 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
             }
             return 0;
         }
+        case O_ANY: /* ! ANY and ALL will work another way, in process_machine, from MOV ... */
+        case O_ALL: /* ! ANY and ALL will work another way, in process_machine, from MOV ... */
         case O_MOV:
         case O_INC:
         case O_DEC:
@@ -746,6 +813,16 @@ int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *d
     return 0;
 }
 
+int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip)
+{
+    extract_deps_inner(t, n, deps, deps_len, ip);
+    deps[*deps_len].start = 0;
+    deps[*deps_len].end = 4;
+    deps[*deps_len].deps = NULL;
+    (*deps_len)++;
+    return 0;
+}
+
 int set_ip(struct tree *t, int entry)
 {
     return set_region_value(t, 0, 4, 0, &entry);
@@ -805,6 +882,8 @@ int process_machine(struct tree *t, struct node *n, int ip)
     {
         int value = ip + n->op.size;
         set_region_value(t, 0, 4, 0, &value);
+        clear_region_masters(t, 0, 4);
+        add_region_master(t, 0, 4, n);
     }
 
     switch (n->op.code)
@@ -1011,37 +1090,45 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 /* if this is move */
                 if (n->op.code == O_MOV)
                 {
-
-                    int prev_id = 0;
-                    for (int i = 0; i <= size; ++i)
+                    if (dest == -1)
                     {
-                        if (i == size || (bad[i] == 0) != (bad[i - 1] == 0))
+                        set_region_value(t, -1, -1, 0, NULL);
+                        clear_region_masters(t, -1, -1);
+                        add_region_master(t, -1, -1, n);
+                    }
+                    else
+                    {
+                        int prev_id = 0;
+                        for (int i = 0; i <= size; ++i)
                         {
-                            /* set region */
-                            if (bad[prev_id] != 0)
+                            if (i == size || (bad[i] == 0) != (bad[i - 1] == 0))
                             {
-                                set_region_value(t, dest + prev_id, dest + i, 0, NULL);
-                                clear_region_masters(t, dest + prev_id, dest + i);
-                                add_region_master(t, dest + prev_id, dest + i, n);
+                                /* set region */
+                                if (bad[prev_id] != 0)
+                                {
+                                    set_region_value(t, dest + prev_id, dest + i, 0, NULL);
+                                    clear_region_masters(t, dest + prev_id, dest + i);
+                                    add_region_master(t, dest + prev_id, dest + i, n);
+                                }
+                                else
+                                {
+                                    set_region_value(t, dest + prev_id, dest + i, 0, mem + prev_id);
+                                    clear_region_masters(t, dest + prev_id, dest + i);
+                                    add_region_master(t, dest + prev_id, dest + i, n);
+                                }
+                                prev_id = i;
                             }
-                            else
-                            {
-                                set_region_value(t, dest + prev_id, dest + i, 0, mem + prev_id);
-                                clear_region_masters(t, dest + prev_id, dest + i);
-                                add_region_master(t, dest + prev_id, dest + i, n);
-                            }
-                            prev_id = i;
-                        }
-                    }    
+                        }    
+                    }
                 }
                 else
                 {
                     if (is_corrupted(bad, size))
                     {
                         /* so all result is corrupted */
-                        set_region_value(t, dest, dest + size, 0, NULL);
-                        clear_region_masters(t, dest, dest + size);
-                        add_region_master(t, dest, dest + size, n);
+                        set_region_value(t, dest, (dest == -1 ? -1 : dest + size), 0, NULL);
+                        clear_region_masters(t, dest, (dest == -1 ? -1 : dest + size));
+                        add_region_master(t, dest, (dest == -1 ? -1 : dest + size), n);
                     }
                     else
                     {
@@ -1052,6 +1139,88 @@ int process_machine(struct tree *t, struct node *n, int ip)
                         clear_region_masters(t, dest, dest + size);
                         add_region_master(t, dest, dest + size, n);
                     }
+                }
+                
+                free(mem);
+                free(bad);
+            }
+            return ip + n->op.size;
+        }
+        case O_ALL:
+        case O_ANY:
+        {
+            int dest, src, size_from;
+            if (n->op.ptr_on_ptr)
+            {
+                BYTE mem[4] = {};
+                BYTE bad[4] = {};
+                
+                /* get destination */
+                get_memory(t, n->op.args[0] + ip, sizeof(mem), mem, bad);
+                dest = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                
+                /* get source */
+                get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
+                src = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                
+                /* get size_from */
+                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
+                size_from = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                
+                printf("$ALL/ANY SET to %d from %d of size from %d\n", dest, src, size_from);
+            }
+            else
+            {
+                dest = n->op.args[0] + ip;
+                src = n->op.args[1] + ip;
+                size_from = n->op.args[2] + ip;
+                printf("ALL/ANY SET to %d from %d of size from %d\n", dest, src, size_from);
+            }
+
+            /* try to read size */
+            int size = -1;
+            if (size_from != -1)
+            {
+                BYTE mem[4] = {};
+                BYTE bad[4] = {};
+                get_memory(t, size_from, sizeof(mem), mem, bad);
+                size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+            }
+
+            if (size == -1)
+            {
+                src = -1;
+            }
+
+            if (src == -1 || size == -1)
+            {
+                printf("src or size is unpredictable\n");
+                set_region_value(t, dest, (dest == -1 || size == -1 ? -1 : dest + 4), 0, NULL);
+                clear_region_masters(t, dest, (dest == -1 || size == -1 ? -1 : dest + 4));
+                add_region_master(t, dest, (dest == -1 || size == -1 ? -1 : dest + 4), n);
+            }
+            else
+            {
+                BYTE *mem = malloc(size);
+                BYTE *bad = malloc(size);
+
+                get_memory(t, src, size, mem, bad);
+                
+                if (is_corrupted(bad, size))
+                {
+                    /* so all result is corrupted */
+                    set_region_value(t, dest, dest + 4, 0, NULL);
+                    clear_region_masters(t, dest, dest + 4);
+                    add_region_master(t, dest, dest + 4, n);
+                }
+                else
+                {
+                    /* predict result */
+                    printf("FOR NOW PREDICTION IS DISABLED (TODO: COPY CODE)\n");
+                    // TODO: COPY CODE
+                    set_region_value(t, dest, dest + 4, 0, NULL);
+                    clear_region_masters(t, dest, dest + 4);
+                    add_region_master(t, dest, dest + 4, n);
                 }
                 
                 free(mem);
@@ -1307,17 +1476,17 @@ int parse_tree(struct tree *t)
         push_state(t);
 
         /* set deps of node: see on which address it depends */
-        struct dependence deps[16];
-        int deps_len = 0;
-        extract_deps(t, n, deps, &deps_len, ip);
+        n->deps = calloc(1, sizeof(*n->deps) * 16);
+        extract_deps(t, n, n->deps, &n->deps_len, ip);
+        load_deps_ll_nodes(t, n->deps, n->deps_len);
 
-        printf("Extracted operation deps: total %d\n", deps_len);
+        printf("Extracted operation deps: total %d\n", n->deps_len);
 
-        for (int i = 0; i < deps_len; ++i)
+        for (int i = 0; i < n->deps_len; ++i)
         {
             printf("dep[%d]\n", i);
-            printf("range [%d %d]\n", deps[i].start, deps[i].end);
-            struct ll_node *x = deps[i].deps;
+            printf("range [%d %d]\n", n->deps[i].start, n->deps[i].end);
+            struct ll_node *x = n->deps[i].deps;
             while (x != NULL)
             {
                 printf(">>> node %p\n", x->node);

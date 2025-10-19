@@ -33,5 +33,8 @@ int main()
     printf("parsing...\n");
     parse(o);
 
+    /* generate profile file */
+    gen_profile(o, "res.prof");
+
     return 0;
 }

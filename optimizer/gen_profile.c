@@ -1,0 +1,76 @@
+#define __USE_MINGW_ANSI_STDIO 1
+#include "stdio.h"
+#include "string.h"
+#include "assert.h"
+#include "stdlib.h"
+
+#include "../utils/assembler.h"
+#include "tree.h"
+
+
+typedef unsigned char BYTE;
+
+
+int gen_profile(struct optimizer *o, const char *out_file)
+{
+    FILE *f = fopen(out_file, "w");
+
+    /* write all nodes in json format */
+    fprintf(f, "{\"Nodes\": [");
+    for (int node = 0; node < o->nodes_len; ++node)
+    {
+        if (node != 0) { fprintf(f, ","); }
+        
+        struct node *n = o->nodes + node;
+        fprintf(f, "{");
+        {
+            /* dump node */
+            fprintf(f, "\"Key\": \"%p\",", n);
+            fprintf(f, "\"Name\": \"%s\",", n->op.name);
+            fprintf(f, "\"Ptrptr\": %s,", (n->op.ptr_on_ptr ? "true" : "false"));
+            fprintf(f, "\"Opcode\": %d,", n->op.code);
+            fprintf(f, "\"Args\": [");
+            {
+                /* dump args */
+                for (int arg = 0; arg < n->op.nargs; ++arg)
+                {
+                    if (arg != 0) { fprintf(f, ","); }
+                    fprintf(f, "%d", n->op.args[arg] + n->op_address);
+                }
+            } 
+            fprintf(f, "],");
+            fprintf(f, "\"Deps\": [");
+            {
+                /* dump deps */
+                for (int dep = 0; dep < n->deps_len; ++dep)
+                {
+                    if (dep != 0) { fprintf(f, ","); }
+                    fprintf(f, "{\"Start\": %d, \"End\": %d, \"Nodes\": [", n->deps[dep].start, n->deps[dep].end);
+                    {
+                        /* dump nodes */
+                        struct ll_node *x = n->deps[dep].deps;
+                        while (x != NULL)
+                        {
+                            fprintf(f, "\"%p\"", x->node);
+                            x = x->next;
+                            if (x != NULL)
+                            {
+                                fprintf(f, ",");
+                            }
+                        }
+                    }
+                    fprintf(f, "]}");
+                }
+            }
+            fprintf(f, "]");
+        }
+        fprintf(f, "}");
+    }
+    fprintf(f, "],\"Flow\":[]}");
+
+    fclose(f);
+
+    printf("Profile file <%s> writed.\n", out_file);
+    
+    return 0;
+}
