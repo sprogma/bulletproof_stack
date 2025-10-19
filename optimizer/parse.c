@@ -154,6 +154,8 @@ int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
             to++;
         }
         to--;
+        /* update end of segment */
+        end = t->regions[to].end;
     }
     else
     {
@@ -217,19 +219,22 @@ int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
 int add_region_master(struct tree *t, int start, int end, struct node *master)
 {
     
-    if (end == -1)
-    {
-        printf("NOT IMPLEMENTED: add_region_master with end == -1\n");
-        // abort();
-        return 0;
-    }
     if (start == -1)
     {
-        printf("NOT IMPLEMENTED: add_region_master with start == -1\n");
-        // abort();
+        if (end != -1)
+        {
+            printf("ERROR: add_region_master with start == -1 and end != -1\n");
+            abort();
+        }
+        for (int i = 0; i < t->regions_len; ++i)
+        {
+            if (t->regions[i].is_restrict == 0)
+            {
+                add_ll_node(t->regions + i, master);
+            }
+        }
         return 0;
     }
-
     
     int from, to;
     get_mem_slice(t, start, end, &from, &to);
@@ -245,17 +250,29 @@ int add_region_master(struct tree *t, int start, int end, struct node *master)
 int clear_region_masters(struct tree *t, int start, int end)
 {
 
-    if (end == -1)
-    {
-        return 0;
-    }
     if (start == -1)
     {
-        printf("NOT IMPLEMENTED: clear_region_masters with start == -1\n");
-        // abort();
+        if (end != -1)
+        {
+            printf("ERROR: clear_region_masters with start == -1 and end != -1\n");
+            abort();
+        }
+        for (int i = 0; i < t->regions_len; ++i)
+        {
+            if (t->regions[i].is_restrict == 0)
+            {
+                free_ll_node(t->regions[i].deps);
+                t->regions[i].deps = NULL;
+            }
+        }
         return 0;
     }
     
+    if (end == -1)
+    {
+        /* if length is unknown, don't remove masters from segment */
+        return 0;
+    }
     
     int from, to;
     get_mem_slice(t, start, end, &from, &to);
@@ -271,17 +288,28 @@ int clear_region_masters(struct tree *t, int start, int end)
 
 int set_region_value(struct tree *t, int start, int end, int is_zero, void *value)
 {
-    if (end == -1)
-    {
-        printf("NOT IMPLEMENTED: set_region_value with end == -1\n");
-        // abort();
-        return 0;
-    }
     
     if (start == -1)
     {
-        printf("NOT IMPLEMENTED: set_region_value with start == -1\n");
-        // abort();
+        if (end != -1)
+        {
+            printf("ERROR: set_region_value with start == -1 and end != -1\n");
+            abort();
+        }
+        if (is_zero || value != NULL)
+        {
+            printf("WARNING: set_region_value with start == -1 and is_zero != 0 or value != NULL [is_zero: %d, value: %p]\n", is_zero, value);
+            is_zero = 0;
+            value = NULL;
+        }
+        for (int i = 0; i < t->regions_len; ++i)
+        {
+            if (t->regions[i].is_restrict == 0)
+            {
+                t->regions[i].is_zero = 0;
+                t->regions[i].value = NULL;
+            }
+        }
         return 0;
     }
     
@@ -290,6 +318,11 @@ int set_region_value(struct tree *t, int start, int end, int is_zero, void *valu
     /* set data */
     if (is_zero)
     {
+        if (end == -1)
+        {
+            printf("ERROR: set_region_value with end == -1 and is_zero != 0\n");
+            abort();
+        }
         for (int i = from; i <= to; ++i)
         {
             t->regions[i].is_zero = 1;
@@ -305,6 +338,11 @@ int set_region_value(struct tree *t, int start, int end, int is_zero, void *valu
     }
     else
     {
+        if (end == -1)
+        {
+            printf("ERROR: set_region_value with end == -1 and value != NULL\n");
+            abort();
+        }
         BYTE *ptr = malloc(end - start);
         memcpy(ptr, value, end - start);
         for (int i = from; i <= to; ++i)
@@ -421,6 +459,8 @@ int load_code_image(struct tree *t, int load_address, const char *byte_file, con
         {
             break;
         }
+        s += load_address;
+        e += load_address;
         if (c == 'I')
         {
             /* this region is instruction, assume them aren't changed */
@@ -459,6 +499,13 @@ struct node *get_node(struct tree *t, int ip)
         if (bad[0] != 0)
         {
             printf("Error: find maybe corrupted instruction at %d\n", ip);
+            /* print info about page */
+            int page = find_region(t, ip);
+            printf("Page %d: is_zero: %d, value: %p, deps_base: %p, restrict: %d\n", page,
+                                                                                     t->regions[page].is_zero,
+                                                                                     t->regions[page].value,
+                                                                                     t->regions[page].deps,
+                                                                                     t->regions[page].is_restrict);
             abort();
         }
         opcode = mem[0];
