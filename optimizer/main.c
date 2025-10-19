@@ -22,7 +22,7 @@ int main()
     t->regions_len = 1;
     t->regions[0].start = 0;
     t->regions[0].end = TOTAL_MEM;
-    t->regions[0].is_zero = 1;
+    t->regions[0].is_zero = 0;
     t->regions[0].value = NULL;
     t->regions[0].is_restrict = 0;
 

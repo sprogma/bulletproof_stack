@@ -9,6 +9,7 @@ Start-Job -ScriptBlock {
         "System.Numerics.Vectors",
         "System.Linq",
         "System.ComponentModel.Primitives",
+        "System.Windows.Forms.Primitives",
         "System.Drawing.Primitives"
     )
     Add-Type -TypeDefinition $code -ReferencedAssemblies $refs

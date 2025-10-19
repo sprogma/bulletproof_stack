@@ -27,6 +27,7 @@ int gen_profile(struct optimizer *o, const char *out_file)
             /* dump node */
             fprintf(f, "\"Key\": \"%p\",", n);
             fprintf(f, "\"Name\": \"%s\",", n->op.name);
+            fprintf(f, "\"Address\": %d,", n->op_address);
             fprintf(f, "\"Ptrptr\": %s,", (n->op.ptr_on_ptr ? "true" : "false"));
             fprintf(f, "\"Opcode\": %d,", n->op.code);
             fprintf(f, "\"Args\": [");
@@ -66,7 +67,18 @@ int gen_profile(struct optimizer *o, const char *out_file)
         }
         fprintf(f, "}");
     }
-    fprintf(f, "],\"Flow\":[]}");
+    fprintf(f, "],\"Flow\":[");
+    for (int node = 0; node < o->nodes_len; ++node)
+    {
+        struct node *n = o->nodes + node;
+        if (node != 0 && n->childs_len > 0) { fprintf(f, ","); }
+        for (int c = 0; c < n->childs_len; ++c)
+        {
+            if (c != 0) { fprintf(f, ","); }
+            fprintf(f, "{\"From\": \"%p\", \"To\": \"%p\"}", n, n->childs[c]);
+        }
+    }
+    fprintf(f, "]}");
 
     fclose(f);
 

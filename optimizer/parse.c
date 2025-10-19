@@ -142,6 +142,7 @@ int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
     if (start == -1)
     {
         printf("ERROR get mem slice with start == -1\n");
+        // *(int *)(NULL) = 5;
         abort();
     }
     int from = find_region(t, start);
@@ -336,16 +337,23 @@ int load_deps_ll_nodes(struct tree *t, struct dependence *deps, int deps_len)
 {
     for (int i = 0; i < deps_len; ++i)
     {
-        int from, to;
-        get_mem_slice(t, deps[i].start, deps[i].end, &from, &to);
-        /* copy all nodes */
-        for (int j = from; j <= to; ++j)
+        if (deps[i].start == -1)
         {
-            struct ll_node *x = t->regions[j].deps;
-            while (x != NULL)
+            printf("ERROR: don't supported: unknown destination\n");
+        }
+        else
+        {
+            int from, to;
+            get_mem_slice(t, deps[i].start, deps[i].end, &from, &to);
+            /* copy all nodes */
+            for (int j = from; j <= to; ++j)
             {
-                add_ll_node_to_dep(deps + i, x->node);
-                x = x->next;
+                struct ll_node *x = t->regions[j].deps;
+                while (x != NULL)
+                {
+                    add_ll_node_to_dep(deps + i, x->node);
+                    x = x->next;
+                }
             }
         }
     }
@@ -488,7 +496,7 @@ struct node *get_node(struct tree *t, int ip)
     t->optimizer->nodes[this].op_address = ip;
     t->optimizer->nodes[this].deps = NULL;
     t->optimizer->nodes[this].deps_len = 0;
-    t->optimizer->nodes[this].childs = NULL;
+    t->optimizer->nodes[this].childs = calloc(1, sizeof(*t->optimizer->nodes[this].childs) * MAX_CHILDS);
     t->optimizer->nodes[this].childs_len = 0;
     t->optimizer->nodes[this].op.code = cmd->code;
     t->optimizer->nodes[this].op.nargs = cmd->nargs;
@@ -522,6 +530,26 @@ struct node *get_node(struct tree *t, int ip)
                                    deps[i].end = n->op.args[0] + ip + 4; \
                                    deps[i].deps = NULL; \
                                }
+#define DEP_ON_SPAN_FROM_PTR(i, ptr, size) { \
+                                    int _ptr = ptr; \
+                                    int _size = size; \
+                                    if (_ptr == -1) \
+                                    { \
+                                        deps[i].start = -1; \
+                                        deps[i].end = -1; \
+                                        deps[i].deps = NULL; \
+                                    } \
+                                    else \
+                                    { \
+                                        BYTE mem[4]; \
+                                        BYTE bad[4]; \
+                                        get_memory(t, _ptr, sizeof(mem), mem, bad); \
+                                        int src = (is_corrupted(bad, 4) ? -1 : *(int *)mem); \
+                                        deps[i].start = src; \
+                                        deps[i].end = (src == -1 ? -1 : src + _size); \
+                                        deps[i].deps = NULL; \
+                                    } \
+                                }
 
 int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip)
 {
@@ -560,8 +588,6 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 
                 BYTE mem[4];
                 BYTE bad[4];
-
-                
                 get_memory(t, n->op.args[0] + ip, sizeof(mem), mem, bad);
                 src = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                 
@@ -614,67 +640,8 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 
                 BYTE mem[4];
                 BYTE bad[4];
-                
-                /* 1. try to get size */
-                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
-                if (!is_corrupted(bad, 4))
-                {
-                    int ptr = *(int *)mem;
-                    get_memory(t, ptr, sizeof(mem), mem, bad);
-                    size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
-                }
 
-                /* 2. try to get source */
-                if (size != -1)
-                {
-                    get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
-                    source = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
-                }
-
-                deps[2].start = source;
-                deps[2].end = (source == -1 || size == -1 ? -1 : source + size);
-                deps[2].deps = NULL;
-                
-                *deps_len = 3;
-            }
-            else
-            {
-                int size = -1;
-                /* 1. deps from count */
-                deps[0].start = n->op.args[2] + ip;
-                deps[0].end = n->op.args[2] + ip + 4;
-                deps[0].deps = NULL;
-                
-                /* try to read count */
-                BYTE mem[4];
-                BYTE bad[4];
-                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
-                size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
-                
-                deps[1].start = n->op.args[1] + ip;
-                deps[1].end = (size == -1 ? -1 : n->op.args[1] + ip + size);
-                deps[1].deps = NULL;
-                *deps_len = 2;
-            }
-            return 0;
-        }
-        case O_ANY: /* ! ANY and ALL will work another way, in process_machine, from MOV ... */
-        case O_ALL: /* ! ANY and ALL will work another way, in process_machine, from MOV ... */
-        case O_MOV:
-        case O_INC:
-        case O_DEC:
-        case O_NEG:
-        case O_INV:
-        {
-            if (n->op.ptr_on_ptr)
-            {
-                /* 1. deps from all three pointers */
-                STANDART_PTR_DEPS(3)
-                /* 2. add [src, size] dep */
-                int size = -1, source = -1;
-                
-                BYTE mem[4];
-                BYTE bad[4];
+                DEP_ON_SPAN_FROM_PTR(2, n->op.args[2] + ip, 4);
                 
                 /* 1. try to get size */
                 get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
@@ -719,6 +686,95 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
             }
             return 0;
         }
+        case O_IN:
+        {
+            if (n->op.ptr_on_ptr)
+            {
+                /* 1. deps from all three pointers */
+                deps[0].start = n->op.args[1] + ip;
+                deps[0].end = n->op.args[1] + ip + 4;
+                deps[0].deps = NULL;
+                deps[1].start = n->op.args[2] + ip;
+                deps[1].end = n->op.args[2] + ip + 4;
+                deps[1].deps = NULL;
+
+                DEP_ON_SPAN_FROM_PTR(2, n->op.args[2] + ip, 4);
+                
+                *deps_len = 3;
+            }
+            else
+            {
+                /* 1. deps from count */
+                deps[0].start = n->op.args[2] + ip;
+                deps[0].end = n->op.args[2] + ip + 4;
+                deps[0].deps = NULL;
+                *deps_len = 1;
+            }
+            return 0;
+        }
+        case O_ANY: /* ! ANY and ALL will work another way, in process_machine, from MOV ... */
+        case O_ALL: /* ! ANY and ALL will work another way, in process_machine, from MOV ... */
+        case O_LT: /* ! ANY and ALL will work another way, in process_machine, from MOV ... */
+        case O_MOV:
+        case O_INC:
+        case O_DEC:
+        case O_NEG:
+        case O_INV:
+        {
+            if (n->op.ptr_on_ptr)
+            {
+                /* 1. deps from all three pointers */
+                STANDART_PTR_DEPS(3)
+                /* 2. add [src, size] dep */
+                int size = -1, source = -1;
+                
+                DEP_ON_SPAN_FROM_PTR(3, n->op.args[2] + ip, 4);
+                
+                BYTE mem[4];
+                BYTE bad[4];
+                /* 1. try to get size */
+                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
+                if (!is_corrupted(bad, 4))
+                {
+                    int ptr = *(int *)mem;
+                    get_memory(t, ptr, sizeof(mem), mem, bad);
+                    size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                }
+
+                /* 2. try to get source */
+                if (size != -1)
+                {
+                    get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
+                    source = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                }
+
+                deps[4].start = source;
+                deps[4].end = (source == -1 || size == -1 ? -1 : source + size);
+                deps[4].deps = NULL;
+                
+                *deps_len = 5;
+            }
+            else
+            {
+                int size = -1;
+                /* 1. deps from count */
+                deps[0].start = n->op.args[2] + ip;
+                deps[0].end = n->op.args[2] + ip + 4;
+                deps[0].deps = NULL;
+                
+                /* try to read count */
+                BYTE mem[4];
+                BYTE bad[4];
+                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
+                size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                
+                deps[1].start = n->op.args[1] + ip;
+                deps[1].end = (size == -1 ? -1 : n->op.args[1] + ip + size);
+                deps[1].deps = NULL;
+                *deps_len = 2;
+            }
+            return 0;
+        }
         case O_ADD:
         case O_SUB:
         case O_MUL:
@@ -734,6 +790,8 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 STANDART_PTR_DEPS(4)
                 /* 2. add [dest, size] dep */
                 int size = -1, source1 = -1, source2 = -1;
+
+                DEP_ON_SPAN_FROM_PTR(4, n->op.args[3] + ip, 4);
                 
                 BYTE mem[4];
                 BYTE bad[4];
@@ -756,15 +814,15 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                     source2 = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
                 }
 
-                deps[4].start = source1;
-                deps[4].end = (source1 == -1 || size == -1 ? -1 : source1 + size);
-                deps[4].deps = NULL;
-                
-                deps[5].start = source2;
-                deps[5].end = (source2 == -1 || size == -1 ? -1 : source2 + size);
+                deps[5].start = source1;
+                deps[5].end = (source1 == -1 || size == -1 ? -1 : source1 + size);
                 deps[5].deps = NULL;
                 
-                *deps_len = 6;
+                deps[6].start = source2;
+                deps[6].end = (source2 == -1 || size == -1 ? -1 : source2 + size);
+                deps[6].deps = NULL;
+                
+                *deps_len = 7;
             }
             else
             {
@@ -816,16 +874,18 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
 int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip)
 {
     extract_deps_inner(t, n, deps, deps_len, ip);
-    deps[*deps_len].start = 0;
-    deps[*deps_len].end = 4;
-    deps[*deps_len].deps = NULL;
-    (*deps_len)++;
+    // deps[*deps_len].start = 0;
+    // deps[*deps_len].end = 4;
+    // deps[*deps_len].deps = NULL;
+    // (*deps_len)++;
     return 0;
 }
 
 int set_ip(struct tree *t, int entry)
 {
-    return set_region_value(t, 0, 4, 0, &entry);
+    set_region_value(t, 0, 4, 0, &entry);
+    set_restrict(t, 0, 4, t->restrict_id++);
+    return 0;
 }
 
 int get_ip(struct tree *t)
@@ -873,6 +933,21 @@ int duplicate_machine(struct tree *t)
     return 0;
 }
 
+
+int add_child(struct tree *t, struct node *n, struct node *child)
+{   
+    (void)t;
+    for (int i = 0; i < n->childs_len; ++i)
+    {
+        if (n->childs[i] == child)
+        {
+            return 0;
+        }
+    }
+    n->childs[n->childs_len++] = child;
+    return 0;
+}
+
 int process_machine(struct tree *t, struct node *n, int ip)
 {
     // int offset = !!(n->op.constant);
@@ -882,8 +957,6 @@ int process_machine(struct tree *t, struct node *n, int ip)
     {
         int value = ip + n->op.size;
         set_region_value(t, 0, 4, 0, &value);
-        clear_region_masters(t, 0, 4);
-        add_region_master(t, 0, 4, n);
     }
 
     switch (n->op.code)
@@ -964,6 +1037,13 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 /* so, as IP is already set on next position, simply */
                 /* call duplicate_machine */
                 duplicate_machine(t);
+                /* add node child */
+                int new_ip = get_ip(t);
+                struct node *new_node = get_node(t, new_ip);
+                if (new_node != NULL)
+                {
+                    add_child(t, n, new_node);
+                }
                 /* as that machine don't taken this branch, now we think */
                 /* that this branch is taken */
                 key = 1;
@@ -992,10 +1072,13 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 set_region_value(t, dest, (dest == -1 ? -1 : dest + 4), 0, &value);
                 clear_region_masters(t, dest, (dest == -1 ? -1 : dest + 4));
                 add_region_master(t, dest, (dest == -1 ? -1 : dest + 4), n);
-                BYTE mem[4] = {};
-                BYTE bad[4] = {};
-                get_memory(t, dest, sizeof(mem), mem, bad);
-                printf("READ FROM %d value %d\n", dest, *(int *)mem);
+                if (dest != -1)
+                {
+                    BYTE mem[4] = {};
+                    BYTE bad[4] = {};
+                    get_memory(t, dest, sizeof(mem), mem, bad);
+                    printf("READ FROM %d value %d\n", dest, *(int *)mem);
+                }
             }
             break;
         }
@@ -1023,6 +1106,47 @@ int process_machine(struct tree *t, struct node *n, int ip)
             clear_region_masters(t, dest, (dest == -1 ? -1 : dest + 4));
             add_region_master(t, dest, (dest == -1 ? -1 : dest + 4), n);
             break;
+        }
+        case O_IN:
+        {
+            /* simply fill all data with NULL */
+            int dest, size_from;
+            if (n->op.ptr_on_ptr)
+            {
+                BYTE mem[4] = {};
+                BYTE bad[4] = {};
+                
+                /* get destination */
+                get_memory(t, n->op.args[1] + ip, sizeof(mem), mem, bad);
+                dest = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                
+                /* get size_from */
+                get_memory(t, n->op.args[2] + ip, sizeof(mem), mem, bad);
+                size_from = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+                
+                printf("$IN to %d of size from %d\n", dest, size_from);
+            }
+            else
+            {
+                dest = n->op.args[1] + ip;
+                size_from = n->op.args[2] + ip;
+                printf("IN to %d of size from %d\n", dest, size_from);
+            }
+
+            /* try to read size */
+            int size = -1;
+            if (size_from != -1)
+            {
+                BYTE mem[4] = {};
+                BYTE bad[4] = {};
+                get_memory(t, size_from, sizeof(mem), mem, bad);
+                size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
+            }
+
+            set_region_value(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), 0, NULL);
+            clear_region_masters(t, dest, (dest == -1 || size == -1 ? -1 : dest + size));
+            add_region_master(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), n);
+            return ip + n->op.size;
         }
         case O_MOV:
         case O_INC:
@@ -1148,6 +1272,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
         }
         case O_ALL:
         case O_ANY:
+        case O_LT:
         {
             int dest, src, size_from;
             if (n->op.ptr_on_ptr)
@@ -1439,11 +1564,12 @@ int parse_tree(struct tree *t)
 {
     /* start main loop: parse current instruction */
     int ip = get_ip(t);
+    struct node *next_node = NULL;
     while (1)
     {
         
         printf("Getting node at ip=%d\n", ip);
-        struct node *n = get_node(t, ip);
+        struct node *n = (next_node == NULL ? get_node(t, ip) : next_node);
         if (n == NULL)
         {
             printf("End execution...\n");
@@ -1500,6 +1626,11 @@ int parse_tree(struct tree *t)
         {
             printf("End execution\n");
             return 0;
+        }
+        next_node = get_node(t, ip);
+        if (next_node != NULL)
+        {
+            add_child(t, n, next_node);
         }
     }
     return 0;

@@ -7,12 +7,20 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 using System.Numerics;
+using System.Runtime.InteropServices; 
 
 
 public class ProfileData
 {
     public List<ProfileNode> Nodes { get; set; }
-    public List<string> Flow { get; set; }
+    public List<ProfileFlow> Flow { get; set; }
+}
+
+
+public class ProfileFlow
+{
+    public string From { get; set; }
+    public string To { get; set; }
 }
 
 
@@ -21,6 +29,7 @@ public class ProfileNode
     public string Key { get; set; }
     public string Name { get; set; }
     public bool Ptrptr { get; set; }
+    public int Address { get; set; }
     public byte Opcode { get; set; }
     public int[] Args { get; set; }
     public ProfileDependence[] Deps { get; set; }
@@ -46,8 +55,8 @@ public class GraphNode
     public GraphNode(ProfileNode node)
     {
         Random random = new Random();
-        float x = (float)(random.NextDouble() * 300 - 150);
-        float y = (float)(random.NextDouble() * 300 - 150);
+        float x = (float)(random.NextDouble() * 900 - 450);
+        float y = (float)(random.NextDouble() * 900 - 450);
         Pos = new Vector2(x, y);
         Radius = 18.0f;
         Node = node;
@@ -60,21 +69,53 @@ public class GraphEdge
     public Vector2[] Pos;
     public GraphNode From;
     public GraphNode To;
+    public bool FlowEdge;
 
-    public GraphEdge(GraphNode from, GraphNode to)
+    public GraphEdge(GraphNode from, GraphNode to, bool flowEdge)
     {
         From = from;
         To = to;
-        Pos = new Vector2[10];
+        Pos = new Vector2[3];
         Random random = new Random();
-        for (int i = 0; i < 10; ++i)
+        FlowEdge = flowEdge;
+        for (int i = 0; i < Pos.Length; ++i)
         {
-            Pos[i] = To.Pos * (float)(i / 9.0) + From.Pos * (float)(1.0 - i / 9.0);
+            Pos[i] = To.Pos * (float)(i / (Pos.Length - 1.0)) + From.Pos * (float)(1.0 - i / (Pos.Length - 1.0));
             Pos[i].X += (float)(random.NextDouble() * 1.0 - 0.5);
             Pos[i].Y += (float)(random.NextDouble() * 1.0 - 0.5);
         }
     }
 }
+
+
+class MouseDownFilter : IMessageFilter {
+    public event EventHandler FormClicked;
+    private int WM_LBUTTONDOWN = 0x201;
+    private Form form = null;
+
+    [DllImport("user32.dll")]
+    public static extern bool IsChild(IntPtr hWndParent, IntPtr hWnd);
+
+    public MouseDownFilter(Form f) {
+        form = f;
+    }
+
+    public bool PreFilterMessage(ref Message m) {
+        if (m.Msg == WM_LBUTTONDOWN) {
+            if (Form.ActiveForm != null && Form.ActiveForm.Equals(form)) {
+                OnFormClicked();
+            }
+        }
+        return false;
+    }
+
+    protected void OnFormClicked() {
+        if (FormClicked != null) {
+            FormClicked(form, EventArgs.Empty);
+        }
+    }
+}
+
 
 
 public class SimpleGraphForm : Form
@@ -84,8 +125,12 @@ public class SimpleGraphForm : Form
     static List<GraphNode> nodes;
     static float Temperature;
 
-    const float Gather = 0.16f;
-    const float Push = 16.0f;
+    const float Gather = 0.15f;
+    const float GatherToZero = 0.08f;
+    const float Push = 26.0f;
+    const float Joining = 0.15f;
+
+    Vector2 Camera = new (0, 0);
 
     public SimpleGraphForm()
     {
@@ -98,6 +143,10 @@ public class SimpleGraphForm : Form
         timer.Tick += Timer_Tick;
         timer.Start();
 
+        MouseDownFilter mouseFilter = new MouseDownFilter(this);
+        mouseFilter.FormClicked += mouseFilter_FormClicked;
+        Application.AddMessageFilter(mouseFilter);
+        
         Temperature = 10.0f;
     }
 
@@ -147,7 +196,7 @@ public class SimpleGraphForm : Form
             {
                 float distance = Vector2.Distance(edge.From.Pos, edge.Pos[0]);
                 distance -= edge.From.Radius + 0.5f;
-                distance = Math.Max(distance, 0.0f);
+                distance = Math.Max(distance * Joining, 0.0f);
                 /* move both points */
                 edge.From.Pos += Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance / 2.0f;
                 edge.Pos[0]   -= Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance / 2.0f;
@@ -155,7 +204,7 @@ public class SimpleGraphForm : Form
             {
                 float distance = Vector2.Distance(edge.To.Pos, edge.Pos[^1]);
                 distance -= edge.To.Radius + 0.5f;
-                distance = Math.Max(distance, 0.0f);
+                distance = Math.Max(distance * Joining, 0.0f);
                 /* move both points */
                 edge.To.Pos  += Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance / 2.0f;
                 edge.Pos[^1] -= Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance / 2.0f;
@@ -169,7 +218,7 @@ public class SimpleGraphForm : Form
             node.Pos.X += ((float)random.NextDouble() * 2.0f - 1.0f) * Temperature;
             node.Pos.Y += ((float)random.NextDouble() * 2.0f - 1.0f) * Temperature;
             /* little pressure to zero */
-            node.Pos += Vector2.Normalize(-node.Pos) * 0.01f;
+            node.Pos += Vector2.Normalize(-node.Pos) * GatherToZero;
         }
         foreach (var edge in edges)
         {
@@ -180,7 +229,7 @@ public class SimpleGraphForm : Form
                 edge.Pos[i].Y += ((float)random.NextDouble() * 2.0f - 1.0f) * Temperature;
             }
         }
-        Temperature *= 0.999f;
+        Temperature *= 0.99f;
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -192,11 +241,13 @@ public class SimpleGraphForm : Form
         using var font = new Font("Segoe UI", 12, FontStyle.Bold);
         using var brush = new SolidBrush(Color.Red);
         using var dataPen = new Pen(Color.Blue, 2);
+        using var flowPen = new Pen(Color.Green, 2);
         StringFormat centerStrFormat = new StringFormat();
         centerStrFormat.LineAlignment = StringAlignment.Center;
         centerStrFormat.Alignment = StringAlignment.Center;
         
         dataPen.CustomEndCap = new AdjustableArrowCap(5, 5);
+        flowPen.CustomEndCap = new AdjustableArrowCap(5, 5);
         
         /*using GraphicsPath capPath = new GraphicsPath();
         
@@ -207,62 +258,90 @@ public class SimpleGraphForm : Form
 
         dataPen.CustomEndCap = new System.Drawing.Drawing2D.CustomLineCap(null, capPath);
 */
-        for (int i = 0; i < 100; ++i)
+        for (int i = 0; i < 1; ++i)
         {
             ProcessPhysics();
         }
         
-        int cx = -800;
-        int cy = -450;
+        int cx = (int)Camera.X - ClientRectangle.Width/2;
+        int cy = (int)Camera.Y - ClientRectangle.Height/2;
         
         Graphics g = e.Graphics;
         g.Clear(Color.White);
 
         
         // 1. draw edges 
-        foreach (var edge in edges)
+        foreach (var edge in edges.Where(x => x.FlowEdge))
+        {
+            g.DrawCurve(flowPen, edge.Pos.Select(x => new Point((int)x.X - cx, (int)x.Y - cy)).ToArray());
+        }
+        foreach (var edge in edges.Where(x => !x.FlowEdge))
         {
             g.DrawCurve(dataPen, edge.Pos.Select(x => new Point((int)x.X - cx, (int)x.Y - cy)).ToArray());
-            /* // [for debug]
-            foreach (Vector2 x in edge.Pos)
-            {
-                g.FillEllipse(Brushes.Green, x.X - 5 - cx, x.Y - 5 - cy, 10, 10);
-            }
-            */
         }
         
         // 2. draw nodes 
         foreach (var node in nodes)
         {
             g.FillEllipse(Brushes.Black, node.Pos.X - node.Radius - cx, node.Pos.Y - node.Radius - cy, 2*node.Radius, 2*node.Radius);
-            g.DrawString(node.Node.Name, font, brush, new PointF(node.Pos.X - cx, node.Pos.Y - cy), centerStrFormat);
+            g.DrawString(node.Node.Name + (node.Node.Address-0x4000).ToString(), font, brush, new PointF(node.Pos.X - cx, node.Pos.Y - cy), centerStrFormat);
         }
-
-        return;
-
-        /*using (var axisPen = new Pen(Color.Black, 2))
-        {
-            g.DrawLine(axisPen, 40, this.ClientSize.Height - 40, this.ClientSize.Width - 20, this.ClientSize.Height - 40);
-            g.DrawLine(axisPen, 40, 20, 40, this.ClientSize.Height - 40);
-        }
-
-
-        using (var pen = new Pen(Color.Orange, 2))
-        using (var fill = new SolidBrush(Color.FromArgb(60, Color.Orange)))
-        {
-            g.DrawEllipse(pen, 420, 50, 120, 80);
-            g.FillEllipse(fill, 420, 50, 120, 80);
-        }
-
-
-        using (var font = new Font("Segoe UI", 9))
-        using (var brush = new SolidBrush(Color.Black))
-        {
-            g.DrawString("0", font, brush, new PointF(30, this.ClientSize.Height - 35));
-            g.DrawString("X", font, brush, new PointF(this.ClientSize.Width - 25, this.ClientSize.Height - 45));
-            g.DrawString("Y", font, brush, new PointF(20, 10));
-        }*/
     }
+
+
+
+    private void mouseFilter_FormClicked(object sender, EventArgs e) 
+    {
+        Point pos = PointToClient(Cursor.Position);
+        Vector2 mouse = new Vector2(pos.X - ClientRectangle.Width/2, pos.Y - ClientRectangle.Height/2) + Camera;
+        
+        foreach (var node in nodes)
+        {
+            //node.Node.Name = mouse.X.ToString() + "X" + mouse.Y.ToString() + ";";
+        }
+        
+        // Update the mouse path with the mouse information
+        // Point mouseDownLocation = new Point(e.X, e.Y);
+
+        /*string? eventString = null;
+        switch (e.Button) {
+            case MouseButtons.Left:
+                eventString = "L";
+                break;
+            case MouseButtons.Right:
+                eventString = "R";
+                break;
+            case MouseButtons.Middle:
+                eventString = "M";
+                break;
+            case MouseButtons.XButton1:
+                eventString = "X1";
+                break;
+            case MouseButtons.XButton2:
+                eventString = "X2";
+                break;
+            case MouseButtons.None:
+            default:
+                break;
+        }*/
+
+        /*if (eventString != null) 
+        {
+            mousePath.AddString(eventString, FontFamily.GenericSerif, (int)FontStyle.Bold, fontSize, mouseDownLocation, StringFormat.GenericDefault);
+        }
+        else 
+        {
+            mousePath.AddLine(mouseDownLocation,mouseDownLocation);
+        }*/
+
+
+        
+        this.Focus();
+        this.Invalidate();
+    }
+
+
+
 
     [STAThread]
     public static void RunForm(string filename)
@@ -292,12 +371,16 @@ public class SimpleGraphForm : Form
                 // get node with this key 
                 foreach (var depNode in dep.Nodes)
                 {
-                    edges.Add(new GraphEdge(nodeKeys[depNode], node));
+                    edges.Add(new GraphEdge(nodeKeys[depNode], node, false));
                 }
             }
         }
+        foreach (var flow in data.Flow)
+        {
+            edges.Add(new GraphEdge(nodeKeys[flow.From], nodeKeys[flow.To], true));
+        }
 
-        
+
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         Application.Run(new SimpleGraphForm());

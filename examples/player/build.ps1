@@ -10,6 +10,7 @@ function build($a, $b)
 
 
 build .\examples\player\math.c .\examples\player\math.asm
-.\linker\linker.ps1 .\examples\player\math.asm, .\examples\player\main.asm -Destination res.asm
+#.\linker\linker.ps1 .\examples\player\math.asm, .\examples\player\main.asm -Destination res.asm
+cp .\examples\player\main.asm .\res.asm
 .\asm.exe res.asm a.bc
 

@@ -10,6 +10,7 @@
 #define MAX_STATES (1024 * 1024)
 #define MAX_QUEUE 1024
 #define TOTAL_MEM (1024 * 1024)
+#define MAX_CHILDS 32
 
 
 #include "inttypes.h"
@@ -41,8 +42,8 @@ struct node
     struct dependence *deps;
     int                deps_len;
     struct operation op;
-    struct node *childs;
-    int          childs_len;
+    struct node **childs;
+    int           childs_len;
 };
 
 struct ll_node
