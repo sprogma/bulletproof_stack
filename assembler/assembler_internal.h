@@ -18,10 +18,10 @@ result_t add_label(struct compilation_table *table, char *name, int64_t len, int
 result_t calculate_offsets(struct compilation_table *table, int64_t position, char *args, char *args_end, int64_t nargs, int32_t *offsets_length);
 
 
-result_t encode_directive(struct compilation_table *table, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length);
+result_t encode_directive(struct compilation_table *table, int line_num, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length);
 
 
-result_t encode_command(struct compilation_table *table, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length, FILE *data_file);
+result_t encode_command(struct compilation_table *table, int line_num, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length, FILE *data_file);
 
 #endif
 

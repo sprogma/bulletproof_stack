@@ -10,6 +10,8 @@ int main()
     o->queue_len = 0;
     o->nodes = calloc(1, sizeof(*o->nodes) * 64 * 1024);
     o->nodes_len = 0;
+    o->lines_buff = MAX_SOURCE_LINES * 2;
+    o->lines = calloc(1, sizeof(*o->lines) * o->lines_buff);
     
     struct tree *t = o->queue + 0;
     o->queue_len = 1;
@@ -35,6 +37,9 @@ int main()
 
     /* generate profile file */
     gen_profile(o, "res.prof");
+
+    /* get optimization tips */
+    optimize(o, stdout);
 
     return 0;
 }

@@ -114,11 +114,14 @@ static result_t encode_directive_align(struct compilation_table *table,
 
 
 result_t encode_directive(struct compilation_table *table, 
+                          int line_num, 
                           char *line, 
                           int64_t position, 
                           struct output_buffer *dst, 
                           int64_t *result_length)
 {
+    (void)line_num;
+    
     /* end of line - start of comment or new line */
     char *line_end = OR(strchr(line, ';'), line + strlen(line));
 

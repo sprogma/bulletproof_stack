@@ -24,10 +24,10 @@ result_t build_pass(struct compilation_table *table, char **lines, int64_t lines
         {
             /* compilation directives */
             int64_t written = 0;
-            encode_directive(table, s, position, out, &written);
+            encode_directive(table, i, s, position, out, &written);
             if (out != NULL)
             {
-                fprintf(data_file, "D %zd %zd\n", position, position + written);
+                fprintf(data_file, "D %zd %zd %lld:%s\n", position, position + written, i + 1, s);
             }
             position += written;
             continue;
@@ -61,7 +61,7 @@ result_t build_pass(struct compilation_table *table, char **lines, int64_t lines
         /* else: */
         /* compile basic command */
         int64_t written = 0;
-        encode_command(table, s, position, out, &written, data_file);
+        encode_command(table, i + 1, s, position, out, &written, data_file);
         position += written;
     }
 

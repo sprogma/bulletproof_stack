@@ -12,8 +12,10 @@
 #define TOTAL_MEM (1024 * 1024)
 #define MAX_CHILDS 128
 #define MAX_NODE_DEPS 128
+#define MAX_SOURCE_LINES (16 * 1024)
 
 
+#include "stdio.h"
 #include "inttypes.h"
 
 
@@ -45,6 +47,7 @@ struct node
     struct operation op;
     struct node **childs;
     int           childs_len;
+    int controls_workflow;
 };
 
 struct ll_node
@@ -71,6 +74,21 @@ struct tree
     int restrict_id;
 };
 
+enum source_line_type
+{
+    SOURCE_LINE_COMMAND,
+    SOURCE_LINE_DATA,
+};
+
+struct source_line
+{
+    int start;
+    int end;
+    enum source_line_type type;
+    int line;
+    char *code;
+};
+
 struct optimizer
 {
     struct tree states[MAX_STATES];
@@ -79,6 +97,8 @@ struct optimizer
     int         queue_len;
     struct node *nodes;
     int          nodes_len;
+    struct source_line *lines;
+    uint32_t            lines_buff;
 };
 
 
@@ -95,5 +115,11 @@ int set_ip(struct tree *t, int entry);
 int parse(struct optimizer *o);
 
 int gen_profile(struct optimizer *o, const char *out_file);
+
+int optimize(struct optimizer *o, FILE *f);
+
+int add_source_data_line(struct optimizer *o, char type, int s, int e, int line, const char *code);
+
+int get_source_data_line(struct optimizer *o, int start, struct source_line **result);
 
 #endif

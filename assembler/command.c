@@ -11,7 +11,7 @@
 
 
 
-result_t encode_command(struct compilation_table *table, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length, FILE *data_file)
+result_t encode_command(struct compilation_table *table, int line_num, char *line, int64_t position, struct output_buffer *dst, int64_t *result_length, FILE *data_file)
 {
 
     /* end of line - start of comment or new line */
@@ -80,7 +80,7 @@ result_t encode_command(struct compilation_table *table, char *line, int64_t pos
         HANDLE_ERROR(calculate_offsets(table, position, line + name_len, line_end, cmd->nargs, offsets));
     }
 
-    fprintf(data_file, "I %zd %zd\n", position, position + 1 + sizeof(*offsets) * cmd->nargs);
+    fprintf(data_file, "I %zd %zd %d:%s\n", position, position + 1 + sizeof(*offsets) * cmd->nargs, line_num, line);
     
     copy_to_end(dst, &header, sizeof(header));
     copy_to_end(dst, offsets, sizeof(*offsets) * cmd->nargs);

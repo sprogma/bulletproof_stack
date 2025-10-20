@@ -45,27 +45,41 @@ int insert_region(struct tree *t, int pos)
 int get_memory(struct tree *t, int start, int size, BYTE *mem, BYTE *bad)
 { 
     /* fill data */   
+    int reg = find_region(t, start);
     for (int i = start; i < start + size;)
     {
-        int reg = find_region(t, i);
-        // printf("bad? %p %d\n", t->regions[reg].value, t->regions[reg].is_zero);
-        bad[i - start] = t->regions[reg].value == NULL && !t->regions[reg].is_zero;
-        if (!bad[i - start])
+        // printf("s s=[%d %d]reg=%d/%d\n", start, size, reg, t->regions_len);
+        assert(t->regions[reg].start < t->regions[reg].end);
+        
+        /* get region end */
+        int reg_end = t->regions[reg].end;
+        if (reg_end > start + size)
         {
-            // printf("get mem[%d]: region is zero:%d ptr:%p\n", i, t->regions[reg].is_zero, t->regions[reg].value);
-            if (t->regions[reg].is_zero)
-            {
-                mem[i - start] = 0;
-            }
-            else
-            {
-                // printf("mem there: %02X\n", ((BYTE *)t->regions[reg].value)[i - t->regions[reg].start]);
-                mem[i - start] = ((BYTE *)t->regions[reg].value)[i - t->regions[reg].start];
-            }
+            reg_end = start + size;
         }
-        //i = t->regions[reg].end;
-        i = i + 1;
-        assert(t->regions[reg].start != t->regions[reg].end);
+
+        /* load memory and bad */
+        if (t->regions[reg].is_zero)
+        {
+            memset(bad + (i - start), 0x00, reg_end - i);
+            memset(mem + (i - start), 0x00, reg_end - i);
+            i = reg_end;
+            reg++;
+        }
+        else if (t->regions[reg].value == NULL)
+        {
+            memset(bad + (i - start), 0xFF, reg_end - i);
+            // memset(mem + (i - start), 0x00, reg_end - i);
+            i = reg_end;
+            reg++;
+        }
+        else
+        {
+            memset(bad + (i - start), 0x00, reg_end - i);
+            memcpy(mem + (i - start), t->regions[reg].value + (i - t->regions[reg].start), reg_end - i);
+            i = reg_end;
+            reg++;
+        }
     }
     return 0;
 }
@@ -424,6 +438,64 @@ int is_corrupted(BYTE *bad, int size)
     return 0;
 }
 
+uint32_t uint32_hash(uint32_t key)
+{
+    const uint32_t c2 = 0x27d4eb2d;
+    key = (key ^ 61) ^ (key >> 16);
+    key = key + (key << 3);
+    key = key ^ (key >> 4);
+    key = key * c2;
+    key = key ^ (key >> 15);
+    return key;
+}
+
+int add_source_data_line(struct optimizer *o, char type, int s, int e, int line, const char *code)
+{
+    printf("registating source line: %c [%d %d] %d:%s\n", type, s, e, line, code);
+    uint32_t hash = uint32_hash(s);
+    uint32_t pos = hash % o->lines_buff;
+    for (uint32_t i = 0; i < o->lines_buff && o->lines[pos].start != 0; ++i)
+    {
+        pos++;
+        if (pos == o->lines_buff)
+        {
+            pos = 0;
+        }
+    }
+    if (o->lines[pos].start != 0)
+    {
+        printf("Error: no empty cell in hashtable. Increase initial capacity\n");
+        abort();
+    }
+    o->lines[pos].start = s;
+    o->lines[pos].end = e;
+    o->lines[pos].line = line;
+    o->lines[pos].code = strdup(code);
+    o->lines[pos].type = (type == 'I' ? SOURCE_LINE_COMMAND : SOURCE_LINE_DATA);
+    return 0;
+}
+
+int get_source_data_line(struct optimizer *o, int start, struct source_line **result)
+{
+    uint32_t hash = uint32_hash(start);
+    uint32_t pos = hash % o->lines_buff;
+    for (uint32_t i = 0; i < o->lines_buff && o->lines[pos].start != start; ++i)
+    {
+        pos++;
+        if (pos == o->lines_buff)
+        {
+            pos = 0;
+        }
+    }
+    if (o->lines[pos].start != start)
+    {
+        printf("Warinig: line with this address [%d] not found in hashtable\n", start);
+        return 1;
+    }
+    *result = o->lines + pos;
+    return 0;
+}
+
 
 int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file)
 {
@@ -453,14 +525,26 @@ int load_code_image(struct tree *t, int load_address, const char *byte_file, con
 
     while (1)
     {
+        int line = 0;
+        char code[256] = {};
         BYTE c;
         int s, e;
-        if (fscanf(d, "%c %d %d\n", &c, &s, &e) != 3)
+        if (fscanf(d, "%c %d %d %d:%[^\n]\n", &c, &s, &e, &line, code) != 5)
         {
+            if (!feof(d))
+            {
+                printf("ERROR: data file is in wrong format.\n");
+                abort();
+            }
             break;
         }
+
         s += load_address;
         e += load_address;
+        
+        /* insert command to command mappings */
+        add_source_data_line(t->optimizer, c, s, e, line, code);
+        
         if (c == 'I')
         {
             /* this region is instruction, assume them aren't changed */
@@ -545,6 +629,7 @@ struct node *get_node(struct tree *t, int ip)
     t->optimizer->nodes[this].deps_len = 0;
     t->optimizer->nodes[this].childs = calloc(1, sizeof(*t->optimizer->nodes[this].childs) * MAX_CHILDS);
     t->optimizer->nodes[this].childs_len = 0;
+    t->optimizer->nodes[this].controls_workflow = 0; // if 1 - this instruction was moditified workflow by writing to zero.
     t->optimizer->nodes[this].op.code = cmd->code;
     t->optimizer->nodes[this].op.nargs = cmd->nargs;
     t->optimizer->nodes[this].op.name = cmd->name;
@@ -573,8 +658,8 @@ struct node *get_node(struct tree *t, int ip)
 
 #define STANDART_PTR_DEPS(CNT) for (int i = 0; i < CNT; ++i) \
                                { \
-                                   deps[i].start = n->op.args[0] + ip; \
-                                   deps[i].end = n->op.args[0] + ip + 4; \
+                                   deps[i].start = n->op.args[i] + ip; \
+                                   deps[i].end = n->op.args[i] + ip + 4; \
                                    deps[i].deps = NULL; \
                                }
 #define DEP_ON_SPAN_FROM_PTR(i, ptr, size) { \
@@ -1193,7 +1278,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
             set_region_value(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), 0, NULL);
             clear_region_masters(t, dest, (dest == -1 || size == -1 ? -1 : dest + size));
             add_region_master(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), n);
-            return ip + n->op.size;
+            break;
         }
         case O_MOV:
         case O_INC:
@@ -1315,7 +1400,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 free(mem);
                 free(bad);
             }
-            return ip + n->op.size;
+            break;
         }
         case O_ALL:
         case O_ANY:
@@ -1398,7 +1483,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 free(mem);
                 free(bad);
             }
-            return ip + n->op.size;
+            break;
         }
         case O_ADD:
         case O_SUB:
@@ -1495,7 +1580,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 free(mem2);
                 free(bad2);
             }
-            return ip + n->op.size;
+            break;
         }
         case O_INT:
             printf("Optimization of INT nodes are unsupported. Error\n");
@@ -1507,7 +1592,12 @@ int process_machine(struct tree *t, struct node *n, int ip)
             abort();
     }
 
-    return get_ip(t);
+    int res_ip = get_ip(t);
+    if (res_ip != ip + n->op.size)
+    {
+        n->controls_workflow = 1;
+    }
+    return res_ip;
 }
 
 
@@ -1598,43 +1688,6 @@ int is_full_looped(struct tree *t)
         }
     }
     return -1;
-}
-
-int is_looped(struct tree *t)
-{
-    if (LOOP_MODEL == IP_MATCH)
-    {
-        for (int j = 0; j < t->optimizer->states_len; ++j)
-        {
-            struct tree *t2 = t->optimizer->states + j;
-            int i;
-            for (i = 0; i < 4; ++i)
-            {
-                BYTE mem1, bad1, mem2, bad2;
-                get_memory(t,  i, 1, &mem1, &bad1);
-                get_memory(t2, i, 1, &mem2, &bad2);
-                if (bad1 != bad2)
-                {
-                    break;
-                }
-                if (mem1 != mem2)
-                {
-                    break;
-                }
-            }
-            /* here, we found loop! */
-            if (i == 4)
-            {
-                return j;
-            }
-        }
-        return -1;
-    }
-    else
-    {
-        printf("Unknown loop model\n");
-        abort();
-    }
 }
 
 
