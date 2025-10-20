@@ -126,8 +126,9 @@ public class SimpleGraphForm : Form
     static float Temperature;
 
     const float Gather = 0.15f;
-    const float GatherToZero = 0.08f;
-    const float Push = 26.0f;
+    const float GatherToZero = 0.01f;
+    const float Push = 46.0f;
+    const float JoiningFlowEdge = 0.15f;
     const float Joining = 0.15f;
 
     Vector2 Camera = new (0, 0);
@@ -153,7 +154,7 @@ public class SimpleGraphForm : Form
     static public void ProcessPhysics()
     {
         // foreach node: find new position 
-        IEnumerable<Vector2> dots = nodes.Select(x => x.Pos).Concat(edges.SelectMany(x => x.Pos));
+        IEnumerable<Vector2> dots = nodes.Select(x => x.Pos).Concat(edges.Where(x => x.FlowEdge).SelectMany(x => x.Pos));
         foreach (var node in nodes)
         {
             foreach (Vector2 dot in dots)
@@ -181,6 +182,19 @@ public class SimpleGraphForm : Form
                         edge.Pos[i] += Vector2.Normalize(edge.Pos[i] - dot) * (float)(Push / (1.0 + distance));
                     }
                 }
+                if (!edge.FlowEdge)
+                {
+                    foreach (Vector2 dot in edge.Pos)
+                    {
+                        if (dot != edge.Pos[i])
+                        {
+                            // push 
+                            float distance = Vector2.Distance(dot, edge.Pos[i]);
+                            distance *= distance;
+                            edge.Pos[i] += 5.0f * Vector2.Normalize(edge.Pos[i] - dot) * (float)(Push / (1.0 + distance));
+                        }
+                    }
+                }
             }
         }
         // gather 
@@ -192,22 +206,44 @@ public class SimpleGraphForm : Form
                 edge.Pos[i]     += Vector2.Normalize(edge.Pos[i - 1] - edge.Pos[i]) * distance * Gather / 2.0f; 
                 edge.Pos[i - 1] -= Vector2.Normalize(edge.Pos[i - 1] - edge.Pos[i]) * distance * Gather / 2.0f;
             }
-            // gather nodes 
+                // gather nodes 
+            if (edge.FlowEdge)
             {
-                float distance = Vector2.Distance(edge.From.Pos, edge.Pos[0]);
-                distance -= edge.From.Radius + 0.5f;
-                distance = Math.Max(distance * Joining, 0.0f);
-                /* move both points */
-                edge.From.Pos += Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance / 2.0f;
-                edge.Pos[0]   -= Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance / 2.0f;
+                {
+                    float distance = Vector2.Distance(edge.From.Pos, edge.Pos[0]);
+                    distance -= edge.From.Radius + 0.5f;
+                    distance = Math.Max(distance * JoiningFlowEdge, 0.0f);
+                    /* move both points */
+                    edge.From.Pos += Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance / 2.0f;
+                    edge.Pos[0]   -= Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance / 2.0f;
+                }
+                {
+                    float distance = Vector2.Distance(edge.To.Pos, edge.Pos[^1]);
+                    distance -= edge.To.Radius + 0.5f;
+                    distance = Math.Max(distance * JoiningFlowEdge, 0.0f);
+                    /* move both points */
+                    edge.To.Pos  += Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance / 2.0f;
+                    edge.Pos[^1] -= Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance / 2.0f;
+                }
             }
+            else
             {
-                float distance = Vector2.Distance(edge.To.Pos, edge.Pos[^1]);
-                distance -= edge.To.Radius + 0.5f;
-                distance = Math.Max(distance * Joining, 0.0f);
-                /* move both points */
-                edge.To.Pos  += Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance / 2.0f;
-                edge.Pos[^1] -= Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance / 2.0f;
+                {
+                    float distance = Vector2.Distance(edge.From.Pos, edge.Pos[0]);
+                    distance -= edge.From.Radius + 0.5f;
+                    distance = Math.Max(distance * Joining, 0.0f);
+                    /* move both points */
+                    edge.From.Pos += Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance * 0.05f;
+                    edge.Pos[0] -= Vector2.Normalize(edge.Pos[0] - edge.From.Pos) * distance * 0.95f;
+                }
+                {
+                    float distance = Vector2.Distance(edge.To.Pos, edge.Pos[^1]);
+                    distance -= edge.To.Radius + 0.5f;
+                    distance = Math.Max(distance * Joining, 0.0f);
+                    /* move both points */
+                    edge.To.Pos  += Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance * 0.05f;
+                    edge.Pos[^1] -= Vector2.Normalize(edge.Pos[^1] - edge.To.Pos) * distance * 0.95f;
+                } 
             }
         }
 
@@ -258,7 +294,7 @@ public class SimpleGraphForm : Form
 
         dataPen.CustomEndCap = new System.Drawing.Drawing2D.CustomLineCap(null, capPath);
 */
-        for (int i = 0; i < 1; ++i)
+        for (int i = 0; i < 10; ++i)
         {
             ProcessPhysics();
         }

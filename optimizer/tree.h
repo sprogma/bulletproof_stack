@@ -10,7 +10,8 @@
 #define MAX_STATES (1024 * 1024)
 #define MAX_QUEUE 1024
 #define TOTAL_MEM (1024 * 1024)
-#define MAX_CHILDS 32
+#define MAX_CHILDS 128
+#define MAX_NODE_DEPS 128
 
 
 #include "inttypes.h"

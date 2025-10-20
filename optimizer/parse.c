@@ -541,7 +541,7 @@ struct node *get_node(struct tree *t, int ip)
     printf("[And] This is node %p\n", t->optimizer->nodes + this);
 
     t->optimizer->nodes[this].op_address = ip;
-    t->optimizer->nodes[this].deps = NULL;
+    t->optimizer->nodes[this].deps = calloc(1, sizeof(*t->optimizer->nodes[this].deps) * MAX_NODE_DEPS);
     t->optimizer->nodes[this].deps_len = 0;
     t->optimizer->nodes[this].childs = calloc(1, sizeof(*t->optimizer->nodes[this].childs) * MAX_CHILDS);
     t->optimizer->nodes[this].childs_len = 0;
@@ -1511,6 +1511,37 @@ int process_machine(struct tree *t, struct node *n, int ip)
 }
 
 
+int update_node_deps(struct node *n, struct dependence *deps, int deps_len)
+{
+    /* foreach dep: if node already have dep with same address, than join ll_lists - else - add new dep */
+    for (int i = 0; i < deps_len; ++i)
+    {
+        int was = 0;
+        for (; was < n->deps_len; ++was)
+        {
+            if (n->deps[was].start == deps[i].start && n->deps[was].end == deps[i].end)
+            {
+                struct ll_node *x = deps[i].deps;
+                while (x != NULL)
+                {
+                    add_ll_node_to_dep(n->deps + was, x->node);
+                    x = x->next;
+                }
+                free_ll_node(deps[i].deps);
+                break;
+            }
+        }
+        if (was == n->deps_len)
+        {
+            assert(n->deps_len < MAX_CHILDS);
+            n->deps[n->deps_len++] = deps[i];
+        }
+    }
+
+    return 0;
+}
+
+
 int push_state(struct tree *t)
 {
     BYTE mem[4];
@@ -1649,11 +1680,13 @@ int parse_tree(struct tree *t)
         push_state(t);
 
         /* set deps of node: see on which address it depends */
-        n->deps = calloc(1, sizeof(*n->deps) * 16);
-        extract_deps(t, n, n->deps, &n->deps_len, ip);
-        load_deps_ll_nodes(t, n->deps, n->deps_len);
+        struct dependence *deps = calloc(1, sizeof(*n->deps) * 16);
+        int deps_len = 0;
+        extract_deps(t, n, deps, &deps_len, ip);
+        load_deps_ll_nodes(t, deps, deps_len);
+        update_node_deps(n, deps, deps_len);
 
-        printf("Extracted operation deps: total %d\n", n->deps_len);
+        printf("Extracted %d operation deps: NOW total %d\n", deps_len, n->deps_len);
 
         for (int i = 0; i < n->deps_len; ++i)
         {

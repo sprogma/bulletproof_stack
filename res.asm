@@ -28,7 +28,7 @@ MOV _audiomemend, _audiomembase, _size4
 MOV_CONST 0, _y
 _loop_audio:
 
-; get address of current sample
+; get address of current sample ; div 200
 DIV _tmp1, _sample_id, audio_compression_rate, _size4
 MUL _tmp5, _tmp1, audio_compression_rate, _size4
 SUB _tmp5, _tmp5, _sample_id, _size4
