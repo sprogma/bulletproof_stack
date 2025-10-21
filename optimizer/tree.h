@@ -12,11 +12,17 @@
 #define TOTAL_MEM (1024 * 1024)
 #define MAX_CHILDS 128
 #define MAX_NODE_DEPS 128
+#define MAX_NODES (16 * 1024)
 #define MAX_SOURCE_LINES (16 * 1024)
+
+#define MAX_LOOP_FIND_BUFFER (32 * 1024)
 
 
 #include "stdio.h"
 #include "inttypes.h"
+
+
+#define FLAG(storage, flag) (((storage) & (flag)) == (flag))
 
 
 struct operation
@@ -39,15 +45,33 @@ struct dependence
     struct ll_node *deps;
 };
 
+struct write
+{
+    int start; /* if start = -1, then this dependence is absolute (from all memory) */
+    int end; /* if end == -1, then this dependence is of unknown length, so it can be of any length, but from "start" */
+    struct ll_node *deps; /* nodes, which we overwrited */
+};
+
+enum
+{
+    NODE_REACHED = 0x1,
+    NODE_CHANGE_FLOW = 0x2,
+    NODE_TAKEN = 0x4,
+    NODE_NOT_TAKEN = 0x8,
+    NODE_WRITE_TO_UNKNOWN = 0x10,
+};
+
 struct node
 {
     int op_address;
     struct dependence *deps;
     int                deps_len;
+    struct write *set;
+    int           set_len;
     struct operation op;
     struct node **childs;
     int           childs_len;
-    int controls_workflow;
+    uint64_t flags;
 };
 
 struct ll_node
@@ -121,5 +145,7 @@ int optimize(struct optimizer *o, FILE *f);
 int add_source_data_line(struct optimizer *o, char type, int s, int e, int line, const char *code);
 
 int get_source_data_line(struct optimizer *o, int start, struct source_line **result);
+
+uint32_t uint32_hash(uint32_t key);
 
 #endif

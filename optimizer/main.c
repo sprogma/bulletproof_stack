@@ -8,7 +8,7 @@ int main()
     struct optimizer *o = malloc(sizeof(*o));
     o->states_len = 0;
     o->queue_len = 0;
-    o->nodes = calloc(1, sizeof(*o->nodes) * 64 * 1024);
+    o->nodes = calloc(1, sizeof(*o->nodes) * MAX_NODES);
     o->nodes_len = 0;
     o->lines_buff = MAX_SOURCE_LINES * 2;
     o->lines = calloc(1, sizeof(*o->lines) * o->lines_buff);

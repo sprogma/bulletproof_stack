@@ -63,6 +63,30 @@ int gen_profile(struct optimizer *o, const char *out_file)
                     fprintf(f, "]}");
                 }
             }
+            fprintf(f, "],");
+            fprintf(f, "\"Sets\": [");
+            {
+                /* dump deps */
+                for (int set = 0; set < n->set_len; ++set)
+                {
+                    if (set != 0) { fprintf(f, ","); }
+                    fprintf(f, "{\"Start\": %d, \"End\": %d, \"Nodes\": [", n->set[set].start, n->set[set].end);
+                    {
+                        /* dump nodes */
+                        struct ll_node *x = n->set[set].deps;
+                        while (x != NULL)
+                        {
+                            fprintf(f, "\"%p\"", x->node);
+                            x = x->next;
+                            if (x != NULL)
+                            {
+                                fprintf(f, ",");
+                            }
+                        }
+                    }
+                    fprintf(f, "]}");
+                }
+            }
             fprintf(f, "]");
         }
         fprintf(f, "}");

@@ -120,6 +120,24 @@ int add_ll_node_to_dep(struct dependence *d, struct node *new_dep)
     return 0;
 }
 
+int add_ll_node_to_set(struct write *w, struct node *new_dep)
+{
+    struct ll_node *x = w->deps;
+    while (x != NULL)
+    {
+        if (x->node == new_dep)
+        {
+            return 0;
+        }
+        x = x->next;
+    }
+    struct ll_node *new_ll_node = malloc(sizeof(*new_ll_node));
+    new_ll_node->node = new_dep;
+    new_ll_node->next = w->deps;
+    w->deps = new_ll_node;
+    return 0;
+}
+
 int free_ll_node(struct ll_node *x)
 {
     if (x == NULL)
@@ -229,10 +247,74 @@ int get_mem_slice(struct tree *t, int start, int end, int *l, int *r)
     return 0;
 }
 
+int update_write_dependence(struct tree *t, struct node *n, int start, int end)
+{
+    /* update master's set array */
+    struct write *w = NULL;
+    {
+        for (int i = 0; i < n->set_len; ++i)
+        {
+            assert(n->set[i].end != 0);
+            if (n->set[i].start == start && n->set[i].end == end)
+            {
+                w = n->set + i;
+                break;
+            }
+        }
+        if (w == NULL)
+        {
+            w = n->set + (n->set_len++);
+            w->start = start;
+            w->end = end;
+            w->deps = NULL;
+        }
+    }
+
+    assert(w->start == start);
+    assert(w->end == end);
+    
+    if (start == -1)
+    {
+        if (end != -1)
+        {
+            printf("ERROR: update_write_dependence with start == -1 and end != -1\n");
+            abort();
+        }
+        
+        for (int i = 0; i < t->regions_len; ++i)
+        {
+            if (t->regions[i].is_restrict == 0)
+            {
+                struct ll_node *x = t->regions[i].deps;
+                while (x != NULL)
+                {
+                    add_ll_node_to_set(w, x->node);
+                    x = x->next;
+                }
+            }
+        }
+        return 0;
+    }
+    
+    assert(w->start != w->end);
+    
+    int from, to;
+    get_mem_slice(t, start, end, &from, &to);
+    
+    for (int i = from; i <= to; ++i)
+    {
+        struct ll_node *x = t->regions[i].deps;
+        while (x != NULL)
+        {
+            add_ll_node_to_set(w, x->node);
+            x = x->next;
+        }
+    }
+    return 0;
+}
 
 int add_region_master(struct tree *t, int start, int end, struct node *master)
 {
-    
     if (start == -1)
     {
         if (end != -1)
@@ -479,7 +561,7 @@ int get_source_data_line(struct optimizer *o, int start, struct source_line **re
 {
     uint32_t hash = uint32_hash(start);
     uint32_t pos = hash % o->lines_buff;
-    for (uint32_t i = 0; i < o->lines_buff && o->lines[pos].start != start; ++i)
+    for (uint32_t i = 0; i < o->lines_buff && o->lines[pos].start != 0 && o->lines[pos].start != start; ++i)
     {
         pos++;
         if (pos == o->lines_buff)
@@ -496,71 +578,6 @@ int get_source_data_line(struct optimizer *o, int start, struct source_line **re
     return 0;
 }
 
-
-int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file)
-{
-    /* read file */
-    FILE *f = fopen(byte_file, "rb");
-    BYTE *x = malloc(1024 * 1024);
-    BYTE *ptr = x;
-    int c = 0;
-    while ((c = fread(ptr, 1, 1024, f)) != 0)
-    {
-        ptr += c;
-    }
-    fclose(f);
-    int total_read = ptr - x;
-    printf("Read %d bytes\n", total_read);
-
-    /* set regions */
-    set_region_value(t, load_address, load_address + total_read, 0, x);
-    FILE *d = fopen(data_file, "r");
-
-    if (d == NULL)
-    {
-        printf("ERROR: cannot open file %s\n", data_file);
-        return 1;
-    }
-    printf("loading data file\n");
-
-    while (1)
-    {
-        int line = 0;
-        char code[256] = {};
-        BYTE c;
-        int s, e;
-        if (fscanf(d, "%c %d %d %d:%[^\n]\n", &c, &s, &e, &line, code) != 5)
-        {
-            if (!feof(d))
-            {
-                printf("ERROR: data file is in wrong format.\n");
-                abort();
-            }
-            break;
-        }
-
-        s += load_address;
-        e += load_address;
-        
-        /* insert command to command mappings */
-        add_source_data_line(t->optimizer, c, s, e, line, code);
-        
-        if (c == 'I')
-        {
-            /* this region is instruction, assume them aren't changed */
-            set_restrict(t, s, e, t->restrict_id++);
-        }
-        if (c == 'D')
-        {
-            /* this is directive, also think that it doesn't changes */
-            set_restrict(t, s, e, t->restrict_id++);
-        }
-    }
-
-    printf("load end\n");
-    
-    return 0;
-}
 
 struct node *get_node(struct tree *t, int ip)
 {
@@ -627,9 +644,11 @@ struct node *get_node(struct tree *t, int ip)
     t->optimizer->nodes[this].op_address = ip;
     t->optimizer->nodes[this].deps = calloc(1, sizeof(*t->optimizer->nodes[this].deps) * MAX_NODE_DEPS);
     t->optimizer->nodes[this].deps_len = 0;
+    t->optimizer->nodes[this].set = calloc(1, sizeof(*t->optimizer->nodes[this].set) * MAX_NODE_DEPS);
+    t->optimizer->nodes[this].set_len = 0;
     t->optimizer->nodes[this].childs = calloc(1, sizeof(*t->optimizer->nodes[this].childs) * MAX_CHILDS);
     t->optimizer->nodes[this].childs_len = 0;
-    t->optimizer->nodes[this].controls_workflow = 0; // if 1 - this instruction was moditified workflow by writing to zero.
+    t->optimizer->nodes[this].flags = 0;
     t->optimizer->nodes[this].op.code = cmd->code;
     t->optimizer->nodes[this].op.nargs = cmd->nargs;
     t->optimizer->nodes[this].op.name = cmd->name;
@@ -654,6 +673,76 @@ struct node *get_node(struct tree *t, int ip)
 
     return t->optimizer->nodes + this;
 }
+
+
+int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file)
+{
+    /* read file */
+    FILE *f = fopen(byte_file, "rb");
+    BYTE *x = malloc(1024 * 1024);
+    BYTE *ptr = x;
+    int c = 0;
+    while ((c = fread(ptr, 1, 1024, f)) != 0)
+    {
+        ptr += c;
+    }
+    fclose(f);
+    int total_read = ptr - x;
+    printf("Read %d bytes\n", total_read);
+
+    /* set regions */
+    set_region_value(t, load_address, load_address + total_read, 0, x);
+    FILE *d = fopen(data_file, "r");
+
+    if (d == NULL)
+    {
+        printf("ERROR: cannot open file %s\n", data_file);
+        return 1;
+    }
+    printf("loading data file\n");
+
+    while (1)
+    {
+        int line = 0;
+        char code[256] = {};
+        BYTE c;
+        int s, e;
+        if (fscanf(d, "%c %d %d %d:%[^\n]\n", &c, &s, &e, &line, code) != 5)
+        {
+            if (!feof(d))
+            {
+                printf("ERROR: data file is in wrong format.\n");
+                abort();
+            }
+            break;
+        }
+
+        s += load_address;
+        e += load_address;
+        
+        /* insert command to command mappings */
+        add_source_data_line(t->optimizer, c, s, e, line, code);
+        
+        if (c == 'I')
+        {
+            /* this region is instruction, assume them aren't changed */
+            set_restrict(t, s, e, t->restrict_id++);
+            
+            /* create node in cache */
+            get_node(t, s);
+        }
+        if (c == 'D')
+        {
+            /* this is directive, also think that it doesn't changes */
+            set_restrict(t, s, e, t->restrict_id++);
+        }
+    }
+
+    printf("load end\n");
+    
+    return 0;
+}
+
 
 
 #define STANDART_PTR_DEPS(CNT) for (int i = 0; i < CNT; ++i) \
@@ -1116,6 +1205,11 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 dest = n->op.args[0] + ip;
                 printf("LEA SET to %d value %d\n", dest, value);
             }
+            if (dest == -1)
+            {
+                n->flags |= NODE_WRITE_TO_UNKNOWN;
+            }
+            update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + 4));
             set_region_value(t, dest, (dest == -1 ? -1 : dest + 4), 0, &value);
             clear_region_masters(t, dest, (dest == -1 ? -1 : dest + 4));
             add_region_master(t, dest, (dest == -1 ? -1 : dest + 4), n);
@@ -1165,6 +1259,8 @@ int process_machine(struct tree *t, struct node *n, int ip)
             /* if corrupted: copy machine state, and think that branch is taken */
             if (key_unknown)
             {
+                /* new machine will assune, that node wasn't taken */
+                n->flags |= NODE_NOT_TAKEN;
                 /* copy machine, in state there branch isn't taken */
                 /* so, as IP is already set on next position, simply */
                 /* call duplicate_machine */
@@ -1181,9 +1277,11 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 key = 1;
                 printf("ASSUME BRANCH TAKEN\n");
             }
+            
             /* if key isn't <false> then complete LEA command */
             if (key)
             {
+                n->flags |= NODE_TAKEN;
                 int dest, value;
                 value = n->op.args[2] + ip;
                 
@@ -1201,6 +1299,11 @@ int process_machine(struct tree *t, struct node *n, int ip)
                     dest = n->op.args[1] + ip;
                     printf("CLEA SET to %d value %d\n", dest, value);
                 }
+                if (dest == -1)
+                {
+                    n->flags |= NODE_WRITE_TO_UNKNOWN;
+                }
+                update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + 4));
                 set_region_value(t, dest, (dest == -1 ? -1 : dest + 4), 0, &value);
                 clear_region_masters(t, dest, (dest == -1 ? -1 : dest + 4));
                 add_region_master(t, dest, (dest == -1 ? -1 : dest + 4), n);
@@ -1211,6 +1314,10 @@ int process_machine(struct tree *t, struct node *n, int ip)
                     get_memory(t, dest, sizeof(mem), mem, bad);
                     printf("READ FROM %d value %d\n", dest, *(int *)mem);
                 }
+            }
+            else
+            {
+                n->flags |= NODE_NOT_TAKEN;
             }
             break;
         }
@@ -1233,7 +1340,12 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 dest = n->op.args[1] + ip;
                 printf("MOV_CONST SET to %d value %d\n", dest, value);
             }
-            
+
+            if (dest == -1)
+            {
+                n->flags |= NODE_WRITE_TO_UNKNOWN;
+            }
+            update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + 4));
             set_region_value(t, dest, (dest == -1 ? -1 : dest + 4), 0, &value);
             clear_region_masters(t, dest, (dest == -1 ? -1 : dest + 4));
             add_region_master(t, dest, (dest == -1 ? -1 : dest + 4), n);
@@ -1275,6 +1387,12 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 size = (is_corrupted(bad, 4) ? -1 : *(int *)mem);
             }
 
+
+            if (dest == -1)
+            {
+            n->flags |= NODE_WRITE_TO_UNKNOWN;
+            }
+            update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + size));
             set_region_value(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), 0, NULL);
             clear_region_masters(t, dest, (dest == -1 || size == -1 ? -1 : dest + size));
             add_region_master(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), n);
@@ -1332,6 +1450,11 @@ int process_machine(struct tree *t, struct node *n, int ip)
             if (src == -1 || size == -1)
             {
                 printf("src or size is unpredictable\n");
+                if (dest == -1)
+                {
+                    n->flags |= NODE_WRITE_TO_UNKNOWN;
+                }
+                update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + size));
                 set_region_value(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), 0, NULL);
                 clear_region_masters(t, dest, (dest == -1 || size == -1 ? -1 : dest + size));
                 add_region_master(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), n);
@@ -1348,12 +1471,15 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 {
                     if (dest == -1)
                     {
+                        n->flags |= NODE_WRITE_TO_UNKNOWN;
+                        update_write_dependence(t, n, -1, -1);
                         set_region_value(t, -1, -1, 0, NULL);
                         clear_region_masters(t, -1, -1);
                         add_region_master(t, -1, -1, n);
                     }
                     else
                     {
+                        update_write_dependence(t, n, dest, dest + size);
                         int prev_id = 0;
                         for (int i = 0; i <= size; ++i)
                         {
@@ -1379,9 +1505,14 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 }
                 else
                 {
+                    if (dest == -1)
+                    {
+                        n->flags |= NODE_WRITE_TO_UNKNOWN;
+                    }
                     if (is_corrupted(bad, size))
                     {
                         /* so all result is corrupted */
+                        update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + size));
                         set_region_value(t, dest, (dest == -1 ? -1 : dest + size), 0, NULL);
                         clear_region_masters(t, dest, (dest == -1 ? -1 : dest + size));
                         add_region_master(t, dest, (dest == -1 ? -1 : dest + size), n);
@@ -1391,9 +1522,10 @@ int process_machine(struct tree *t, struct node *n, int ip)
                         /* predict result */
                         printf("FOR NOW PREDICTION IS DISABLED (TODO: COPY CODE)\n");
                         // TODO: COPY CODE
-                        set_region_value(t, dest, dest + size, 0, NULL);
-                        clear_region_masters(t, dest, dest + size);
-                        add_region_master(t, dest, dest + size, n);
+                        update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + size));
+                        set_region_value(t, dest, (dest == -1 ? -1 : dest + size), 0, NULL);
+                        clear_region_masters(t, dest, (dest == -1 ? -1 : dest + size));
+                        add_region_master(t, dest, (dest == -1 ? -1 : dest + size), n);
                     }
                 }
                 
@@ -1449,9 +1581,14 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 src = -1;
             }
 
-            if (src == -1 || size == -1)
+            if (dest == -1 || src == -1 || size == -1)
             {
                 printf("src or size is unpredictable\n");
+                if (dest == -1)
+                {
+                    n->flags |= NODE_WRITE_TO_UNKNOWN;
+                }
+                update_write_dependence(t, n, dest, (dest == -1 ? -1 : dest + 4));
                 set_region_value(t, dest, (dest == -1 || size == -1 ? -1 : dest + 4), 0, NULL);
                 clear_region_masters(t, dest, (dest == -1 || size == -1 ? -1 : dest + 4));
                 add_region_master(t, dest, (dest == -1 || size == -1 ? -1 : dest + 4), n);
@@ -1466,6 +1603,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 if (is_corrupted(bad, size))
                 {
                     /* so all result is corrupted */
+                    update_write_dependence(t, n, dest, dest + 4);
                     set_region_value(t, dest, dest + 4, 0, NULL);
                     clear_region_masters(t, dest, dest + 4);
                     add_region_master(t, dest, dest + 4, n);
@@ -1475,6 +1613,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
                     /* predict result */
                     printf("FOR NOW PREDICTION IS DISABLED (TODO: COPY CODE)\n");
                     // TODO: COPY CODE
+                    update_write_dependence(t, n, dest, dest + 4);
                     set_region_value(t, dest, dest + 4, 0, NULL);
                     clear_region_masters(t, dest, dest + 4);
                     add_region_master(t, dest, dest + 4, n);
@@ -1541,9 +1680,14 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 src2 = -1;
             }
 
-            if (src1 == -1 || src2 == -1 || size == -1)
+            if (dest == -1 || src1 == -1 || src2 == -1 || size == -1)
             {
                 printf("src or size is unpredictable\n");
+                if (dest == -1)
+                {
+                    n->flags |= NODE_WRITE_TO_UNKNOWN;
+                }
+                update_write_dependence(t, n, dest, (dest == -1 || size == -1 ? -1 : dest + size));
                 set_region_value(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), 0, NULL);
                 clear_region_masters(t, dest, (dest == -1 || size == -1 ? -1 : dest + size));
                 add_region_master(t, dest, (dest == -1 || size == -1 ? -1 : dest + size), n);
@@ -1561,6 +1705,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
                 if (is_corrupted(bad1, size) || is_corrupted(bad2, size))
                 {
                     /* so all result is corrupted */
+                    update_write_dependence(t, n, dest, dest + size);
                     set_region_value(t, dest, dest + size, 0, NULL);
                     clear_region_masters(t, dest, dest + size);
                     add_region_master(t, dest, dest + size, n);
@@ -1570,6 +1715,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
                     /* predict result */
                     printf("FOR NOW PREDICTION IS DISABLED (TODO: COPY CODE)\n");
                     // TODO: COPY CODE
+                    update_write_dependence(t, n, dest, dest + size);
                     set_region_value(t, dest, dest + size, 0, NULL);
                     clear_region_masters(t, dest, dest + size);
                     add_region_master(t, dest, dest + size, n);
@@ -1595,7 +1741,7 @@ int process_machine(struct tree *t, struct node *n, int ip)
     int res_ip = get_ip(t);
     if (res_ip != ip + n->op.size)
     {
-        n->controls_workflow = 1;
+        n->flags |= NODE_CHANGE_FLOW;
     }
     return res_ip;
 }
@@ -1706,6 +1852,9 @@ int parse_tree(struct tree *t)
             printf("End execution...\n");
             return 0;
         }
+
+        /* this instruction can be reached */
+        n->flags |= NODE_REACHED;
 
         /* check - if we was visited this node before, check, */
         /* is there looping */

@@ -1,143 +1,146 @@
-I 0 13 0:MOV _frame_base, video_start, _size4
-I 13 22 1:MOV_CONST 0, _sample_id
-I 22 31 3:MOV_CONST 8, _tmp1
-I 31 48 4:MUL _frame_size, video_width, video_height, _size4
-I 48 65 5:DIV _frame_size, _frame_size, _tmp1, _size4
-I 65 74 7:MOV_CONST 8, _tmp1
-I 74 91 8:DIV _frame_line_size, video_width, _tmp1, _size4
-I 91 100 10:MOV_CONST 1000, _ms_per_frame
-I 100 117 11:DIV _ms_per_frame, _ms_per_frame, fps, _size4
-I 117 126 13:MOV_CONST 44100, _samples_per_frame
-I 126 143 14:DIV _samples_per_frame, _samples_per_frame, fps, _size4
-I 143 156 16:IN 2, _start_time, _size4
-I 156 169 17:MOV _current_time, _start_time, _size4
-I 169 178 20:MOV_CONST -1, _first_iteration
-I 178 191 24:MOV _audiomemend, _audiomembase, _size4
-I 191 200 27:MOV_CONST 0, _y
-I 200 217 31:DIV _tmp1, _sample_id, audio_compression_rate, _size4
-I 217 234 32:MUL _tmp5, _tmp1, audio_compression_rate, _size4
-I 234 251 33:SUB _tmp5, _tmp5, _sample_id, _size4
-I 251 268 34:MUL _tmp1, _tmp1, _four, _size4
-I 268 285 35:ADD _tmp1, _tmp1, audio_start, _size4
-I 285 294 38:LEA _tmp_ptr1, _size4
-I 294 303 39:LEA _tmp_ptr2, _tmp2
-I 303 316 40:MOV _tmp_ptr2, _tmp1, _tmp_ptr1
-I 316 333 42:ADD _tmp1, _tmp1, _four, _size4
-I 333 342 43:LEA _tmp_ptr1, _size4
-I 342 351 44:LEA _tmp_ptr2, _tmp3
-I 351 364 45:MOV _tmp_ptr2, _tmp1, _tmp_ptr1
-I 364 377 48:MOV _tmp1, _tmp2, _size4
-I 377 394 49:SUB _tmp4, _tmp3, _tmp2, _size4
-I 394 411 50:DIV _tmp4, _tmp4, audio_compression_rate, _size4
-I 411 428 51:MUL _tmp4, _tmp4, _tmp5, _size4
-I 428 437 54:LEA _tmp_ptr1, _size4
-I 437 446 55:LEA _tmp_ptr2, _tmp1
-I 446 459 56:MOV _audiomemend, _tmp_ptr2, _tmp_ptr1
-I 459 476 59:ADD _audiomemend, _audiomemend, _four, _size4
-I 476 489 61:INC _sample_id, _sample_id, _size4
-I 489 502 64:INC _y, _y, _size4
-I 502 511 65:LEA _tmp_ptr1, _tmp1
-I 511 528 66:LT _tmp1, _y, _samples_per_frame, _size4
-I 528 541 67:CLEA _tmp_ptr1, _zero, _loop_audio
-I 541 550 70:LEA _tmp_ptr1, _first_iteration
-I 550 563 71:CLEA _tmp_ptr1, _zero, skip_music_sending
-I 563 580 73:SUB _tmp1, _audiomemend, _audiomembase, _size4
-I 580 589 74:LEA _tmp_ptr1, _tmp1
-I 589 602 75:OUT 3, _audiomembase, _tmp_ptr1
-I 602 615 79:MOV _memend, _membase, _size4
-I 615 624 81:MOV_CONST 0, _y
-I 624 633 84:MOV_CONST 0, _x
-I 633 642 88:MOV_CONST 0, _memend
-I 642 651 91:MOV_CONST 8, _tmp2 ; 8 - bit per byte
-I 651 668 92:DIV _tmp1, _x, _tmp2, _size4
-I 668 685 93:MUL _tmp3, _tmp1, _tmp2, _size4 ; _tmp2 = (x / 8) * 8
-I 685 702 94:SUB _tmp2, _x, _tmp3, _size4 ; _tmp2 = x - (x / 8) * 8
-I 702 711 97:LEA _tmp3, _mask_LUT
-I 711 728 98:MUL _tmp2, _tmp2, _size4, _size4
-I 728 745 99:ADD _tmp2, _tmp2, _tmp3, _size4
-I 745 754 100:LEA _tmp_ptr2, _tmp2
-I 754 763 101:LEA _tmp_ptr3, _size4
-I 763 776 102:MOV _tmp_ptr2, _tmp2, _tmp_ptr3
-I 776 793 104:ADD _tmp1, _tmp1, _frame_base, _size4
-I 793 802 105:LEA _tmp_ptr3, _tmp3
-I 802 811 106:LEA _tmp_ptr4, _size4
-I 811 824 107:MOV _tmp_ptr3, _tmp1, _tmp_ptr4
-I 824 841 110:AND _tmp1, _tmp2, _tmp3, _size4
-I 841 854 111:ANY _tmp1, _tmp1, _size4
-I 854 867 112:INV _tmp1, _tmp1, _size4
-I 867 876 113:LEA _tmp_ptr1, _tmp1
-I 876 889 114:CLEA _tmp_ptr1, _zero, _black_pixel
-I 889 898 115:MOV_CONST 16776960, _memend
-I 898 915 119:ADD _memend, _memend, _four, _size4
-I 915 928 122:INC _x, _x, _size4
-I 928 937 123:LEA _tmp_ptr1, _tmp1
-I 937 954 124:LT _tmp1, _x, video_width, _size4
-I 954 967 125:CLEA _tmp_ptr1, _zero, _loop_2
-I 967 984 128:ADD _frame_base, _frame_base, _frame_line_size, _size4
-I 984 997 133:INC _y, _y, _size4
-I 997 1006 134:LEA _tmp_ptr1, _tmp1
-I 1006 1023 135:LT _tmp1, _y, video_height, _size4
-I 1023 1036 136:CLEA _tmp_ptr1, _zero, _loop_1
-I 1036 1053 140:ADD _current_time, _current_time, _ms_per_frame, _size4
-I 1053 1066 143:IN 2, _tmp1, _size4
-I 1066 1083 144:LT _tmp1, _tmp1, _current_time, _size4
-I 1083 1092 145:LEA _tmp_ptr1, _tmp1
-I 1092 1105 146:CLEA _tmp_ptr1, _zero, _wait
-I 1105 1118 149:INV _tmp1, _first_iteration, _size4
-I 1118 1127 150:LEA _tmp_ptr1, _tmp1
-I 1127 1140 151:CLEA _tmp_ptr1, _zero, not_first_iteration
-I 1140 1149 153:MOV_CONST 0, _first_iteration
-I 1149 1166 155:SUB _tmp1, _audiomemend, _audiomembase, _size4
-I 1166 1175 156:LEA _tmp_ptr1, _tmp1
-I 1175 1188 157:OUT 3, _audiomembase, _tmp_ptr1
-I 1188 1205 161:SUB _tmp1, _memend, _membase, _size4
-I 1205 1214 162:LEA _tmp_ptr1, _tmp1
-I 1214 1227 163:OUT 1, _membase, _tmp_ptr1
-I 1227 1236 167:LEA _zero, _inf_loop
-D 1236 1237 169:.db 0xFF
-D 1237 1241 172:.dd 0x010000
-D 1241 1245 174:.dd 0
-D 1245 1249 176:.dd 0x25000
-D 1249 1253 178:.dd 0
-D 1253 1257 181:.dd 0x40000
-D 1257 1261 183:.dd 160
-D 1261 1265 185:.dd 90
-D 1265 1269 187:.dd 0x80000
-D 1269 1273 189:.dd 5
-D 1273 1277 191:.dd 25
-D 1277 1281 193:.dd 0
-D 1281 1285 195:.dd 0
-D 1285 1289 197:.dd 0
-D 1289 1293 199:.dd 0
-D 1293 1297 201:.dd 0
-D 1297 1301 203:.dd 0
-D 1301 1305 205:.dd 0
-D 1305 1309 207:.dd 0
-D 1309 1313 211:.dd 0x01
-D 1313 1317 212:.dd 0x02
-D 1317 1321 213:.dd 0x04
-D 1321 1325 214:.dd 0x08
-D 1325 1329 215:.dd 0x10
-D 1329 1333 216:.dd 0x20
-D 1333 1337 217:.dd 0x40
-D 1337 1341 218:.dd 0x80
-D 1341 1345 221:.dd 0
-D 1345 1349 223:.dd 0
-D 1349 1353 225:.dd 0
-D 1353 1357 228:.dd 0
-D 1357 1361 230:.dd 0
-D 1361 1365 232:.dd 0
-D 1365 1369 234:.dd 0
-D 1369 1373 236:.dd 0
-D 1373 1377 238:.dd 0
-D 1377 1381 240:.dd 0
-D 1381 1385 242:.dd 0
-D 1385 1389 244:.dd 0
-D 1389 1393 247:.dd 1
-D 1393 1397 249:.dd 4
-D 1397 1401 251:.dd 4
-D 1401 1405 254:.dd 0
-D 1405 1409 256:.dd 4
-D 1409 1413 258:.dd 1000
-D 1413 1417 260:.dd 4
-D 1417 1421 262:.dd 1
+I 0 13 1:MOV _frame_base, video_start, _size4
+I 13 22 2:MOV_CONST 0, _sample_id
+I 22 31 4:MOV_CONST 8, _tmp1
+I 31 48 5:MUL _frame_size, video_width, video_height, _size4
+I 48 65 6:DIV _frame_size, _frame_size, _tmp1, _size4
+I 65 74 8:MOV_CONST 8, _tmp1
+I 74 91 9:DIV _frame_line_size, video_width, _tmp1, _size4
+I 91 100 11:MOV_CONST 1000, _ms_per_frame
+I 100 117 12:DIV _ms_per_frame, _ms_per_frame, fps, _size4
+I 117 126 14:MOV_CONST 44100, _samples_per_frame
+I 126 143 15:DIV _samples_per_frame, _samples_per_frame, fps, _size4
+I 143 156 17:IN 2, _start_time, _size4
+I 156 169 18:MOV _current_time, _start_time, _size4
+I 169 178 21:MOV_CONST -1, _first_iteration
+I 178 191 25:MOV _audiomemend, _audiomembase, _size4
+I 191 200 28:MOV_CONST 0, _y
+I 200 217 32:DIV _tmp1, _sample_id, audio_compression_rate, _size4
+I 217 234 33:MUL _tmp5, _tmp1, audio_compression_rate, _size4
+I 234 251 34:SUB _tmp5, _tmp5, _sample_id, _size4
+I 251 268 35:MUL _tmp1, _tmp1, _four, _size4
+I 268 285 36:ADD _tmp1, _tmp1, audio_start, _size4
+I 285 294 39:LEA _tmp_ptr1, _size4
+I 294 303 40:LEA _tmp_ptr2, _tmp2
+I 303 316 41:MOV _tmp_ptr2, _tmp1, _tmp_ptr1
+I 316 333 43:ADD _tmp1, _tmp1, _four, _size4
+I 333 342 44:LEA _tmp_ptr1, _size4
+I 342 351 45:LEA _tmp_ptr2, _tmp3
+I 351 364 46:MOV _tmp_ptr2, _tmp1, _tmp_ptr1
+I 364 377 49:MOV _tmp1, _tmp2, _size4
+I 377 394 50:SUB _tmp4, _tmp3, _tmp2, _size4
+I 394 411 51:DIV _tmp4, _tmp4, audio_compression_rate, _size4
+I 411 428 52:MUL _tmp4, _tmp4, _tmp5, _size4
+I 428 437 55:LEA _tmp_ptr1, _size4
+I 437 446 56:LEA _tmp_ptr3, _tmp1
+I 446 459 57:MOV _audiomemend, _tmp_ptr3, _tmp_ptr1
+I 459 476 60:ADD _audiomemend, _audiomemend, _four, _size4
+I 476 489 62:INC _sample_id, _sample_id, _size4
+I 489 502 65:INC _y, _y, _size4
+I 502 511 66:LEA _tmp_ptr1, _tmp1
+I 511 528 67:LT _tmp1, _y, _samples_per_frame, _size4
+I 528 541 68:CLEA _tmp_ptr1, _zero, _loop_audio
+I 541 550 71:LEA _tmp_ptr1, _first_iteration
+I 550 563 72:CLEA _tmp_ptr1, _zero, skip_music_sending
+I 563 580 74:SUB _tmp1, _audiomemend, _audiomembase, _size4
+I 580 589 75:LEA _tmp_ptr1, _tmp1
+I 589 602 76:OUT 3, _audiomembase, _tmp_ptr1
+I 602 615 80:MOV _memend, _membase, _size4
+I 615 624 82:MOV_CONST 0, _y
+I 624 633 85:MOV_CONST 0, _x
+I 633 642 89:MOV_CONST 0, _memend
+I 642 651 92:MOV_CONST 8, _tmp2 ; 8 - bit per byte
+I 651 668 93:DIV _tmp1, _x, _tmp2, _size4
+I 668 685 94:MUL _tmp3, _tmp1, _tmp2, _size4 ; _tmp2 = (x / 8) * 8
+I 685 702 95:SUB _tmp2, _x, _tmp3, _size4 ; _tmp2 = x - (x / 8) * 8
+I 702 711 98:LEA _tmp3, _mask_LUT
+I 711 728 99:MUL _tmp2, _tmp2, _size4, _size4
+I 728 745 100:ADD _tmp2, _tmp2, _tmp3, _size4
+I 745 754 101:LEA _tmp_ptr2, _tmp2
+I 754 763 102:LEA _tmp_ptr3, _size4
+I 763 776 103:MOV _tmp_ptr2, _tmp2, _tmp_ptr3
+I 776 793 105:ADD _tmp1, _tmp1, _frame_base, _size4
+I 793 802 106:LEA _tmp_ptr3, _tmp3
+I 802 811 107:LEA _tmp_ptr4, _size4
+I 811 824 108:MOV _tmp_ptr3, _tmp1, _tmp_ptr4
+I 824 841 111:AND _tmp1, _tmp2, _tmp3, _size4
+I 841 854 112:ANY _tmp1, _tmp1, _size4
+I 854 867 113:INV _tmp1, _tmp1, _size4
+I 867 876 114:LEA _tmp_ptr1, _tmp1
+I 876 889 115:CLEA _tmp_ptr1, _zero, _black_pixel
+I 889 898 116:MOV_CONST 16776960, _memend
+I 898 915 120:ADD _memend, _memend, _four, _size4
+I 915 928 123:INC _x, _x, _size4
+I 928 937 124:LEA _tmp_ptr1, _tmp1
+I 937 954 125:LT _tmp1, _x, video_width, _size4
+I 954 967 126:CLEA _tmp_ptr1, _zero, _loop_2
+I 967 984 129:ADD _frame_base, _frame_base, _frame_line_size, _size4
+I 984 997 134:INC _y, _y, _size4
+I 997 1006 135:LEA _tmp_ptr1, _tmp1
+I 1006 1023 136:LT _tmp1, _y, video_height, _size4
+I 1023 1036 137:CLEA _tmp_ptr1, _zero, _loop_1
+I 1036 1053 141:ADD _current_time, _current_time, _ms_per_frame, _size4
+I 1053 1066 144:IN 2, _tmp1, _size4
+I 1066 1083 145:LT _tmp1, _tmp1, _current_time, _size4
+I 1083 1092 146:LEA _tmp_ptr1, _tmp1
+I 1092 1105 147:CLEA _tmp_ptr1, _zero, _wait
+I 1105 1118 150:INV _tmp1, _first_iteration, _size4
+I 1118 1127 151:LEA _tmp_ptr1, _tmp1
+I 1127 1140 152:CLEA _tmp_ptr1, _zero, not_first_iteration
+I 1140 1149 154:MOV_CONST 0, _first_iteration
+I 1149 1166 156:SUB _tmp1, _audiomemend, _audiomembase, _size4
+I 1166 1175 157:LEA _tmp_ptr1, _tmp1
+I 1175 1188 158:OUT 3, _audiomembase, _tmp_ptr1
+I 1188 1205 162:SUB _tmp1, _memend, _membase, _size4
+I 1205 1214 163:LEA _tmp_ptr1, _tmp1
+I 1214 1227 164:OUT 1, _membase, _tmp_ptr1
+I 1227 1236 168:MOV_CONST -1, _tmp1
+I 1236 1245 169:LEA _tmp_ptr1, _tmp1
+I 1245 1258 170:CLEA _tmp_ptr1, _zero, _inf_loop
+I 1258 1271 172:INC _tmp1, _tmp1, _size4
+D 1271 1272 174:.db 0xFF
+D 1272 1276 177:.dd 0x010000
+D 1276 1280 179:.dd 0
+D 1280 1284 181:.dd 0x25000
+D 1284 1288 183:.dd 0
+D 1288 1292 186:.dd 0x40000
+D 1292 1296 188:.dd 160
+D 1296 1300 190:.dd 90
+D 1300 1304 192:.dd 0x80000
+D 1304 1308 194:.dd 5
+D 1308 1312 196:.dd 25
+D 1312 1316 198:.dd 0
+D 1316 1320 200:.dd 0
+D 1320 1324 202:.dd 0
+D 1324 1328 204:.dd 0
+D 1328 1332 206:.dd 0
+D 1332 1336 208:.dd 0
+D 1336 1340 210:.dd 0
+D 1340 1344 212:.dd 0
+D 1344 1348 216:.dd 0x01
+D 1348 1352 217:.dd 0x02
+D 1352 1356 218:.dd 0x04
+D 1356 1360 219:.dd 0x08
+D 1360 1364 220:.dd 0x10
+D 1364 1368 221:.dd 0x20
+D 1368 1372 222:.dd 0x40
+D 1372 1376 223:.dd 0x80
+D 1376 1380 226:.dd 0
+D 1380 1384 228:.dd 0
+D 1384 1388 230:.dd 0
+D 1388 1392 233:.dd 0
+D 1392 1396 235:.dd 0
+D 1396 1400 237:.dd 0
+D 1400 1404 239:.dd 0
+D 1404 1408 241:.dd 0
+D 1408 1412 243:.dd 0
+D 1412 1416 245:.dd 0
+D 1416 1420 247:.dd 0
+D 1420 1424 249:.dd 0
+D 1424 1428 252:.dd 1
+D 1428 1432 254:.dd 4
+D 1432 1436 256:.dd 4
+D 1436 1440 259:.dd 0
+D 1440 1444 261:.dd 4
+D 1444 1448 263:.dd 1000
+D 1448 1452 265:.dd 4
+D 1452 1456 267:.dd 1

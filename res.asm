@@ -53,8 +53,8 @@ MUL _tmp4, _tmp4, _tmp5, _size4
 ; ADD _tmp1, _tmp1, _tmp4, _size4
 ; copy this sample, padding with zeros
 LEA _tmp_ptr1, _size4
-LEA _tmp_ptr2, _tmp1
-$MOV _audiomemend, _tmp_ptr2, _tmp_ptr1
+LEA _tmp_ptr3, _tmp1
+$MOV _audiomemend, _tmp_ptr3, _tmp_ptr1
 
 ; move memory pointer
 ADD _audiomemend, _audiomemend, _four, _size4
@@ -165,7 +165,11 @@ $OUT 1, _membase, _tmp_ptr1
 
 
 ; infite loop
-$LEA _zero, _inf_loop
+MOV_CONST -1, _tmp1
+LEA _tmp_ptr1, _tmp1
+$CLEA _tmp_ptr1, _zero, _inf_loop
+
+INC _tmp1, _tmp1, _size4
 
 .db 0xFF
 
