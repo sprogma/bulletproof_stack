@@ -55,10 +55,11 @@ int optimize(struct optimizer *o, FILE *f)
         struct source_line *x;
         get_source_data_line(o, n->op_address, &x);
         fprintf(f, "OPT: result of this instruction is probably unused:\n");
-        fprintf(f, "%s at %d:%s\n", n->op.name, x->line, x->code);
+        fprintf(f, "     instruction %d:%s\n", x->line, x->code);
         
     find_next_unused_node:;
     }
+
 //     
 // 
 //     /* write all nodes in json format */
