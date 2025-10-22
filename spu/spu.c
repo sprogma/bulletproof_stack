@@ -28,10 +28,10 @@
 #define MAP_BASE_SIZE_OPTIMIZATION(MACRO) \
     switch (size) \
     { \
-        case sizeof(int8_t):  MACRO((*(int8_t *)s), (*(int8_t *)s), (*(int8_t *)a)); return; \
-        case sizeof(int16_t): MACRO((*(int16_t *)s), (*(int16_t *)s), (*(int16_t *)a)); return; \
-        case sizeof(int32_t): MACRO((*(int32_t *)s), (*(int32_t *)s), (*(int32_t *)a)); return; \
-        case sizeof(int64_t): MACRO((*(int64_t *)s), (*(int64_t *)s), (*(int64_t *)a)); return; \
+        case sizeof(int8_t):  MACRO((*(int8_t *)first), (*(int8_t *)first), (*(int8_t *)second)); return; \
+        case sizeof(int16_t): MACRO((*(int16_t *)first), (*(int16_t *)first), (*(int16_t *)second)); return; \
+        case sizeof(int32_t): MACRO((*(int32_t *)first), (*(int32_t *)first), (*(int32_t *)second)); return; \
+        case sizeof(int64_t): MACRO((*(int64_t *)first), (*(int64_t *)first), (*(int64_t *)second)); return; \
         default: break; \
     }
 
@@ -66,16 +66,14 @@ void send_port(struct spu *s, int32_t port, BYTE *data, size_t count)
         t->send(t, data, count);
     }
     */
-    // TODO: (a ? b : NULL) ?? c == a ? b : c
-    // TODO: remove cast
-    ((void(*)())OR((t ? t->send : NULL), &empty_port_fn))(t, data, count);
+    (t ? t->send : empty_port_fn)(t, data, count);
 }
 
 
 void read_port(struct spu *s, int32_t port, BYTE *data, size_t count)
 {
     struct port_mapping_t *t = find_port_mapping(s, port);
-    ((void(*)())OR((t ? t->read : NULL), &empty_port_fn))(t, data, count);
+    (t ? t->read : empty_port_fn)(t, data, count);
 }
 
 
@@ -126,7 +124,7 @@ void large_integer_dec(BYTE *s, size_t size)
 }
 
 
-void large_integer_add(BYTE *s, BYTE *a, size_t size)
+void large_integer_add(BYTE *first, BYTE *second, size_t size)
 {
     #define ADD(to, a, b) to = a + b;
     MAP_BASE_SIZE_OPTIMIZATION(ADD)
@@ -135,14 +133,14 @@ void large_integer_add(BYTE *s, BYTE *a, size_t size)
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
     {
-        uint32_t res = s[i] + a[i] + carry;
-        s[i] = res;
+        uint32_t res = first[i] + second[i] + carry;
+        first[i] = res;
         carry = res >> (sizeof(BYTE) * CHAR_BIT);
     }
 }
 
 
-void large_integer_sub(BYTE *s, BYTE *a, size_t size)
+void large_integer_sub(BYTE *first, BYTE *second, size_t size)
 {
     #define SUB(to, a, b) to = a - b;
     MAP_BASE_SIZE_OPTIMIZATION(SUB)
@@ -151,22 +149,22 @@ void large_integer_sub(BYTE *s, BYTE *a, size_t size)
     int carry = 0;
     for (size_t i = 0; i < size; ++i)
     {
-        int res = (int)s[i] - (int)a[i] + carry;
+        int res = (int)first[i] - (int)second[i] + carry;
         carry = (res < 0 ? -1 : 0);
-        s[i] = res - carry * (1 << (sizeof(BYTE) * CHAR_BIT));
+        first[i] = res - carry * (1 << (sizeof(BYTE) * CHAR_BIT));
     }
 }
 
 
-void large_integer_mul(BYTE *s, BYTE *a, size_t size)
-{ // TODO: better names everywhere
+void large_integer_mul(BYTE *first, BYTE *second, size_t size)
+{
     #define MUL(to, a, b) to = a * b;
     MAP_BASE_SIZE_OPTIMIZATION(MUL)
     #undef MUL
     
     BYTE *tmp = calloc(1, size);
-    memcpy(tmp, s, size);
-    memset(s, 0, size);
+    memcpy(tmp, first, size);
+    memset(first, 0, size);
 
     for (size_t k = 0; k < size; ++k)
     {
@@ -174,8 +172,8 @@ void large_integer_mul(BYTE *s, BYTE *a, size_t size)
         int mul = tmp[k];
         for (size_t i = 0; i < size - k; ++i)
         {
-            uint32_t res = s[i + k] + a[i] * mul + carry;
-            s[i + k] = res;
+            uint32_t res = first[i + k] + second[i] * mul + carry;
+            first[i + k] = res;
             carry = res >> (sizeof(BYTE) * CHAR_BIT);
         }
     }
@@ -184,7 +182,7 @@ void large_integer_mul(BYTE *s, BYTE *a, size_t size)
 }
 
 
-void large_integer_div(BYTE *s, BYTE *a, size_t size)
+void large_integer_div(BYTE *first, BYTE *second, size_t size)
 {
     #define DIV(to, a, b) to = a / b;
     MAP_BASE_SIZE_OPTIMIZATION(DIV)
@@ -194,97 +192,116 @@ void large_integer_div(BYTE *s, BYTE *a, size_t size)
     abort();
 }
 
-int32_t large_unsigned_integer_less(BYTE *a, BYTE *b, size_t size)
+int32_t large_unsigned_integer_less(BYTE *first, BYTE *second, size_t size)
 {    
     for (size_t x = size - 1; x < size; --x)
     {
-        if (a[x] != b[x])
+        if (first[x] != second[x])
         {
-            return (a[x] < b[x] ? -1 : 0);
+            return (first[x] < second[x] ? -1 : 0);
         }
     }
     return 0;
 }
 
 
-int32_t large_integer_less(BYTE *a, BYTE *b, size_t size)
+int32_t large_integer_less(BYTE *first, BYTE *second, size_t size)
 {
     // can't use optimizate_size... becouse this construction needs non null return  
     if (size == 8)
     {
-        return -((*(int64_t *)a) < (*(int64_t *)b));
+        return -((*(int64_t *)first) < (*(int64_t *)second));
     }
     if (size == 4)
     {
-        return -((*(int32_t *)a) < (*(int32_t *)b));
+        return -((*(int32_t *)first) < (*(int32_t *)second));
     }
     if (size == 2)
     {
-        return -((*(int16_t *)a) < (*(int16_t *)b));
+        return -((*(int16_t *)first) < (*(int16_t *)second));
     }
     if (size == 1)
     {
-        return -((*(int8_t *)a) < (*(int8_t *)b));
+        return -((*(int8_t *)first) < (*(int8_t *)second));
     }
-    int a_neg = a[size - 1] & 0x80; // TODO: char(a) >> 7
-    int b_neg = b[size - 1] & 0x80;
+    int a_neg = (int8_t)first[size - 1] < 0;
+    int b_neg = (int8_t)second[size - 1] < 0;
 
     if (!a_neg && !b_neg)
     {
-        return large_unsigned_integer_less(a, b, size);
+        return large_unsigned_integer_less(first, second, size);
     }
     if (a_neg != b_neg)
     {
         return -(a_neg > b_neg);
     }
-    return large_unsigned_integer_less(b, a, size);
+    return large_unsigned_integer_less(second, first, size);
 }
 
-// TODO: why are those not functions?
-// TODO: + 1 + 4 * id?
-#define GET_ARG(s, ip, id) (*((int32_t *)((s)->mem + ip + 1 + 4 * (id))))
-#define INT_FROM(s, pos) (*((int32_t *)((s)->mem + (pos))))
+int32_t get_command_arg(struct spu *s, int ip, int arg_id)
+{
+    /* 1 + 4 * arg_id is shift from command begining */
+    /* 4 == sizeof(int32_t) - size of one argument for now */
+    return *(int32_t *)(s->mem + ip + 1 + 4 * arg_id);
+}
 
-/* logical conversions */
-#define PTR_FROM_PTR(s, ptr) INT_FROM(s, ptr)
-#define REL_TO_PTR(s, ptr) ((ptr) + ip)
-#define PTR_TO_REAL(s, ptr) ((s)->mem + (ptr))
+int32_t int_from(struct spu *s, int addr)
+{
+    return *(int32_t *)(s->mem + addr);
+}
+
+/* logical pointers conversions */
+int32_t ptr_from_ptr(struct spu *s, int addr)
+{
+    return int_from(s, addr);
+}
+
+int32_t rel_to_abs(struct spu *s, int ip, int addr)
+{
+    (void)s;
+    return addr + ip;
+}
+
+BYTE *ptr_to_memory(struct spu *s, int addr)
+{
+    return s->mem + addr;
+}
 
 // TODO: a lot less love for macros, please
 
 #define READ_DST_SRC_COUNT \
-    int32_t dst = REL_TO_PTR(s, GET_ARG(s, ip, 0)); \
-    int32_t src = REL_TO_PTR(s, GET_ARG(s, ip, 1)); \
-    int32_t cnt = REL_TO_PTR(s, GET_ARG(s, ip, 2)); \
+    int32_t dst = rel_to_abs(s, ip, get_command_arg(s, ip, 0)); \
+    int32_t src = rel_to_abs(s, ip, get_command_arg(s, ip, 1)); \
+    int32_t cnt = rel_to_abs(s, ip, get_command_arg(s, ip, 2)); \
     \
     if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR) \
     { \
         VERBOSE_INFO("dest = *%08x=%08x src = *%08x=%08x cnt = *%08x=%08x\n", \
-                      dst, PTR_FROM_PTR(s, dst), \
-                      src, PTR_FROM_PTR(s, src), \
-                      cnt, PTR_FROM_PTR(s, cnt)); \
-        dst = PTR_FROM_PTR(s, dst); \
-        src = PTR_FROM_PTR(s, src); \
-        cnt = PTR_FROM_PTR(s, cnt); \
+                      dst, ptr_from_ptr(s, dst), \
+                      src, ptr_from_ptr(s, src), \
+                      cnt, ptr_from_ptr(s, cnt)); \
+        dst = ptr_from_ptr(s, dst); \
+        src = ptr_from_ptr(s, src); \
+        cnt = ptr_from_ptr(s, cnt); \
     }
 
 #define READ_DST_A_B_COUNT \
-    int32_t dst = REL_TO_PTR(s, GET_ARG(s, ip, 0)); \
-    int32_t a   = REL_TO_PTR(s, GET_ARG(s, ip, 1)); \
-    int32_t b   = REL_TO_PTR(s, GET_ARG(s, ip, 2)); \
-    int32_t cnt = REL_TO_PTR(s, GET_ARG(s, ip, 3)); \
+    int32_t dst = rel_to_abs(s, ip, get_command_arg(s, ip, 0)); \
+    int32_t a   = rel_to_abs(s, ip, get_command_arg(s, ip, 1)); \
+    int32_t b   = rel_to_abs(s, ip, get_command_arg(s, ip, 2)); \
+    int32_t cnt = rel_to_abs(s, ip, get_command_arg(s, ip, 3)); \
     \
     if ((opcode & ARG_PTR_OPCODE_MASK) == ARG_PTR_ON_PTR) \
     { \
         VERBOSE_INFO("dest = *%08x=%08x a = *%08x=%08x b = *%08x=%08x cnt = *%08x=%08x\n", \
-                      dst, PTR_FROM_PTR(s, dst), \
-                      a, PTR_FROM_PTR(s, a), \
-                      b, PTR_FROM_PTR(s, b), \
-                      cnt, PTR_FROM_PTR(s, cnt)); \
-        dst = PTR_FROM_PTR(s, dst); \
-        a   = PTR_FROM_PTR(s, a); \
-        b   = PTR_FROM_PTR(s, b); \
-        cnt = PTR_FROM_PTR(s, cnt); \
+                      dst, ptr_from_ptr(s, dst), \
+                      a,   ptr_from_ptr(s, a), \
+                      b,   ptr_from_ptr(s, b), \
+                      cnt, ptr_from_ptr(s, cnt)); \
+        dst = ptr_from_ptr(s, dst); \
+        a   = ptr_from_ptr(s, a); \
+        b   = ptr_from_ptr(s, b); \
+        cnt = ptr_from_ptr(s, cnt); \
     }
 
 
@@ -296,7 +313,7 @@ void run(struct spu *s)
             dump(s->mem, 0x3FF0, 0x4200);
         #endif
         /* load instruction */
-        uint32_t ip = INT_FROM(s, 0);
+        uint32_t ip = int_from(s, 0);
         VERBOSE_INFO("IP = %08x\n", ip);
 
         if (ip >= s->mem_size)
@@ -305,15 +322,15 @@ void run(struct spu *s)
             break;
         }
         
-        int64_t cmd_size = decode_instruction_length(PTR_TO_REAL(s, ip));
+        int64_t cmd_size = decode_instruction_length(ptr_to_memory(s, ip));
         
         if (ip + cmd_size > (int64_t)s->mem_size)
         {
             PRINT_ERROR("ip + cmd_size is outside of memory bounds.");
             break;
         }
-        
-        INT_FROM(s, 0) = ip + cmd_size;
+
+        *(int32_t *)ptr_to_memory(s, 0) = ip + cmd_size;
         
         /* run instruction */
         BYTE opcode = s->mem[ip];

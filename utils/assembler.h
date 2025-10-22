@@ -10,7 +10,6 @@
 
 
 #define ARRAYLEN(array) (sizeof(array) / sizeof(*(array)))
-static inline void *OR(void *a, void *b) { return (a ? a : b); }
 
 
 #ifndef NOT_DEFINE_INTEGER_TYPES
@@ -97,6 +96,7 @@ int isstartkey(int c);
 int iskey(int c);
 int is_all_digits(char *s, char *e);
 char *skip_leading_spaces(char *s);
+char *strchr_or_end(char *s, char ch);
 void str_trim(char **p_s, char **p_e);
 result_t parse_integer(char *s, char *e, int32_t *result);
 

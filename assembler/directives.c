@@ -10,8 +10,11 @@
 #include "./assembler_internal.h"
 
 
-// TODO: nooooooooooooooooooooooooooooo
-#define STARTSWITH(s, str) (strncmp((s), str, sizeof(str) - 1) == 0 && !iskey((s)[sizeof(str) - 1]))
+static int starts_with(const char *s, const char *pattern)
+{
+    int len = strlen(pattern);
+    return strncmp(s, pattern, len) == 0 && !iskey(s[len - 1]);
+}
 
 
 static result_t encode_directive_data(struct compilation_table *table, 
@@ -28,9 +31,9 @@ static result_t encode_directive_data(struct compilation_table *table,
     
     int32_t element_size = 0;
 
-    if      (STARTSWITH(line, ".db")) { element_size = 1; }
-    else if (STARTSWITH(line, ".dw")) { element_size = 2; }
-    else if (STARTSWITH(line, ".dd")) { element_size = 4; }
+    if      (starts_with(line, ".db")) { element_size = 1; }
+    else if (starts_with(line, ".dw")) { element_size = 2; }
+    else if (starts_with(line, ".dd")) { element_size = 4; }
     else
     {
         PRINT_ERROR("not .db .dw or .dd given in .db .dw or .dd directive [strange error]");
@@ -39,10 +42,16 @@ static result_t encode_directive_data(struct compilation_table *table,
 
     *result_length = 0;
 
-    char *num_start = line + strlen(".db"); // TODO: ??
+    char *num_start = line + 1; // skip dot
+    while (iskey(*num_start)) { num_start++; } // skip directive name [like db or dd]
+    
     while (num_start < line_end)
     {
-        char *end = OR(strchr(num_start, ','), line_end);
+        char *end = strchr(num_start, ',');
+        if (end > line_end)
+        {
+            end = line_end;
+        }
 
         str_trim(&num_start, &end);
 
@@ -123,17 +132,17 @@ result_t encode_directive(struct compilation_table *table,
     (void)line_num;
     
     /* end of line - start of comment or new line */
-    char *line_end = OR(strchr(line, ';'), line + strlen(line));
+    char *line_end = strchr_or_end(line, ';');
 
     str_trim(&line, &line_end);
 
-    if (STARTSWITH(line, ".db") ||
-        STARTSWITH(line, ".dw") ||
-        STARTSWITH(line, ".dd"))
+    if (starts_with(line, ".db") ||
+        starts_with(line, ".dw") ||
+        starts_with(line, ".dd"))
     {
         return encode_directive_data(table, line, line_end, position, dst, result_length);
     }
-    else if (STARTSWITH(line, ".align"))
+    else if (starts_with(line, ".align"))
     {
         return encode_directive_align(table, line, line_end, position, dst, result_length);
     }

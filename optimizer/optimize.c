@@ -215,6 +215,7 @@ int optimize(struct optimizer *o, FILE *f)
             goto find_next_loop_local_node;
         }
 
+        /* no instruction inside loop is depend from this one */
         for (int i = 0; i < loop_len; ++i)
         {
             struct node *nx = loop[i];
@@ -238,15 +239,17 @@ int optimize(struct optimizer *o, FILE *f)
             get_source_data_line(o, n->op_address, &x);
             if (FLAG(n->flags, NODE_WRITE_TO_UNKNOWN))
             {
-                fprintf(f, "OPT: [may be false] this instruction is located in some loop, and is unused inside it.\n");
-                fprintf(f, "     but, this instruction writes to unknown position. It can be, that\n");
-                fprintf(f, "     this instruction writes to diffrent places at each loop, so optimize\n");
-                fprintf(f, "     carefuly, if this can be optimized at all.\n");
+                fprintf(f, "OPT: [probably false] this instruction is located in some loop, and it's\n");
+                fprintf(f, "     result is unused inside it. but, this instruction writes\n");
+                fprintf(f, "     to unknown position. It can be, that this instruction writes\n");
+                fprintf(f, "     to diffrent places at each loop, so optimize carefuly,\n");
+                fprintf(f, "     if this can be optimized at all.\n");
             }
             else
             {
-                fprintf(f, "OPT: [probably false] this instruction is located in some loop, but is unused inside it:\n");
-                fprintf(f, "     maybe you can move this instruction out from loop?\n");
+                fprintf(f, "OPT: [may be false] this instruction is located in some loop,\n");
+                fprintf(f, "     but is unused inside it. maybe you can move this\n");
+                fprintf(f, "     instruction out from loop?\n");
             }
             fprintf(f, "     instruction %d:%s\n", x->line, x->code);
             fprintf(f, "     in loop of %d instructions [smallest possible loop].\n", loop_len);
@@ -320,6 +323,9 @@ int optimize(struct optimizer *o, FILE *f)
                 t = t->next;
             }
         }
+
+        /* 3. no instruction is read this memory span before this instruction? */
+        // TODO: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         /* - print optimization tip */
         {

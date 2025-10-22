@@ -60,6 +60,13 @@ char *skip_leading_spaces(char *s)
 }
 
 
+char *strchr_or_end(char *s, char ch)
+{
+    char *x = strchr(s, ch);
+    return (x != NULL ? x : s + strlen(s));
+}
+
+
 void str_trim(char **p_s, char **p_e)
 {
     *p_s = skip_leading_spaces(*p_s);
@@ -99,3 +106,4 @@ result_t parse_integer(char *s, char *e, int32_t *result)
     *result = res;
     return 0;
 }
+

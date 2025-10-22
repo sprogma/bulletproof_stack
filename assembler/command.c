@@ -15,7 +15,7 @@ result_t encode_command(struct compilation_table *table, int line_num, char *lin
 {
 
     /* end of line - start of comment or new line */
-    char *line_end = OR(strchr(line, ';'), line + strlen(line)); // TODO: make a function
+    char *line_end = strchr_or_end(line, ';');
 
     str_trim(&line, &line_end);
     
@@ -69,8 +69,10 @@ result_t encode_command(struct compilation_table *table, int line_num, char *lin
             PRINT_ERROR("command %s have only one parameter.", cmd->name);
             return 1;
         }
-
-        cnt_e = OR(cnt_e, line_end);
+        if (cnt_e == NULL)
+        {
+            cnt_e = line_end;
+        }
         HANDLE_ERROR(parse_integer(line + name_len, cnt_e, offsets + 0));
         
         HANDLE_ERROR(calculate_offsets(table, position, cnt_e + 1, line_end, cmd->nargs - 1, offsets + 1));

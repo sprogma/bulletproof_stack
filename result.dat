@@ -1,146 +1,262 @@
-I 0 13 1:MOV _frame_base, video_start, _size4
-I 13 22 2:MOV_CONST 0, _sample_id
-I 22 31 4:MOV_CONST 8, _tmp1
-I 31 48 5:MUL _frame_size, video_width, video_height, _size4
-I 48 65 6:DIV _frame_size, _frame_size, _tmp1, _size4
-I 65 74 8:MOV_CONST 8, _tmp1
-I 74 91 9:DIV _frame_line_size, video_width, _tmp1, _size4
-I 91 100 11:MOV_CONST 1000, _ms_per_frame
-I 100 117 12:DIV _ms_per_frame, _ms_per_frame, fps, _size4
-I 117 126 14:MOV_CONST 44100, _samples_per_frame
-I 126 143 15:DIV _samples_per_frame, _samples_per_frame, fps, _size4
-I 143 156 17:IN 2, _start_time, _size4
-I 156 169 18:MOV _current_time, _start_time, _size4
-I 169 178 21:MOV_CONST -1, _first_iteration
-I 178 191 25:MOV _audiomemend, _audiomembase, _size4
-I 191 200 28:MOV_CONST 0, _y
-I 200 217 32:DIV _tmp1, _sample_id, audio_compression_rate, _size4
-I 217 234 33:MUL _tmp5, _tmp1, audio_compression_rate, _size4
-I 234 251 34:SUB _tmp5, _tmp5, _sample_id, _size4
-I 251 268 35:MUL _tmp1, _tmp1, _four, _size4
-I 268 285 36:ADD _tmp1, _tmp1, audio_start, _size4
-I 285 294 39:LEA _tmp_ptr1, _size4
-I 294 303 40:LEA _tmp_ptr2, _tmp2
-I 303 316 41:MOV _tmp_ptr2, _tmp1, _tmp_ptr1
-I 316 333 43:ADD _tmp1, _tmp1, _four, _size4
-I 333 342 44:LEA _tmp_ptr1, _size4
-I 342 351 45:LEA _tmp_ptr2, _tmp3
-I 351 364 46:MOV _tmp_ptr2, _tmp1, _tmp_ptr1
-I 364 377 49:MOV _tmp1, _tmp2, _size4
-I 377 394 50:SUB _tmp4, _tmp3, _tmp2, _size4
-I 394 411 51:DIV _tmp4, _tmp4, audio_compression_rate, _size4
-I 411 428 52:MUL _tmp4, _tmp4, _tmp5, _size4
-I 428 437 55:LEA _tmp_ptr1, _size4
-I 437 446 56:LEA _tmp_ptr3, _tmp1
-I 446 459 57:MOV _audiomemend, _tmp_ptr3, _tmp_ptr1
-I 459 476 60:ADD _audiomemend, _audiomemend, _four, _size4
-I 476 489 62:INC _sample_id, _sample_id, _size4
-I 489 502 65:INC _y, _y, _size4
-I 502 511 66:LEA _tmp_ptr1, _tmp1
-I 511 528 67:LT _tmp1, _y, _samples_per_frame, _size4
-I 528 541 68:CLEA _tmp_ptr1, _zero, _loop_audio
-I 541 550 71:LEA _tmp_ptr1, _first_iteration
-I 550 563 72:CLEA _tmp_ptr1, _zero, skip_music_sending
-I 563 580 74:SUB _tmp1, _audiomemend, _audiomembase, _size4
-I 580 589 75:LEA _tmp_ptr1, _tmp1
-I 589 602 76:OUT 3, _audiomembase, _tmp_ptr1
-I 602 615 80:MOV _memend, _membase, _size4
-I 615 624 82:MOV_CONST 0, _y
-I 624 633 85:MOV_CONST 0, _x
-I 633 642 89:MOV_CONST 0, _memend
-I 642 651 92:MOV_CONST 8, _tmp2 ; 8 - bit per byte
-I 651 668 93:DIV _tmp1, _x, _tmp2, _size4
-I 668 685 94:MUL _tmp3, _tmp1, _tmp2, _size4 ; _tmp2 = (x / 8) * 8
-I 685 702 95:SUB _tmp2, _x, _tmp3, _size4 ; _tmp2 = x - (x / 8) * 8
-I 702 711 98:LEA _tmp3, _mask_LUT
-I 711 728 99:MUL _tmp2, _tmp2, _size4, _size4
-I 728 745 100:ADD _tmp2, _tmp2, _tmp3, _size4
-I 745 754 101:LEA _tmp_ptr2, _tmp2
-I 754 763 102:LEA _tmp_ptr3, _size4
-I 763 776 103:MOV _tmp_ptr2, _tmp2, _tmp_ptr3
-I 776 793 105:ADD _tmp1, _tmp1, _frame_base, _size4
-I 793 802 106:LEA _tmp_ptr3, _tmp3
-I 802 811 107:LEA _tmp_ptr4, _size4
-I 811 824 108:MOV _tmp_ptr3, _tmp1, _tmp_ptr4
-I 824 841 111:AND _tmp1, _tmp2, _tmp3, _size4
-I 841 854 112:ANY _tmp1, _tmp1, _size4
-I 854 867 113:INV _tmp1, _tmp1, _size4
-I 867 876 114:LEA _tmp_ptr1, _tmp1
-I 876 889 115:CLEA _tmp_ptr1, _zero, _black_pixel
-I 889 898 116:MOV_CONST 16776960, _memend
-I 898 915 120:ADD _memend, _memend, _four, _size4
-I 915 928 123:INC _x, _x, _size4
-I 928 937 124:LEA _tmp_ptr1, _tmp1
-I 937 954 125:LT _tmp1, _x, video_width, _size4
-I 954 967 126:CLEA _tmp_ptr1, _zero, _loop_2
-I 967 984 129:ADD _frame_base, _frame_base, _frame_line_size, _size4
-I 984 997 134:INC _y, _y, _size4
-I 997 1006 135:LEA _tmp_ptr1, _tmp1
-I 1006 1023 136:LT _tmp1, _y, video_height, _size4
-I 1023 1036 137:CLEA _tmp_ptr1, _zero, _loop_1
-I 1036 1053 141:ADD _current_time, _current_time, _ms_per_frame, _size4
-I 1053 1066 144:IN 2, _tmp1, _size4
-I 1066 1083 145:LT _tmp1, _tmp1, _current_time, _size4
-I 1083 1092 146:LEA _tmp_ptr1, _tmp1
-I 1092 1105 147:CLEA _tmp_ptr1, _zero, _wait
-I 1105 1118 150:INV _tmp1, _first_iteration, _size4
-I 1118 1127 151:LEA _tmp_ptr1, _tmp1
-I 1127 1140 152:CLEA _tmp_ptr1, _zero, not_first_iteration
-I 1140 1149 154:MOV_CONST 0, _first_iteration
-I 1149 1166 156:SUB _tmp1, _audiomemend, _audiomembase, _size4
-I 1166 1175 157:LEA _tmp_ptr1, _tmp1
-I 1175 1188 158:OUT 3, _audiomembase, _tmp_ptr1
-I 1188 1205 162:SUB _tmp1, _memend, _membase, _size4
-I 1205 1214 163:LEA _tmp_ptr1, _tmp1
-I 1214 1227 164:OUT 1, _membase, _tmp_ptr1
-I 1227 1236 168:MOV_CONST -1, _tmp1
-I 1236 1245 169:LEA _tmp_ptr1, _tmp1
-I 1245 1258 170:CLEA _tmp_ptr1, _zero, _inf_loop
-I 1258 1271 172:INC _tmp1, _tmp1, _size4
-D 1271 1272 174:.db 0xFF
-D 1272 1276 177:.dd 0x010000
-D 1276 1280 179:.dd 0
-D 1280 1284 181:.dd 0x25000
-D 1284 1288 183:.dd 0
-D 1288 1292 186:.dd 0x40000
-D 1292 1296 188:.dd 160
-D 1296 1300 190:.dd 90
-D 1300 1304 192:.dd 0x80000
-D 1304 1308 194:.dd 5
-D 1308 1312 196:.dd 25
-D 1312 1316 198:.dd 0
-D 1316 1320 200:.dd 0
-D 1320 1324 202:.dd 0
-D 1324 1328 204:.dd 0
-D 1328 1332 206:.dd 0
-D 1332 1336 208:.dd 0
-D 1336 1340 210:.dd 0
-D 1340 1344 212:.dd 0
-D 1344 1348 216:.dd 0x01
-D 1348 1352 217:.dd 0x02
-D 1352 1356 218:.dd 0x04
-D 1356 1360 219:.dd 0x08
-D 1360 1364 220:.dd 0x10
-D 1364 1368 221:.dd 0x20
-D 1368 1372 222:.dd 0x40
-D 1372 1376 223:.dd 0x80
-D 1376 1380 226:.dd 0
-D 1380 1384 228:.dd 0
-D 1384 1388 230:.dd 0
-D 1388 1392 233:.dd 0
-D 1392 1396 235:.dd 0
-D 1396 1400 237:.dd 0
-D 1400 1404 239:.dd 0
-D 1404 1408 241:.dd 0
-D 1408 1412 243:.dd 0
-D 1412 1416 245:.dd 0
-D 1416 1420 247:.dd 0
-D 1420 1424 249:.dd 0
-D 1424 1428 252:.dd 1
-D 1428 1432 254:.dd 4
-D 1432 1436 256:.dd 4
-D 1436 1440 259:.dd 0
-D 1440 1444 261:.dd 4
-D 1444 1448 263:.dd 1000
-D 1448 1452 265:.dd 4
-D 1452 1456 267:.dd 1
+I 0 9 2:LEA main - 4, end_proc
+I 9 18 3:LEA __ld_zero, main
+D 18 19 6:.db 0xFF
+D 19 23 8:.dd 0
+D 23 27 10:.dd 0xBEBEBEBE
+D 27 31 11:.dd 0xBEBEBEBE
+D 31 35 13:.dd 0xBEBEBEBE
+D 35 39 15:.dd 0xBEBEBEBE
+I 39 52 17:MOV fmul - 8, fmul - 12, _0math__size4
+I 52 65 18:MOV _0math__local1, fmul - 16, _0math__size4
+I 65 82 19:MUL fmul - 8, fmul - 8, _0math__local1, _0math__size4
+I 82 91 20:MOV_CONST 1000, _0math__local0
+I 91 108 21:DIV fmul - 8, fmul - 8, _0math__local0, _0math__size4
+I 108 117 22:LEA _0math__local2, _0math__size4
+I 117 126 23:LEA _0math__local3, fmul - 4
+I 126 139 24:MOV _0math__zero, _0math__local3, _0math__local2
+D 139 143 26:.dd 0xBEBEBEBE
+D 143 147 27:.dd 0xBEBEBEBE
+D 147 151 29:.dd 0xBEBEBEBE
+D 151 155 31:.dd 0xBEBEBEBE
+I 155 168 33:MOV fdiv - 8, fdiv - 12, _0math__size4
+I 168 177 34:MOV_CONST 1000, _0math__local5
+I 177 194 35:MUL fdiv - 8, fdiv - 8, _0math__local5, _0math__size4
+I 194 207 36:MOV _0math__local4, fdiv - 16, _0math__size4
+I 207 224 37:DIV fdiv - 8, fdiv - 8, _0math__local4, _0math__size4
+I 224 233 38:LEA _0math__local6, _0math__size4
+I 233 242 39:LEA _0math__local7, fdiv - 4
+I 242 255 40:MOV _0math__zero, _0math__local7, _0math__local6
+D 255 259 42:.dd 0xBEBEBEBE
+D 259 263 44:.dd 0xBEBEBEBE
+D 263 267 46:.dd 0xBEBEBEBE
+I 267 280 48:MOV _0math__local8, sqrt - 12, _0math__size4
+I 280 289 49:MOV_CONST 1000, _0math__local9
+I 289 306 50:MUL _0math__local8, _0math__local8, _0math__local9, _0math__size4
+I 306 319 51:MOV _0math__sqrt_aa, _0math__local8, _0math__size4
+I 319 328 52:MOV_CONST 0, _0math__local10
+I 328 341 53:MOV _0math__sqrt_res, _0math__local10, _0math__size4
+I 341 350 54:MOV_CONST 46340, _0math__local11
+I 350 363 55:MOV _0math__sqrt_add, _0math__local11, _0math__size4
+I 363 372 56:LEA _0math__local16, _0math__local15
+I 372 385 58:MOV _0math__local15, _0math__sqrt_add, _0math__size4
+I 385 394 59:MOV_CONST 0, _0math__local17
+I 394 411 60:LT _0math__local15, _0math__local17, _0math__local15, _0math__size4
+I 411 424 61:CLEA _0math__local16, _0math__zero, _0math__local13 
+I 424 433 62:LEA _0math__zero, _0math__local12
+I 433 446 64:MOV _0math__local20, _0math__sqrt_res, _0math__size4
+I 446 459 65:MOV _0math__local24, _0math__sqrt_add, _0math__size4
+I 459 476 66:ADD _0math__local20, _0math__local20, _0math__local24, _0math__size4
+I 476 489 67:MOV _0math__local23, _0math__sqrt_res, _0math__size4
+I 489 502 68:MOV _0math__local25, _0math__sqrt_add, _0math__size4
+I 502 519 69:ADD _0math__local23, _0math__local23, _0math__local25, _0math__size4
+I 519 536 70:MUL _0math__local20, _0math__local20, _0math__local23, _0math__size4
+I 536 549 71:MOV _0math__local22, _0math__sqrt_aa, _0math__size4
+I 549 566 72:LT _0math__local20, _0math__local20, _0math__local22, _0math__size4
+I 566 575 73:LEA _0math__local21, _0math__local20
+I 575 588 74:CLEA _0math__local21, _0math__zero, _0math__local18 
+I 588 597 75:LEA _0math__zero, _0math__local19 
+I 597 610 77:MOV _0math__local26, _0math__sqrt_res, _0math__size4
+I 610 623 78:MOV _0math__local27, _0math__sqrt_add, _0math__size4
+I 623 640 79:ADD _0math__local26, _0math__local26, _0math__local27, _0math__size4
+I 640 653 80:MOV _0math__sqrt_res, _0math__local26, _0math__size4
+I 653 666 82:MOV _0math__local28, _0math__sqrt_add, _0math__size4
+I 666 675 83:MOV_CONST 2, _0math__local29
+I 675 692 84:DIV _0math__local28, _0math__local28, _0math__local29, _0math__size4
+I 692 705 85:MOV _0math__sqrt_add, _0math__local28, _0math__size4
+I 705 714 86:LEA _0math__zero, _0math__local14 
+I 714 727 88:MOV sqrt - 8, _0math__sqrt_res, _0math__size4
+I 727 736 89:LEA _0math__local30, _0math__size4
+I 736 745 90:LEA _0math__local31, sqrt - 4
+I 745 758 91:MOV _0math__zero, _0math__local31, _0math__local30
+D 758 762 93:.dd 0xBEBEBEBE
+D 762 766 95:.dd 0xBEBEBEBE
+D 766 770 97:.dd 0xBEBEBEBE
+I 770 783 99:MOV f - 8, f - 12, _0math__size4
+I 783 792 100:MOV_CONST 1000, _0math__local32
+I 792 809 101:MUL f - 8, f - 8, _0math__local32, _0math__size4
+I 809 818 102:LEA _0math__local33, _0math__size4
+I 818 827 103:LEA _0math__local34, f - 4
+I 827 840 104:MOV _0math__zero, _0math__local34, _0math__local33
+D 840 844 106:.dd 0
+D 844 848 108:.dd 0
+D 848 852 110:.dd 0
+D 852 856 112:.dd 0
+D 856 860 114:.dd 0
+D 860 864 116:.dd 0
+D 864 868 118:.dd 0
+D 868 872 120:.dd 0
+D 872 876 122:.dd 0
+D 876 880 124:.dd 0
+D 880 884 126:.dd 0
+D 884 888 128:.dd 0
+D 888 892 130:.dd 0
+D 892 896 132:.dd 0
+D 896 900 134:.dd 0
+D 900 904 136:.dd 0
+D 904 908 138:.dd 0
+D 908 912 140:.dd 0
+D 912 916 142:.dd 0
+D 916 920 144:.dd 0
+D 920 924 146:.dd 0
+D 924 928 148:.dd 0
+D 928 932 150:.dd 0
+D 932 936 152:.dd 0
+D 936 940 154:.dd 0
+D 940 944 156:.dd 0
+D 944 948 158:.dd 0
+D 948 952 160:.dd 0
+D 952 956 162:.dd 0
+D 956 960 164:.dd 0
+D 960 964 166:.dd 0
+D 964 968 168:.dd 0
+D 968 972 170:.dd 0
+D 972 976 172:.dd 4
+D 976 980 174:.dd 1
+D 980 984 176:.dd 0
+D 984 988 179:.dd 0xBEBEBEBE
+D 988 992 180:.dd 0xBEBEBEBE
+I 992 1005 183:MOV _1main__frame_base, video_start, _1main__size4
+I 1005 1014 184:MOV_CONST 0, _1main__sample_id
+I 1014 1023 186:MOV_CONST 8, _1main__tmp1
+I 1023 1040 187:MUL _1main__frame_size, video_width, video_height, _1main__size4
+I 1040 1057 188:DIV _1main__frame_size, _1main__frame_size, _1main__tmp1, _1main__size4
+I 1057 1066 190:MOV_CONST 8, _1main__tmp1
+I 1066 1083 191:DIV _1main__frame_line_size, video_width, _1main__tmp1, _1main__size4
+I 1083 1092 193:MOV_CONST 1000, _1main__ms_per_frame
+I 1092 1109 194:DIV _1main__ms_per_frame, _1main__ms_per_frame, fps, _1main__size4
+I 1109 1118 196:MOV_CONST 44100, _1main__samples_per_frame
+I 1118 1135 197:DIV _1main__samples_per_frame, _1main__samples_per_frame, fps, _1main__size4
+I 1135 1148 199:IN 2, _1main__start_time, _1main__size4
+I 1148 1161 200:MOV _1main__current_time, _1main__start_time, _1main__size4
+I 1161 1170 203:MOV_CONST -1, _1main__first_iteration
+I 1170 1183 207:MOV _1main__audiomemend, _1main__audiomembase, _1main__size4
+I 1183 1192 210:MOV_CONST 0, _1main__y
+I 1192 1209 214:DIV _1main__tmp1, _1main__sample_id, audio_compression_rate, _1main__size4
+I 1209 1226 215:MUL _1main__tmp5, _1main__tmp1, audio_compression_rate, _1main__size4
+I 1226 1243 216:SUB _1main__tmp5, _1main__tmp5, _1main__sample_id, _1main__size4
+I 1243 1260 217:MUL _1main__tmp1, _1main__tmp1, _1main__four, _1main__size4
+I 1260 1277 218:ADD _1main__tmp1, _1main__tmp1, audio_start, _1main__size4
+I 1277 1286 221:LEA _1main__tmp_ptr1, _1main__size4
+I 1286 1295 222:LEA _1main__tmp_ptr2, _1main__tmp2
+I 1295 1308 223:MOV _1main__tmp_ptr2, _1main__tmp1, _1main__tmp_ptr1
+I 1308 1325 225:ADD _1main__tmp1, _1main__tmp1, _1main__four, _1main__size4
+I 1325 1334 226:LEA _1main__tmp_ptr1, _1main__size4
+I 1334 1343 227:LEA _1main__tmp_ptr2, _1main__tmp3
+I 1343 1356 228:MOV _1main__tmp_ptr2, _1main__tmp1, _1main__tmp_ptr1
+I 1356 1369 231:MOV _1main__tmp1, _1main__tmp2, _1main__size4
+I 1369 1386 232:SUB _1main__tmp4, _1main__tmp3, _1main__tmp2, _1main__size4
+I 1386 1403 233:DIV _1main__tmp4, _1main__tmp4, audio_compression_rate, _1main__size4
+I 1403 1420 234:MUL _1main__tmp4, _1main__tmp4, _1main__tmp5, _1main__size4
+I 1420 1429 237:LEA _1main__tmp_ptr1, _1main__size4
+I 1429 1438 238:LEA _1main__tmp_ptr2, _1main__tmp1
+I 1438 1451 239:MOV _1main__audiomemend, _1main__tmp_ptr2, _1main__tmp_ptr1
+I 1451 1468 242:ADD _1main__audiomemend, _1main__audiomemend, _1main__four, _1main__size4
+I 1468 1481 244:INC _1main__sample_id, _1main__sample_id, _1main__size4
+I 1481 1494 247:INC _1main__y, _1main__y, _1main__size4
+I 1494 1503 248:LEA _1main__tmp_ptr1, _1main__tmp1
+I 1503 1520 249:LT _1main__tmp1, _1main__y, _1main__samples_per_frame, _1main__size4
+I 1520 1533 250:CLEA _1main__tmp_ptr1, _1main__zero, _1main__loop_audio
+I 1533 1542 253:LEA _1main__tmp_ptr1, _1main__first_iteration
+I 1542 1555 254:CLEA _1main__tmp_ptr1, _1main__zero, skip_music_sending
+I 1555 1572 256:SUB _1main__tmp1, _1main__audiomemend, _1main__audiomembase, _1main__size4
+I 1572 1581 257:LEA _1main__tmp_ptr1, _1main__tmp1
+I 1581 1594 258:OUT 3, _1main__audiomembase, _1main__tmp_ptr1
+I 1594 1607 262:MOV _1main__memend, _1main__membase, _1main__size4
+I 1607 1616 264:MOV_CONST 0, _1main__y
+I 1616 1625 267:MOV_CONST 0, _1main__x
+I 1625 1634 271:MOV_CONST 0, _1main__memend
+I 1634 1643 274:MOV_CONST 8, _1main__tmp2 ; 8 - bit per byte
+I 1643 1660 275:DIV _1main__tmp1, _1main__x, _1main__tmp2, _1main__size4
+I 1660 1677 276:MUL _1main__tmp3, _1main__tmp1, _1main__tmp2, _1main__size4 ; _1main__tmp2 = (x / 8) * 8
+I 1677 1694 277:SUB _1main__tmp2, _1main__x, _1main__tmp3, _1main__size4 ; _1main__tmp2 = x - (x / 8) * 8
+I 1694 1703 280:LEA _1main__tmp3, _1main__mask_LUT
+I 1703 1720 281:MUL _1main__tmp2, _1main__tmp2, _1main__size4, _1main__size4
+I 1720 1737 282:ADD _1main__tmp2, _1main__tmp2, _1main__tmp3, _1main__size4
+I 1737 1746 283:LEA _1main__tmp_ptr2, _1main__tmp2
+I 1746 1755 284:LEA _1main__tmp_ptr3, _1main__size4
+I 1755 1768 285:MOV _1main__tmp_ptr2, _1main__tmp2, _1main__tmp_ptr3
+I 1768 1785 287:ADD _1main__tmp1, _1main__tmp1, _1main__frame_base, _1main__size4
+I 1785 1794 288:LEA _1main__tmp_ptr3, _1main__tmp3
+I 1794 1803 289:LEA _1main__tmp_ptr4, _1main__size4
+I 1803 1816 290:MOV _1main__tmp_ptr3, _1main__tmp1, _1main__tmp_ptr4
+I 1816 1833 293:AND _1main__tmp1, _1main__tmp2, _1main__tmp3, _1main__size4
+I 1833 1846 294:ANY _1main__tmp1, _1main__tmp1, _1main__size4
+I 1846 1859 295:INV _1main__tmp1, _1main__tmp1, _1main__size4
+I 1859 1868 296:LEA _1main__tmp_ptr1, _1main__tmp1
+I 1868 1881 297:CLEA _1main__tmp_ptr1, _1main__zero, _1main__black_pixel
+I 1881 1890 298:MOV_CONST 16776960, _1main__memend
+I 1890 1907 302:ADD _1main__memend, _1main__memend, _1main__four, _1main__size4
+I 1907 1920 305:INC _1main__x, _1main__x, _1main__size4
+I 1920 1929 306:LEA _1main__tmp_ptr1, _1main__tmp1
+I 1929 1946 307:LT _1main__tmp1, _1main__x, video_width, _1main__size4
+I 1946 1959 308:CLEA _1main__tmp_ptr1, _1main__zero, _1main__loop_2
+I 1959 1976 311:ADD _1main__frame_base, _1main__frame_base, _1main__frame_line_size, _1main__size4
+I 1976 1989 316:INC _1main__y, _1main__y, _1main__size4
+I 1989 1998 317:LEA _1main__tmp_ptr1, _1main__tmp1
+I 1998 2015 318:LT _1main__tmp1, _1main__y, video_height, _1main__size4
+I 2015 2028 319:CLEA _1main__tmp_ptr1, _1main__zero, _1main__loop_1
+I 2028 2045 323:ADD _1main__current_time, _1main__current_time, _1main__ms_per_frame, _1main__size4
+I 2045 2058 326:IN 2, _1main__tmp1, _1main__size4
+I 2058 2075 327:LT _1main__tmp1, _1main__tmp1, _1main__current_time, _1main__size4
+I 2075 2084 328:LEA _1main__tmp_ptr1, _1main__tmp1
+I 2084 2097 329:CLEA _1main__tmp_ptr1, _1main__zero, _1main__wait
+I 2097 2110 332:INV _1main__tmp1, _1main__first_iteration, _1main__size4
+I 2110 2119 333:LEA _1main__tmp_ptr1, _1main__tmp1
+I 2119 2132 334:CLEA _1main__tmp_ptr1, _1main__zero, not_first_iteration
+I 2132 2141 336:MOV_CONST 0, _1main__first_iteration
+I 2141 2158 338:SUB _1main__tmp1, _1main__audiomemend, _1main__audiomembase, _1main__size4
+I 2158 2167 339:LEA _1main__tmp_ptr1, _1main__tmp1
+I 2167 2180 340:OUT 3, _1main__audiomembase, _1main__tmp_ptr1
+I 2180 2197 344:SUB _1main__tmp1, _1main__memend, _1main__membase, _1main__size4
+I 2197 2206 345:LEA _1main__tmp_ptr1, _1main__tmp1
+I 2206 2219 346:OUT 1, _1main__membase, _1main__tmp_ptr1
+I 2219 2228 350:LEA _1main__zero, _1main__inf_loop
+I 2228 2237 353:LEA _1main__tmp_ptr2, main - 4
+I 2237 2246 354:LEA _1main__tmp_ptr1, _1main__size4
+I 2246 2259 355:MOV _1main__zero, _1main__tmp_ptr2, _1main__tmp_ptr1
+D 2259 2263 359:.dd 0x010000
+D 2263 2267 361:.dd 0
+D 2267 2271 363:.dd 0x045000
+D 2271 2275 365:.dd 0
+D 2275 2279 368:.dd 0x080000
+D 2279 2283 370:.dd 160
+D 2283 2287 372:.dd 90
+D 2287 2291 374:.dd 0x1080000
+D 2291 2295 376:.dd 5
+D 2295 2299 378:.dd 25
+D 2299 2303 380:.dd 0
+D 2303 2307 382:.dd 0
+D 2307 2311 384:.dd 0
+D 2311 2315 386:.dd 0
+D 2315 2319 388:.dd 0
+D 2319 2323 390:.dd 0
+D 2323 2327 392:.dd 0
+D 2327 2331 394:.dd 0
+D 2331 2335 398:.dd 0x01
+D 2335 2339 399:.dd 0x02
+D 2339 2343 400:.dd 0x04
+D 2343 2347 401:.dd 0x08
+D 2347 2351 402:.dd 0x10
+D 2351 2355 403:.dd 0x20
+D 2355 2359 404:.dd 0x40
+D 2359 2363 405:.dd 0x80
+D 2363 2367 408:.dd 0
+D 2367 2371 410:.dd 0
+D 2371 2375 412:.dd 0
+D 2375 2379 415:.dd 0
+D 2379 2383 417:.dd 0
+D 2383 2387 419:.dd 0
+D 2387 2391 421:.dd 0
+D 2391 2395 423:.dd 0
+D 2395 2399 425:.dd 0
+D 2399 2403 427:.dd 0
+D 2403 2407 429:.dd 0
+D 2407 2411 431:.dd 0
+D 2411 2415 434:.dd 1
+D 2415 2419 436:.dd 4
+D 2419 2423 438:.dd 4
+D 2423 2427 441:.dd 0
+D 2427 2431 443:.dd 4
+D 2431 2435 445:.dd 1000
+D 2435 2439 447:.dd 4
+D 2439 2443 449:.dd 1
