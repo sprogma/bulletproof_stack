@@ -18,6 +18,9 @@
 #define MAX_LOOP_FIND_BUFFER (32 * 1024)
 
 
+typedef unsigned char BYTE;
+
+
 #include "stdio.h"
 #include "inttypes.h"
 
@@ -125,27 +128,79 @@ struct optimizer
     uint32_t            lines_buff;
 };
 
-
 int find_region(struct tree *t, int ptr);
 
 int insert_region(struct tree *t, int pos);
 
+int get_memory(struct tree *t, int start, int size, BYTE *mem, BYTE *bad);
+
+int add_ll_node(struct region *r, struct node *new_dep);
+
+int add_ll_node_to_dep(struct dependence *d, struct node *new_dep);
+
+int add_ll_node_to_set(struct write *w, struct node *new_dep);
+
+int free_ll_node(struct ll_node *x);
+
+int check_is_equal_ll_nodes(struct ll_node *la, struct ll_node *lb);
+
+int get_mem_slice(struct tree *t, int start, int end, int *l, int *r);
+
+int update_write_dependence(struct tree *t, struct node *n, int start, int end);
+
+int add_region_master(struct tree *t, int start, int end, struct node *master);
+
+int clear_region_masters(struct tree *t, int start, int end);
+
 int set_region_value(struct tree *t, int start, int end, int is_zero, void *value);
 
-int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file);
+int set_restrict(struct tree *t, int start, int end, int is_restrict);
 
-int set_ip(struct tree *t, int entry);
+int load_deps_ll_nodes(struct tree *t, struct dependence *deps, int deps_len);
 
-int parse(struct optimizer *o);
+int assert_not_corrupted(BYTE *bad, int size, const char *message);
 
-int gen_profile(struct optimizer *o, const char *out_file);
+int is_corrupted(BYTE *bad, int size);
 
-int optimize(struct optimizer *o, FILE *f);
+uint32_t uint32_hash(uint32_t key);
 
 int add_source_data_line(struct optimizer *o, char type, int s, int e, int line, const char *code);
 
 int get_source_data_line(struct optimizer *o, int start, struct source_line **result);
 
-uint32_t uint32_hash(uint32_t key);
+struct node *get_node(struct tree *t, int ip);
+
+int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file);
+
+int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip);
+
+int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip);
+
+int set_ip(struct tree *t, int entry);
+
+int get_ip(struct tree *t);
+
+int copy_tree(struct tree *t1, struct tree *t2);
+
+int duplicate_machine(struct tree *t);
+
+int add_child(struct tree *t, struct node *n, struct node *child);
+
+int process_machine(struct tree *t, struct node *n, int ip);
+
+int update_node_deps(struct node *n, struct dependence *deps, int deps_len);
+
+int push_state(struct tree *t);
+
+int is_full_looped(struct tree *t);
+
+int parse_tree(struct tree *t);
+
+int parse(struct optimizer *o);
+
+
+int gen_profile(struct optimizer *o, const char *out_file);
+
+int optimize(struct optimizer *o, FILE *f);
 
 #endif
