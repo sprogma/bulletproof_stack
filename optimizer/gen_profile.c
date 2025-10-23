@@ -40,6 +40,7 @@ int gen_profile(struct optimizer *o, const char *out_file)
                 }
             } 
             fprintf(f, "],");
+            fprintf(f, "\"Variants\": [\"not implemented dumping this data\"],");
             fprintf(f, "\"Deps\": [");
             {
                 /* dump deps */

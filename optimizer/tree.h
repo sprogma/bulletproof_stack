@@ -10,7 +10,8 @@
 #define MAX_STATES (1024 * 1024)
 #define MAX_QUEUE 1024
 #define TOTAL_MEM (1024 * 1024)
-#define MAX_CHILDS 128
+#define MAX_CHILDS 64
+#define MAX_ARG_VARIANTS 64
 #define MAX_NODE_DEPS 128
 #define MAX_NODES (16 * 1024)
 #define MAX_SOURCE_LINES (16 * 1024)
@@ -36,9 +37,15 @@ struct ll_node
 
 struct mem_value
 {
-    BYTE *mem;
+    BYTE *mem; /* if mem == NULL, then this memory value is unknown */
+    BYTE *bad;
     int size;
-    struct mem_value *next;
+};
+
+struct args_variant
+{
+    struct mem_value ptr_on_ptr[4];
+    struct mem_value args[4];
 };
 
 struct operation
@@ -59,7 +66,6 @@ struct dependence
     int start; /* if start = -1, then this dependence is absolute (from all memory) */
     int end; /* if end == -1, then this dependence is of unknown length, so it can be of any length, but from "start" */
     struct ll_node *deps;
-    struct mem_value *mem; /* diffrent values which was there */
 };
 
 struct write
@@ -67,7 +73,6 @@ struct write
     int start; /* if start = -1, then this dependence is absolute (from all memory) */
     int end; /* if end == -1, then this dependence is of unknown length, so it can be of any length, but from "start" */
     struct ll_node *deps; /* nodes, which we overwrited */
-    struct mem_value *mem; /* diffrent values which we writed */
 };
 
 enum
@@ -89,6 +94,8 @@ struct node
     struct operation op;
     struct node **childs;
     int           childs_len;
+    struct args_variant *args; /* diffrent values which we writed */
+    int                  args_len;
     uint64_t flags;
 };
 
@@ -181,7 +188,7 @@ struct node *get_node(struct tree *t, int ip);
 
 int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file);
 
-int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip);
+int extract_deps_inner(struct tree *t, struct node *n, struct args_variant *args, struct dependence *deps, int *deps_len, int ip);
 
 int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip);
 
@@ -207,7 +214,9 @@ int parse_tree(struct tree *t);
 
 int parse(struct optimizer *o);
 
-int add_mem_value(struct mem_value **mem, BYTE *pointer, int size);
+int set_cmd_arg(struct tree *t, struct args_variant *args, int id, int ptr, struct dependence dep);
+
+int is_args_equal(struct args_variant *arg1, struct args_variant *arg2);
 
 
 int gen_profile(struct optimizer *o, const char *out_file);

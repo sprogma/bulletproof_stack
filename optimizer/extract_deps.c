@@ -11,11 +11,22 @@
 
 int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip)
 {
-    extract_deps_inner(t, n, deps, deps_len, ip);
-    // deps[*deps_len].start = 0;
-    // deps[*deps_len].end = 4;
-    // deps[*deps_len].deps = NULL;
-    // (*deps_len)++;
+    struct args_variant *variant = n->args + n->args_len;
+    memset(variant, 0, sizeof(*variant));
+    
+    extract_deps_inner(t, n, variant, deps, deps_len, ip);
+    
+    for (int i = 0; i < n->args_len; ++i)
+    {
+        if (is_args_equal(n->args + i, variant))
+        {
+            goto not_new_node_arg_variant;
+        }
+    }
+    /* not found same args */
+    n->args_len++;
+not_new_node_arg_variant:
+
     return 0;
 }
 

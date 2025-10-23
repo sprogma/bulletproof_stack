@@ -78,6 +78,8 @@ struct node *get_node(struct tree *t, int ip)
     t->optimizer->nodes[this].set_len = 0;
     t->optimizer->nodes[this].childs = calloc(1, sizeof(*t->optimizer->nodes[this].childs) * MAX_CHILDS);
     t->optimizer->nodes[this].childs_len = 0;
+    t->optimizer->nodes[this].args = calloc(1, sizeof(*t->optimizer->nodes[this].args) * MAX_ARG_VARIANTS);
+    t->optimizer->nodes[this].args_len = 0;
     t->optimizer->nodes[this].flags = 0;
     t->optimizer->nodes[this].op.code = cmd->code;
     t->optimizer->nodes[this].op.nargs = cmd->nargs;
