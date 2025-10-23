@@ -28,6 +28,19 @@ typedef unsigned char BYTE;
 #define FLAG(storage, flag) (((storage) & (flag)) == (flag))
 
 
+struct ll_node
+{
+    struct node *node;
+    struct ll_node *next;
+};
+
+struct mem_value
+{
+    BYTE *mem;
+    int size;
+    struct mem_value *next;
+};
+
 struct operation
 {
     int8_t code;
@@ -46,6 +59,7 @@ struct dependence
     int start; /* if start = -1, then this dependence is absolute (from all memory) */
     int end; /* if end == -1, then this dependence is of unknown length, so it can be of any length, but from "start" */
     struct ll_node *deps;
+    struct mem_value *mem; /* diffrent values which was there */
 };
 
 struct write
@@ -53,6 +67,7 @@ struct write
     int start; /* if start = -1, then this dependence is absolute (from all memory) */
     int end; /* if end == -1, then this dependence is of unknown length, so it can be of any length, but from "start" */
     struct ll_node *deps; /* nodes, which we overwrited */
+    struct mem_value *mem; /* diffrent values which we writed */
 };
 
 enum
@@ -75,12 +90,6 @@ struct node
     struct node **childs;
     int           childs_len;
     uint64_t flags;
-};
-
-struct ll_node
-{
-    struct node *node;
-    struct ll_node *next;
 };
 
 struct region
@@ -197,6 +206,8 @@ int is_full_looped(struct tree *t);
 int parse_tree(struct tree *t);
 
 int parse(struct optimizer *o);
+
+int add_mem_value(struct mem_value **mem, BYTE *pointer, int size);
 
 
 int gen_profile(struct optimizer *o, const char *out_file);

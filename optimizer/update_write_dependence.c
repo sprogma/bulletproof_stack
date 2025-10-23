@@ -29,6 +29,7 @@ int update_write_dependence(struct tree *t, struct node *n, int start, int end)
             w->start = start;
             w->end = end;
             w->deps = NULL;
+            w->mem = NULL;
         }
     }
 
@@ -42,6 +43,8 @@ int update_write_dependence(struct tree *t, struct node *n, int start, int end)
             printf("ERROR: update_write_dependence with start == -1 and end != -1\n");
             abort();
         }
+
+        /* load information */
         
         for (int i = 0; i < t->regions_len; ++i)
         {
@@ -60,6 +63,20 @@ int update_write_dependence(struct tree *t, struct node *n, int start, int end)
     
     assert(w->start != w->end);
     
+    {
+        int size = w->start - w->end;
+        
+        BYTE *mem = malloc(size);
+        BYTE *bad = malloc(size);
+        get_memory(t, w->start, size, mem, bad);
+        if (!is_corrupted(bad, size))
+        {
+            add_mem_value(&w->mem, mem, size);
+        }
+        free(mem);
+        free(bad);
+    }
+    
     int from, to;
     get_mem_slice(t, start, end, &from, &to);
     
@@ -74,4 +91,6 @@ int update_write_dependence(struct tree *t, struct node *n, int start, int end)
     }
     return 0;
 }
+
+
 

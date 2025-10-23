@@ -1,3 +1,4 @@
+
 #define __USE_MINGW_ANSI_STDIO 1
 #include "stdio.h"
 #include "string.h"
@@ -14,6 +15,7 @@
                                    deps[i].start = n->op.args[i] + ip; \
                                    deps[i].end = n->op.args[i] + ip + 4; \
                                    deps[i].deps = NULL; \
+                                   deps[i].mem = NULL; \
                                }
 #define DEP_ON_SPAN_FROM_PTR(i, ptr, size) { \
                                     int _ptr = ptr; \
@@ -23,6 +25,7 @@
                                         deps[i].start = -1; \
                                         deps[i].end = -1; \
                                         deps[i].deps = NULL; \
+                                        deps[i].mem = NULL; \
                                     } \
                                     else \
                                     { \
@@ -33,6 +36,7 @@
                                         deps[i].start = src; \
                                         deps[i].end = (src == -1 ? -1 : src + _size); \
                                         deps[i].deps = NULL; \
+                                        deps[i].mem = NULL; \
                                     } \
                                 }
 
@@ -58,6 +62,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[0] + ip;
                 deps[0].end = n->op.args[0] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 *deps_len = 1;
             }
             return 0;
@@ -70,10 +75,12 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[0] + ip;
                 deps[0].end = n->op.args[0] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
 
                 deps[1].start = n->op.args[1] + ip;
                 deps[1].end = n->op.args[1] + ip + 4;
                 deps[1].deps = NULL;
+                deps[1].mem = NULL;
                 
                 BYTE mem[4];
                 BYTE bad[4];
@@ -83,6 +90,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[2].start = src;
                 deps[2].end = (src == -1 ? -1 : src + 4);
                 deps[2].deps = NULL;
+                deps[2].mem = NULL;
                 
                 *deps_len = 3;
             }
@@ -91,16 +99,15 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[0] + ip;
                 deps[0].end = n->op.args[0] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 
                 deps[1].start = n->op.args[1] + ip;
                 deps[1].end = n->op.args[1] + ip + 4;
                 deps[1].deps = NULL;
+                deps[1].mem = NULL;
                 *deps_len = 2;
             }
             return 0;
-            printf("Optimization of CLEA nodes are unsupported. Error\n");
-            *deps_len = 1;
-            return 1;
         }
         case O_MOV_CONST:
             *deps_len = 0; 
@@ -109,6 +116,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[1] + ip;
                 deps[0].end = n->op.args[1] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 *deps_len = 1;
             }
             return 0;
@@ -120,9 +128,11 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[1] + ip;
                 deps[0].end = n->op.args[1] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 deps[1].start = n->op.args[2] + ip;
                 deps[1].end = n->op.args[2] + ip + 4;
                 deps[1].deps = NULL;
+                deps[1].mem = NULL;
                 
                 /* 2. add [src, size] dep */
                 int size = -1, source = -1;
@@ -151,6 +161,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[3].start = source;
                 deps[3].end = (source == -1 || size == -1 ? -1 : source + size);
                 deps[3].deps = NULL;
+                deps[3].mem = NULL;
                 
                 *deps_len = 4;
             }
@@ -161,6 +172,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[2] + ip;
                 deps[0].end = n->op.args[2] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 
                 /* try to read count */
                 BYTE mem[4];
@@ -171,6 +183,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[1].start = n->op.args[1] + ip;
                 deps[1].end = (size == -1 ? -1 : n->op.args[1] + ip + size);
                 deps[1].deps = NULL;
+                deps[1].mem = NULL;
                 *deps_len = 2;
             }
             return 0;
@@ -186,6 +199,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[1].start = n->op.args[2] + ip;
                 deps[1].end = n->op.args[2] + ip + 4;
                 deps[1].deps = NULL;
+                deps[1].mem = NULL;
 
                 DEP_ON_SPAN_FROM_PTR(2, n->op.args[2] + ip, 4);
                 
@@ -197,6 +211,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[2] + ip;
                 deps[0].end = n->op.args[2] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 *deps_len = 1;
             }
             return 0;
@@ -240,6 +255,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[4].start = source;
                 deps[4].end = (source == -1 || size == -1 ? -1 : source + size);
                 deps[4].deps = NULL;
+                deps[4].mem = NULL;
                 
                 *deps_len = 5;
             }
@@ -250,6 +266,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[2] + ip;
                 deps[0].end = n->op.args[2] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 
                 /* try to read count */
                 BYTE mem[4];
@@ -260,6 +277,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[1].start = n->op.args[1] + ip;
                 deps[1].end = (size == -1 ? -1 : n->op.args[1] + ip + size);
                 deps[1].deps = NULL;
+                deps[1].mem = NULL;
                 *deps_len = 2;
             }
             return 0;
@@ -306,10 +324,12 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[5].start = source1;
                 deps[5].end = (source1 == -1 || size == -1 ? -1 : source1 + size);
                 deps[5].deps = NULL;
+                deps[5].mem = NULL;
                 
                 deps[6].start = source2;
                 deps[6].end = (source2 == -1 || size == -1 ? -1 : source2 + size);
                 deps[6].deps = NULL;
+                deps[6].mem = NULL;
                 
                 *deps_len = 7;
             }
@@ -320,6 +340,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[0].start = n->op.args[3] + ip;
                 deps[0].end = n->op.args[3] + ip + 4;
                 deps[0].deps = NULL;
+                deps[0].mem = NULL;
                 
                 /* try to read count */
                 BYTE mem[4];
@@ -330,10 +351,12 @@ int extract_deps_inner(struct tree *t, struct node *n, struct dependence *deps, 
                 deps[1].start = n->op.args[1] + ip;
                 deps[1].end = (size == -1 ? -1 : n->op.args[1] + ip + size);
                 deps[1].deps = NULL;
+                deps[1].mem = NULL;
                 
                 deps[2].start = n->op.args[2] + ip;
                 deps[2].end = (size == -1 ? -1 : n->op.args[2] + ip + size);
                 deps[2].deps = NULL;
+                deps[2].mem = NULL;
                 *deps_len = 3;
             }
             return 0;

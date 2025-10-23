@@ -13,12 +13,22 @@ int load_deps_ll_nodes(struct tree *t, struct dependence *deps, int deps_len)
 {
     for (int i = 0; i < deps_len; ++i)
     {
-        if (deps[i].start == -1)
+        if (deps[i].start != -1)
         {
-            printf("ERROR: don't supported: unknown destination\n");
-        }
-        else
-        {
+            if (deps[i].end != -1)
+            {
+                int size = deps[i].start - deps[i].end;
+                /* load information */
+                BYTE *mem = malloc(size);
+                BYTE *bad = malloc(size);
+                get_memory(t, deps[i].start, size, mem, bad);
+                if (!is_corrupted(bad, size))
+                {
+                    add_mem_value(&deps[i].mem, mem, size);
+                }
+                free(mem);
+                free(bad);
+            }
             int from, to;
             get_mem_slice(t, deps[i].start, deps[i].end, &from, &to);
             /* copy all nodes */

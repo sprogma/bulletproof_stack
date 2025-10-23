@@ -148,7 +148,7 @@ public class SimpleGraphForm : Form
         mouseFilter.FormClicked += mouseFilter_FormClicked;
         Application.AddMessageFilter(mouseFilter);
         
-        Temperature = 10.0f;
+        Temperature = 1000.0f;
     }
 
     static public void ProcessPhysics()
@@ -294,7 +294,7 @@ public class SimpleGraphForm : Form
 
         dataPen.CustomEndCap = new System.Drawing.Drawing2D.CustomLineCap(null, capPath);
 */
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 100; ++i)
         {
             ProcessPhysics();
         }
@@ -305,12 +305,12 @@ public class SimpleGraphForm : Form
         Graphics g = e.Graphics;
         g.Clear(Color.White);
 
-        
         // 1. draw edges 
         foreach (var edge in edges.Where(x => x.FlowEdge))
         {
             g.DrawCurve(flowPen, edge.Pos.Select(x => new Point((int)x.X - cx, (int)x.Y - cy)).ToArray());
         }
+        
         foreach (var edge in edges.Where(x => !x.FlowEdge))
         {
             g.DrawCurve(dataPen, edge.Pos.Select(x => new Point((int)x.X - cx, (int)x.Y - cy)).ToArray());
@@ -400,7 +400,7 @@ public class SimpleGraphForm : Form
             nodes.Add(gNode);
             nodeKeys[node.Key] = gNode;
         }
-        foreach (var node in nodes)
+        /*foreach (var node in nodes)
         {
             foreach (var dep in node.Node.Deps)
             {
@@ -410,7 +410,7 @@ public class SimpleGraphForm : Form
                     edges.Add(new GraphEdge(nodeKeys[depNode], node, false));
                 }
             }
-        }
+        }*/
         foreach (var flow in data.Flow)
         {
             edges.Add(new GraphEdge(nodeKeys[flow.From], nodeKeys[flow.To], true));
