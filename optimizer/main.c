@@ -30,7 +30,7 @@ int main()
 
     printf("loading image...\n");
     load_code_image(t, 0x4000, "a.bc", "result.dat");
-    set_ip(t, 0x4000);
+    set_entry(t, 0x4000);
     
     printf("parsing...\n");
     parse(o);

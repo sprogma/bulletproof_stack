@@ -71,6 +71,7 @@ struct node *get_node(struct tree *t, int ip)
     int this = t->optimizer->nodes_len++;
     printf("[And] This is node %p\n", t->optimizer->nodes + this);
 
+    t->optimizer->nodes[this].entry_node = 0;
     t->optimizer->nodes[this].op_address = ip;
     t->optimizer->nodes[this].deps = calloc(1, sizeof(*t->optimizer->nodes[this].deps) * MAX_NODE_DEPS);
     t->optimizer->nodes[this].deps_len = 0;

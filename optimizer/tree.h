@@ -86,6 +86,7 @@ enum
 
 struct node
 {
+    int entry_node;
     int op_address;
     struct dependence *deps;
     int                deps_len;
@@ -134,6 +135,9 @@ struct source_line
 
 struct optimizer
 {
+    int entry_address;
+    BYTE *source;
+    int   source_size;
     struct tree states[MAX_STATES];
     int         states_len;
     struct tree queue[MAX_QUEUE];
@@ -192,7 +196,7 @@ int extract_deps_inner(struct tree *t, struct node *n, struct args_variant *args
 
 int extract_deps(struct tree *t, struct node *n, struct dependence *deps, int *deps_len, int ip);
 
-int set_ip(struct tree *t, int entry);
+int set_entry(struct tree *t, int entry);
 
 int get_ip(struct tree *t);
 

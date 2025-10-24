@@ -11,6 +11,7 @@
 
 int load_code_image(struct tree *t, int load_address, const char *byte_file, const char *data_file)
 {
+    
     /* read file */
     FILE *f = fopen(byte_file, "rb");
     BYTE *x = malloc(1024 * 1024);
@@ -23,6 +24,10 @@ int load_code_image(struct tree *t, int load_address, const char *byte_file, con
     fclose(f);
     int total_read = ptr - x;
     printf("Read %d bytes\n", total_read);
+    
+    /* no free neded, becouse saved data in optimizer->source */
+    t->optimizer->source = x;
+    t->optimizer->source_size = total_read;
 
     /* set regions */
     set_region_value(t, load_address, load_address + total_read, 0, x);

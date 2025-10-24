@@ -8,7 +8,6 @@
 
 int main()
 {
-    
     struct optimizer *o = malloc(sizeof(*o));
     o->states_len = 0;
     o->queue_len = 0;
@@ -34,14 +33,21 @@ int main()
 
     printf("loading image...\n");
     load_code_image(t, 0x4000, "a.bc", "result.dat");
-    set_ip(t, 0x4000);
+    set_entry(t, 0x4000);
     
     printf("parsing...\n");
     parse(o);
 
-    printf("generating C cource code");
+    printf("generating S cource code.\n");
 
-    gen_c_code(o, "res.c");
+    gen_c_code(o, "res.S");
+    
+    printf("source code generated.\n");
+    printf("build it using:\n");
+    printf("gcc %s -masm=intel -c -o a.o\n", "res.S");
+    printf("gcc %s -c -o b.o\n", "aotcompiler/runtime.c");
+    printf("gcc a.o b.o -o a.exe\n");
+
 
     return 0;
 }

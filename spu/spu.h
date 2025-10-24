@@ -28,5 +28,11 @@ struct spu
 
 result_t load_spu_port_mapping(struct spu *s, char *mapping_scheme);
 
+result_t load_image(struct spu *s, char *filename, size_t load_address);
+
+result_t allocate_memory(struct spu *s, size_t memsize);
+
+void run(struct spu *s);
+
 
 #endif
